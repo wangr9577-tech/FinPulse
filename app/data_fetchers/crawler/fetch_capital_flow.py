@@ -4,16 +4,14 @@ D组脚本：中国结算 + 沪深交易所 — 资金流向数据
 数据来源：AKShare + 中国结算 + 上交所/深交所
 注：北向资金指标（原指标20）因数据源不可用已移除。
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, save_processed, log_fetch, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("D组：资金流向数据")

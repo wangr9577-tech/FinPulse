@@ -3,17 +3,15 @@ A组脚本：央行与货币网 — 利率与货币供应数据
 覆盖指标：1 DR007偏离度(由fetch_dr007.py生成) / 3 M1同比 / 4 M1-PPI剪刀差 / 5 M2-GDP利差 / 6 信贷脉冲
 数据来源：AKShare
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, PROCESSED, save_processed, log_fetch,
     parse_chinese_date, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("A组: 货币/信用数据爬取")

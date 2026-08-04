@@ -44,9 +44,9 @@ backend/
 ## 🔥 核心功能与架构特性
 
 ### 1. 全量 28 大财经媒体与投研源秒级抓取 (`app/data_fetchers/flash_news_fetcher.py`)
-- **覆盖数据源**：新浪财经、东方财富、财联社、华尔街见闻、36氪、IT之家、钛媒体、EE Times、机器之心、量子位、Reuters、Bloomberg、Yahoo Finance、TradingView、Kiplinger、Seeking Alpha、The Motley Fool、Morningstar、Benzinga、MarketWatch、FT、WSJ、CNBC、Investing.com、The Economist、Barron's、Forbes、Fortune。
-- **早停熔断机制 (`Early-Exit Short-Circuit`)**：倒序解析快讯，一旦发布时间超出指定窗口 (默认 24h) 自动切断网络请求，大幅提升采集效率。
-- **强类型 Schema & 动态落盘**：支持基于 `news_id` 唯一索引的 MongoDB 增量 `upsert`。
+- **覆盖数据源与新增板块**：新浪财经、东方财富、财联社、华尔街见闻、36氪、IT之家、钛媒体、EE Times、机器之心、量子位、Reuters、Bloomberg、Yahoo Finance、TradingView、Kiplinger、Seeking Alpha、The Motley Fool、Morningstar、Benzinga、MarketWatch、FT、WSJ、CNBC、Investing.com、The Economist、Barron's、Forbes、Fortune，并全新扩展“高股息/红利”、“低估值/破净/回购”与“大消费/白酒/零售”三大垂直板块。
+- **早停熔断机制 (`Early-Exit Short-Circuit`)**：倒序解析快讯，一旦发布时间超出指定窗口 (由 `settings.REPORT_HOURS_BACK` 全局控制) 自动切断网络请求，同时支持 Google News RSS 智能兜底容灾。
+- **强类型 Schema & 极速批量落盘**：采用 `news_1`, `news_2` ... 纯自增序列 ID，结合 `insert_many(..., ordered=False)` 批量直接追加落盘与 `publish_time` 时间降序索引。
 
 ### 2. 择时六面图 35 项定量指标计算引擎 (`app/timing_hexagon/`)
 基于国盛证券《择时六面图：流动性上行、景气度下行》基准研报：
@@ -57,7 +57,7 @@ backend/
   3. `03_质量检查.py`：自动校验 35 项指标时间连续性与数据过期检查。
 
 ### 3. LangChain / LangGraph 多节点 Agent 引擎 (`app/agents/`)
-- **Extractor Agent**：对海量资讯执行关联实体抽离与意图结构化。
+- **Extractor Agent**：对海量资讯执行关联实体抽离与意图结构化 (统一升级为 `deepseek-v4-flash` 高吞吐模型)。
 - **Analyst Agent**：结合两融资金、DR007 利差、ERP 溢价等定量指标执行多板块推理。
 - **Synthesizer Agent**：合成全局投研报告，消除跨板块矛盾与逻辑冲突。
 - **Report Validator**：校验修复 Markdown 结构缺陷，确保符合金融研报标准。
@@ -71,7 +71,7 @@ backend/
 
 ## 🛠️ 环境配置指南 (`.env`)
 
-本系统通过 `.env` 管理敏感凭证与运行时环境变量（本地已配置 `.gitignore`，请勿将 `.env` 提交至代码仓库）。
+本系统通过 `app.core.config.settings` 统一管理敏感凭证与运行时环境变量（本地已配置 `.gitignore`，请勿将 `.env` 提交至代码仓库）。
 
 复制模版文件创建本地配置：
 ```bash
@@ -83,7 +83,7 @@ cp .env.example .env
 # 1. LLM 配置
 LLM_API_KEY=your_deepseek_api_key_here
 LLM_BASE_URL=https://api.deepseek.com/v1
-FLASH_MODEL_NAME=deepseek-chat
+FLASH_MODEL_NAME=deepseek-v4-flash
 PRO_MODEL_NAME=deepseek-reasoner
 
 # 2. MongoDB 数据库配置

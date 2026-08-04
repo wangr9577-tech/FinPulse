@@ -44,24 +44,13 @@ class DummyMockLLM(BaseChatModel):
         return "dummy_mock_llm"
 
 
-from pathlib import Path
-from dotenv import load_dotenv
-
-# 自动加载根目录或 backend 目录的 .env 文件
-env_path_root = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-env_path_backend = Path(__file__).resolve().parent.parent.parent / ".env"
-if env_path_root.exists():
-    load_dotenv(dotenv_path=env_path_root)
-elif env_path_backend.exists():
-    load_dotenv(dotenv_path=env_path_backend)
-else:
-    load_dotenv()
+from app.core.config import settings
 
 
 class LLMFactory:
     """
     LLM 工厂：管理 Data Agent (Flash) 与 Analyst Agent (Pro) 的 LangChain 实例化
-    支持自动从 .env 文件读取 API Key、Base URL 及模型选型
+    支持自动从系统配置中心 (app.core.config.settings) 读取 API Key、Base URL 及模型选型
     """
     def __init__(
         self,
@@ -70,12 +59,12 @@ class LLMFactory:
         request_timeout: float = 30.0,
         max_retries: int = 3
     ):
-        self.api_key = api_key or os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY")
-        self.base_url = base_url or os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
+        self.api_key = api_key or settings.LLM_API_KEY or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY")
+        self.base_url = base_url or settings.LLM_BASE_URL
         self.request_timeout = request_timeout
         self.max_retries = max_retries
-        self.flash_model_name = os.getenv("FLASH_MODEL_NAME", "gpt-4o-mini")
-        self.pro_model_name = os.getenv("PRO_MODEL_NAME", "gpt-4o")
+        self.flash_model_name = settings.FLASH_MODEL_NAME
+        self.pro_model_name = settings.PRO_MODEL_NAME
 
     def _is_invalid_key(self, key: Optional[str]) -> bool:
         if not key:

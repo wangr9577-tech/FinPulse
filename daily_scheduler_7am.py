@@ -30,26 +30,10 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-# 将项目根目录与 backend 目录写入 sys.path
-BACKEND_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BACKEND_DIR.parent
-
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
-
 from app.core.logger import app_logger
+from scripts.run_end_to_end_pipeline import run_end_to_end_pipeline
+from send_daily_report_email import send_daily_report_email
 
-try:
-    from backend.scripts.run_end_to_end_pipeline import run_end_to_end_pipeline
-except ModuleNotFoundError:
-    from scripts.run_end_to_end_pipeline import run_end_to_end_pipeline
-
-try:
-    from backend.send_daily_report_email import send_daily_report_email
-except ModuleNotFoundError:
-    from send_daily_report_email import send_daily_report_email
 
 
 def execute_daily_task():
@@ -61,9 +45,10 @@ def execute_daily_task():
 
     # 1. 跑通单日全自动化流水线 (分析过去 24 小时数据)
     try:
-        app_logger.info("📌 [STEP 1/2] 正在运行 24h 单日全自动化投研流水线...")
-        run_end_to_end_pipeline(hours_back=24.0)
+        app_logger.info("📌 [STEP 1/2] 正在运行单日全自动化投研流水线 (数据时间窗口来自 config 配置)...")
+        run_end_to_end_pipeline()
         app_logger.info("✅ [STEP 1/2] 单日研报生成与 PDF 编译导出成功！")
+
     except Exception as e_pipeline:
         app_logger.error(f"❌ [STEP 1/2] 研报流水线运行异常: {e_pipeline}")
         # 即使流水线局部报警，仍尝试发送已有或最新研报

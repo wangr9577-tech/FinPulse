@@ -29,7 +29,7 @@ class RawNewsSchema(BaseModel):
     """
     第一层/源头抓取的原始新闻资讯标准数据结构
     """
-    news_id: str = Field(..., description="全网唯一新闻ID，格式为: {source_code}_{original_id}")
+    news_id: str = Field(..., description="按存入/抓取数量严格递增的唯一新闻ID，格式为: news_{序号} (例: news_1, news_2)")
     source: str = Field(..., description="新闻来源名称 (例: 财联社, 华尔街见闻, 东方财富)")
     title: Optional[str] = Field(None, description="新闻标题 (快讯类若无标题则为 None)")
     content: str = Field(..., description="新闻正文/摘要纯文本")

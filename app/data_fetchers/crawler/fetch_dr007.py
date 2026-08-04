@@ -8,17 +8,15 @@ DR007 = 存款类机构间7天质押式回购利率 (Depository-institution 7-da
 2. AKShare repo_rate_query (FDR007 - 定盘利率)
 3. PBOC 公开数据
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 import requests
 import json
 from datetime import datetime, timedelta
-from utils import RAW, save_processed, log_fetch, TZ_BEIJING
+from app.data_fetchers.crawler.utils import RAW, save_processed, log_fetch, TZ_BEIJING
 import time
+
 
 print("=" * 60)
 print("DR007 数据获取")

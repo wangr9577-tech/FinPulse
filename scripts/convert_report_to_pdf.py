@@ -16,13 +16,9 @@ from typing import Optional
 # 确保 UTF-8 控制台输出
 sys.stdout.reconfigure(encoding='utf-8')
 
-# 将 backend 路径加入 sys.path
-backend_dir = Path(__file__).resolve().parent.parent
-if str(backend_dir) not in sys.path:
-    sys.path.insert(0, str(backend_dir))
-
 from app.core.logger import app_logger
 from app.core.report_validator import ReportValidator
+
 
 
 FINANCIAL_REPORT_CSS = """

@@ -3,16 +3,14 @@ E组脚本：中证800与全A行情 — 技术指标和市场广度
 覆盖指标：22 均线排列 / 23 均线距离 / 24 布林带 / 25 RSI / 26 新高占比 / 27 新低占比 / 28 量价时钟
 数据来源：AKShare
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, save_processed, log_fetch, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("E组：技术指标与市场广度")

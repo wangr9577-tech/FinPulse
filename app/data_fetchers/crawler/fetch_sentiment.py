@@ -3,16 +3,14 @@ F组脚本：市场情绪数据
 覆盖指标：29 成交热度 / 30 行业分歧度 / 31 偏股基金仓位 / 32 NLP情绪(代理)
 数据来源：AKShare
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, save_processed, log_fetch, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("F组：市场情绪数据")

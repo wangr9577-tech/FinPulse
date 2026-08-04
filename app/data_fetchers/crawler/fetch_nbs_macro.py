@@ -3,17 +3,15 @@ B组脚本：国家统计局 — 宏观经济与通胀数据
 覆盖指标：7 制造业PMI / 8 发电量同比 / 9 库存周期 / 10 A股景气度 / 11 CPI同比 / 12 PPI同比
 数据来源：AKShare
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, save_processed, log_fetch,
     parse_chinese_date, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("B组: 宏观经济数据爬取")

@@ -18,31 +18,32 @@ import os
 import time
 import datetime
 import subprocess
+from typing import Optional, List, Dict, Any
 from pathlib import Path
+
 
 # 确保 UTF-8 控制台输出
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-# 将项目根目录与 backend 目录写入 sys.path
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(BASE_DIR))
-sys.path.insert(0, str(BASE_DIR / "backend"))
-
 from app.core.logger import app_logger, log_data_pipeline, log_agent_action
+
 from app.data_fetchers.flash_news_fetcher import FlashNewsFetcher
 from app.timing_hexagon.pipeline import run_timing_hexagon_pipeline
-from app.data_fetchers.feature_operators import FeatureOperatorEngine
-from app.core.pipeline_graph import run_research_pipeline
+from app.core.config import settings
 
 
-def run_end_to_end_pipeline(hours_back: float = 1.0):
+def run_end_to_end_pipeline(hours_back: Optional[float] = None):
+    if hours_back is None:
+        hours_back = settings.REPORT_HOURS_BACK
+
     start_total_time = time.time()
     print("=" * 80)
     print(" 🚀 智能投研信息引擎 - 全自动化一键运行主入口 (End-to-End Master Pipeline)")
     print("=" * 80)
     print(f" 启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f" 分析时间窗口: 过去 {hours_back:.1f} 小时")
+    print(f" 分析时间窗口: 过去 {hours_back:.1f} 小时 (根据 config.REPORT_HOURS_BACK 设定)")
+
     print(" 闭环流程: [数据爬取] -> [择时计算] -> [数据库落盘] -> [AI智能体推演] -> [PDF研报导出]")
     print("=" * 80 + "\n")
 
@@ -60,7 +61,7 @@ def run_end_to_end_pipeline(hours_back: float = 1.0):
 
         async def _fetch_and_store_news():
             app_logger.info(f"[STAGE 1.1] 正在抓取全量 28 大媒体高频新闻快讯 (过去 {hours_back}h)...")
-            news_fetcher = FlashNewsFetcher(max_hours=hours_back)
+            news_fetcher = FlashNewsFetcher()
             fetched_news = await news_fetcher.fetch_all_flash_news()
             app_logger.info(f"✅ [STAGE 1.1] 抓取完成！共获取 {len(fetched_news)} 条 {hours_back}h 内增量资讯。")
 
@@ -82,13 +83,14 @@ def run_end_to_end_pipeline(hours_back: float = 1.0):
     # 1.2 择时六面图 35 项核心指标爬虫调度
     try:
         app_logger.info("[STAGE 1.2] 正在调度择时 35 项指标多源爬虫 (AKShare + 官方 API)...")
-        crawler_script = BASE_DIR / "backend" / "app" / "data_fetchers" / "crawler" / "run_all.py"
+        backend_dir = Path(__file__).resolve().parent.parent
         proc = subprocess.run(
-            [sys.executable, str(crawler_script)],
-            cwd=crawler_script.parent,
+            [sys.executable, "-m", "app.data_fetchers.crawler.run_all"],
+            cwd=backend_dir,
             capture_output=True,
             text=True
         )
+
         if proc.returncode == 0:
             app_logger.info("✅ [STAGE 1.2] 择时 35 项指标数据更新成功！")
         else:
@@ -186,6 +188,7 @@ def run_end_to_end_pipeline(hours_back: float = 1.0):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="智能投研全自动化流水线")
-    parser.add_argument("--hours", "--hours-back", type=float, default=1.0, help="分析时间窗口 (过去多少小时的数据, 默认 1.0)")
+    parser.add_argument("--hours", "--hours-back", type=float, default=None, help=f"分析时间窗口 (过去多少小时的数据, 默认由 config.REPORT_HOURS_BACK 配置: {settings.REPORT_HOURS_BACK}h)")
     args = parser.parse_args()
     run_end_to_end_pipeline(hours_back=args.hours)
+

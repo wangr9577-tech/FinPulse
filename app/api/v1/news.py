@@ -3,6 +3,7 @@
 """
 from typing import Optional
 from fastapi import APIRouter, Query
+from app.core.config import settings
 from app.db.mongodb import MongoDBClient
 from app.data_fetchers.flash_news_fetcher import FlashNewsFetcher
 
@@ -22,8 +23,8 @@ async def get_flash_news(limit: int = Query(50, ge=1, le=200)):
 
 
 @router.post("/fetch", summary="触发全量 28 大媒体增量快讯抓取并自动落库")
-async def trigger_fetch_news(max_hours: float = Query(1.0, ge=0.5, le=48.0)):
-    fetcher = FlashNewsFetcher(request_timeout=12.0, max_hours=max_hours)
+async def trigger_fetch_news():
+    fetcher = FlashNewsFetcher()
     news_items = await fetcher.fetch_all_flash_news()
     
     # 转换为 dict 落库
@@ -33,7 +34,8 @@ async def trigger_fetch_news(max_hours: float = Query(1.0, ge=0.5, le=48.0)):
 
     return {
         "code": 200,
-        "message": f"成功拉取过去 {max_hours} 小时内 {len(news_items)} 条增量快讯，更新落库 {saved_count} 条记录",
+        "message": f"成功拉取过去 {settings.REPORT_HOURS_BACK} 小时内 {len(news_items)} 条增量快讯，更新落库 {saved_count} 条记录",
         "fetched_total": len(news_items),
         "saved_total": saved_count
     }
+

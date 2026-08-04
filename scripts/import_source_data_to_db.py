@@ -10,12 +10,14 @@ from pathlib import Path
 import pandas as pd
 from pymongo import MongoClient
 
+from app.core.config import settings
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SOURCE_DATA_DIR = BASE_DIR / "backend" / "data" / "source_data"
 RESULTS_DIR = BASE_DIR / "backend" / "data" / "results"
 
-MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DB_NAME = os.getenv("MONGODB_DB_NAME", "intelligent_research_db")
+MONGO_URI = settings.MONGODB_URI
+DB_NAME = settings.MONGODB_DB_NAME
 
 
 def import_source_data():

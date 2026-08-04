@@ -3,16 +3,14 @@ C组脚本：中证指数 + 沪深交易所 — 估值数据
 覆盖指标：13 PE_TTM中位数 / 14 股息率 / 15 PB / 16 ERP / 17 DCF估值 / 18 AIAE
 数据来源：AKShare (legulegu.com PE/PB, csindex 股息率, bond_china_yield)
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, save_processed, log_fetch, parse_chinese_date, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("C组: 估值数据爬取")

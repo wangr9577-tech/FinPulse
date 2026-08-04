@@ -3,16 +3,14 @@ G组脚本：上交所期权 — CPR、VIX与SKEW
 覆盖指标：33 CPR(认购认沽成交比) / 34 QVIX(Quantile VIX) / 35 SKEW(代理)
 数据来源：AKShare (option_sse_daily_sina, index_option qvix)
 """
-import sys
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-
 import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils import (
+from app.data_fetchers.crawler.utils import (
     RAW, save_processed, log_fetch, TZ_BEIJING,
 )
+
 
 print("=" * 60)
 print("G组：期权数据")

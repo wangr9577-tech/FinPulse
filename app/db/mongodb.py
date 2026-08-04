@@ -10,32 +10,22 @@ from typing import Dict, List, Optional, Any
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
+from app.core.config import settings
 from app.core.logger import app_logger, log_data_pipeline
 
 
 class MongoDBClient:
     _instance: Optional["MongoDBClient"] = None
 
-    def __init__(self, mongo_uri: Optional[str] = None, db_name: Optional[str] = None):
-        self.mongo_uri = mongo_uri or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        self.db_name = db_name or os.getenv("MONGODB_DB_NAME", "intelligent_research_db")
-        self.max_pool_size = int(os.getenv("MONGODB_MAX_POOL_SIZE", "50"))
-        self.min_pool_size = int(os.getenv("MONGODB_MIN_POOL_SIZE", "5"))
+    def __init__(self):
+        self.mongo_uri = settings.MONGODB_URI
+        self.db_name = settings.MONGODB_DB_NAME
+        self.max_pool_size = settings.MONGODB_MAX_POOL_SIZE
+        self.min_pool_size = settings.MONGODB_MIN_POOL_SIZE
         
         self.client: Optional[AsyncIOMotorClient] = None
         self.db = None
         self.is_connected: bool = False
-        
-        # 内存兜底存储 (当本地未安装或未启动 MongoDB 时保证系统可用)
-        self._memory_raw_news: Dict[str, Dict[str, Any]] = {}
-        self._memory_structured_news: Dict[str, Dict[str, Any]] = {}
-        self._memory_reports: List[Dict[str, Any]] = []
-        self._memory_config: Dict[str, Any] = {
-            "industries": ["半导体", "人工智能"],
-            "macro_keywords": ["美联储", "央行", "PMI", "关税"],
-            "regions": ["国内", "美", "日", "韩"],
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }
 
     @classmethod
     def get_instance(cls) -> "MongoDBClient":
@@ -62,7 +52,7 @@ class MongoDBClient:
             return True
         except (ConnectionFailure, ServerSelectionTimeoutError, Exception) as e:
             self.is_connected = False
-            app_logger.warning(f"⚠️ [MongoDB 未开启/无法连接]: {e}。系统已安全切换至 Motor 内存降级缓冲模式。")
+            app_logger.warning(f"⚠️ [MongoDB 未开启/无法连接]: {e}")
             return False
 
     async def init_indexes(self):
@@ -70,21 +60,16 @@ class MongoDBClient:
         if not self.is_connected or self.db is None:
             return
         try:
-            # 1. raw_news_collection 索引
+            # 1. raw_news_collection 索引 (publish_time 降序索引，用于过去 24h 快讯检索)
             raw_coll = self.db["raw_news_collection"]
-            await raw_coll.create_index("news_id", unique=True)
             await raw_coll.create_index([("publish_time", -1)])
-            await raw_coll.create_index("source")
 
-            # 2. structured_news_collection 索引
+            # 2. structured_news_collection 索引 (processed_at 降序索引，用于过去 24h 研报卡片检索)
             struct_coll = self.db["structured_news_collection"]
-            await struct_coll.create_index("raw_id")
-            await struct_coll.create_index([("importance", -1)])
             await struct_coll.create_index([("processed_at", -1)])
 
-            # 3. market_insight_reports 索引
+            # 3. market_insight_reports 索引 (generation_time 降序索引，用于研报历史检索)
             report_coll = self.db["market_insight_reports"]
-            await report_coll.create_index("report_id", unique=True)
             await report_coll.create_index([("generation_time", -1)])
 
             app_logger.info("✅ [MongoDB] 核心集合索引初始化完成 (raw_news, structured_news, market_insight_reports)！")
@@ -101,70 +86,44 @@ class MongoDBClient:
             app_logger.info("[MongoDB] 异步连接池已优雅断开。")
 
     # =========================================================================
-    # 数据读写操作接口 (带内存降级兜底)
+    # 数据读写操作接口
     # =========================================================================
     async def upsert_raw_news_batch(self, news_items: List[Dict[str, Any]]) -> int:
-        """批量更新/插入原始新闻"""
+        """批量直接写入原始新闻"""
         if not news_items:
             return 0
 
         if self.is_connected and self.db is not None:
-            count = 0
             coll = self.db["raw_news_collection"]
-            for item in news_items:
-                nid = item.get("news_id")
-                if nid:
-                    res = await coll.update_one({"news_id": nid}, {"$set": item}, upsert=True)
-                    if res.acknowledged:
-                        count += 1
+            res = await coll.insert_many(news_items, ordered=False)
+            count = len(res.inserted_ids)
             log_data_pipeline("upsert_raw_news_batch", "MongoDB-RawNews", count)
             return count
         else:
-            # 内存降级
-            for item in news_items:
-                nid = item.get("news_id")
-                if nid:
-                    self._memory_raw_news[nid] = item
-            log_data_pipeline("upsert_raw_news_batch", "Memory-Fallback-RawNews", len(news_items))
-            return len(news_items)
+            app_logger.warning("MongoDB 未连接，原始新闻数据未落盘。")
+            return 0
 
     async def get_raw_news_list(self, limit: int = 50) -> List[Dict[str, Any]]:
         """获取最新原始新闻列表"""
         if self.is_connected and self.db is not None:
             cursor = self.db["raw_news_collection"].find({}, {"_id": 0}).sort("publish_time", -1).limit(limit)
             return await cursor.to_list(length=limit)
-        else:
-            sorted_items = sorted(
-                self._memory_raw_news.values(),
-                key=lambda x: str(x.get("publish_time", "")),
-                reverse=True
-            )
-            return sorted_items[:limit]
+        return []
 
     async def upsert_structured_news_batch(self, card_items: List[Dict[str, Any]]) -> int:
-        """8月5日新增：批量更新/插入结构化情报卡片至 structured_news_collection"""
+        """8月5日新增：批量直接写入结构化情报卡片至 structured_news_collection"""
         if not card_items:
             return 0
 
         if self.is_connected and self.db is not None:
-            count = 0
             coll = self.db["structured_news_collection"]
-            for item in card_items:
-                rid = item.get("raw_id")
-                if rid:
-                    res = await coll.update_one({"raw_id": rid}, {"$set": item}, upsert=True)
-                    if res.acknowledged:
-                        count += 1
+            res = await coll.insert_many(card_items, ordered=False)
+            count = len(res.inserted_ids)
             log_data_pipeline("upsert_structured_news_batch", "MongoDB-StructuredNews", count)
             return count
         else:
-            # 内存降级
-            for item in card_items:
-                rid = item.get("raw_id")
-                if rid:
-                    self._memory_structured_news[rid] = item
-            log_data_pipeline("upsert_structured_news_batch", "Memory-Fallback-StructuredNews", len(card_items))
-            return len(card_items)
+            app_logger.warning("MongoDB 未连接，结构化情报卡片数据未落盘。")
+            return 0
 
     async def get_structured_news_list(self, limit: int = 50, min_research_value: int = 1) -> List[Dict[str, Any]]:
         """8月5日新增：查询结构化情报卡片列表 (支持按研报价值筛选)"""
@@ -172,17 +131,7 @@ class MongoDBClient:
             query = {"research_value": {"$gte": min_research_value}}
             cursor = self.db["structured_news_collection"].find(query, {"_id": 0}).sort("processed_at", -1).limit(limit)
             return await cursor.to_list(length=limit)
-        else:
-            filtered = [
-                v for v in self._memory_structured_news.values()
-                if v.get("research_value", 1) >= min_research_value
-            ]
-            sorted_items = sorted(
-                filtered,
-                key=lambda x: str(x.get("processed_at", "")),
-                reverse=True
-            )
-            return sorted_items[:limit]
+        return []
 
     async def save_insight_report(self, report_data: Dict[str, Any]) -> str:
         """保存成品研报"""
@@ -195,8 +144,7 @@ class MongoDBClient:
             await coll.update_one({"report_id": rid}, {"$set": report_data}, upsert=True)
             log_data_pipeline("save_insight_report", "MongoDB-Reports", 1, extra_info=rid)
         else:
-            self._memory_reports.insert(0, report_data)
-            log_data_pipeline("save_insight_report", "Memory-Fallback-Reports", 1, extra_info=rid)
+            app_logger.warning(f"MongoDB 未连接，研报 ({rid}) 未落盘。")
 
         return rid
 
@@ -224,7 +172,7 @@ class MongoDBClient:
                     if res.acknowledged:
                         count += 1
             return count
-        return len(records)
+        return 0
 
     async def get_max_date_timing_source(self, indicator_name: str) -> Optional[str]:
         """查询指定指标在 MongoDB 中的最大已存日期"""
@@ -256,7 +204,7 @@ class MongoDBClient:
                     if res.acknowledged:
                         count += 1
             return count
-        return len(signals)
+        return 0
 
     async def get_max_date_timing_signals(self, indicator: str) -> Optional[str]:
         """查询指定择时信号指标在 MongoDB 中的最大已存算计日期"""
@@ -273,37 +221,21 @@ class MongoDBClient:
             report = await self.db["market_insight_reports"].find_one({}, {"_id": 0}, sort=[("generation_time", -1)])
             if report:
                 return report
-
-        if self._memory_reports:
-            return self._memory_reports[0]
-
-        return {
-            "report_id": "rep_20260728_mock_01",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "target_industries": ["半导体", "人工智能"],
-            "macro_alert": {
-                "is_triggered": True,
-                "events": ["国家统计局发布最新PMI数据", "美联储维持利率决议不变"]
-            },
-            "content_markdown": "# 行业与宏观综合研报 (7.28 LangChain + Motor 联调测试样例)\n\n## 1. 宏观货币与资金流动性\n今日全市场两融交易占比及流动性利差处于合理博弈区间，聪明钱保持净流入状态。\n\n## 2. 垂直硬科技与AI前沿\n半导体产业链晶圆产能利用率逐步回升，全球 AI 大模型生态加速商业化落地。\n\n> *本报告由智能投研信息引擎服务自动集成输出。*",
-            "charts_data": {
-                "margin_ratio": [
-                    {"date": "2026-07-26", "value": 0.098},
-                    {"date": "2026-07-27", "value": 0.102},
-                    {"date": "2026-07-28", "value": 0.105}
-                ]
-            },
-            "generation_time": datetime.now(timezone.utc).isoformat()
-        }
+        return None
 
     async def get_system_config(self) -> Dict[str, Any]:
         """获取当前系统订阅偏好配置"""
+        default_cfg = {
+            "industries": ["半导体", "人工智能"],
+            "macro_keywords": ["美联储", "央行", "PMI", "关税"],
+            "regions": ["国内", "美", "日", "韩"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
         if self.is_connected and self.db is not None:
             cfg = await self.db["system_config_collection"].find_one({"config_key": "user_subscriptions"}, {"_id": 0})
-            if cfg:
-                return cfg.get("payload", self._memory_config)
-
-        return self._memory_config
+            if cfg and "payload" in cfg:
+                return cfg["payload"]
+        return default_cfg
 
     async def update_system_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
         """更新系统订阅偏好配置"""
@@ -314,8 +246,6 @@ class MongoDBClient:
                 {"$set": {"config_key": "user_subscriptions", "payload": config_data}},
                 upsert=True
             )
-
-        self._memory_config = config_data
         return config_data
 
     async def benchmark_async_read_write(self, sample_size: int = 10) -> Dict[str, Any]:
@@ -337,7 +267,7 @@ class MongoDBClient:
         elapsed_ms = (time.time() - start_time) * 1000
 
         res = {
-            "mode": "mongodb_online" if self.is_connected else "memory_fallback",
+            "mode": "mongodb_online" if self.is_connected else "disconnected",
             "batch_saved": saved_count,
             "batch_read": len(read_items),
             "elapsed_ms": round(elapsed_ms, 2)

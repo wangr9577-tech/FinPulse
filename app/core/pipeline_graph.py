@@ -17,8 +17,10 @@ from pathlib import Path
 from langgraph.graph import StateGraph, START, END
 
 from app.core.logger import app_logger, log_agent_action, log_data_pipeline
+from app.core.config import settings
 from app.db.mongodb import MongoDBClient
 from app.db.aggregator import NewsAggregator
+
 from app.data_fetchers.feature_operators import FeatureOperatorEngine
 from app.agents.extractor_agent import ExtractorAgent
 from app.agents.analyst_agent import AnalystAgent, SectorAnalysisResult, load_default_market_features
@@ -269,11 +271,14 @@ def build_research_pipeline_graph():
     return workflow.compile()
 
 
-def run_research_pipeline(hours_back: float = 1.0, raw_news_list: Optional[List[Dict]] = None) -> Dict[str, Any]:
+def run_research_pipeline(hours_back: Optional[float] = None, raw_news_list: Optional[List[Dict]] = None) -> Dict[str, Any]:
     """
-    运行 LangGraph 智能投研 5 节点全自动化流水线图 (指定分析过去 hours_back 小时内数据，默认 1.0h)
+    运行 LangGraph 智能投研 5 节点全自动化流水线图 (限定分析过去 hours_back 小时内数据，默认从 config.REPORT_HOURS_BACK 读取)
     - raw_news_list: 可选，直接传入原始新闻列表（来自 Stage 1.1 抓取结果），为空时节点自动从 MongoDB 读取
     """
+    if hours_back is None:
+        hours_back = settings.REPORT_HOURS_BACK
+
     graph = build_research_pipeline_graph()
     initial_state: PipelineGraphState = {
         "hours_back": hours_back,
@@ -288,3 +293,4 @@ def run_research_pipeline(hours_back: float = 1.0, raw_news_list: Optional[List[
     }
     final_state = graph.invoke(initial_state)
     return final_state
+
