@@ -6,10 +6,12 @@
     将单日运行生成的智能投研研报 (HTML / PDF) 通过 QQ 邮箱 SMTP 自动发送至指定接收人。
 
 发件配置：
-    - 发件人：3080596038@qq.com
-    - 授权码：zjexmkxagvxfddhb
-    - SMTP服务器：smtp.qq.com (端口 465 SSL)
-    - 收件人：395399805@qq.com, kfzhong@sina.com
+    优先从环境变量 (.env) 中读取：
+    - SMTP_SERVER: SMTP 服务器地址 (如 smtp.qq.com)
+    - SMTP_PORT: 端口号 (如 465 SSL)
+    - SMTP_SENDER_EMAIL: 发件人邮箱账号
+    - SMTP_AUTH_CODE: 发件人邮箱授权码/密码
+    - DEFAULT_RECEIVERS: 默认收件人列表 (逗号分隔)
 """
 
 import sys
@@ -22,6 +24,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email.header import Header
 from email.utils import formataddr
+from dotenv import load_dotenv
 
 # 强制控制台 UTF-8 输出
 if hasattr(sys.stdout, "reconfigure"):
@@ -38,6 +41,16 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+# 自动加载根目录或 backend 目录的 .env 配置文件
+env_path_root = PROJECT_ROOT / ".env"
+env_path_backend = BACKEND_DIR / ".env"
+if env_path_root.exists():
+    load_dotenv(dotenv_path=env_path_root)
+elif env_path_backend.exists():
+    load_dotenv(dotenv_path=env_path_backend)
+else:
+    load_dotenv()
+
 try:
     from app.core.logger import app_logger
 except ImportError:
@@ -45,12 +58,15 @@ except ImportError:
     app_logger = logging.getLogger("email_dispatcher")
     logging.basicConfig(level=logging.INFO)
 
-# 默认配置
-SMTP_SERVER = "smtp.qq.com"
-SMTP_PORT = 465
-SENDER_EMAIL = "3080596038@qq.com"
-AUTH_CODE = "zjexmkxagvxfddhb"
-DEFAULT_RECEIVERS = ["395399805@qq.com", "kfzhong@sina.com"]
+# 从环境变量中读取配置
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.qq.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SENDER_EMAIL = os.getenv("SMTP_SENDER_EMAIL", "3080596038@qq.com")
+AUTH_CODE = os.getenv("SMTP_AUTH_CODE", "")
+
+_raw_receivers = os.getenv("DEFAULT_RECEIVERS", "395399805@qq.com,kfzhong@sina.com")
+DEFAULT_RECEIVERS = [r.strip() for r in _raw_receivers.split(",") if r.strip()]
+
 
 
 def find_latest_report_files():
