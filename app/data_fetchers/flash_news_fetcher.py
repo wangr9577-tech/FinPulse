@@ -26,11 +26,13 @@ import asyncio
 import json
 import logging
 import re
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 import httpx
 import feedparser
 from bs4 import BeautifulSoup
+
 
 from app.models.news_schema import RawNewsSchema
 
@@ -305,8 +307,41 @@ class FlashNewsFetcher:
         return await self._fetch_rss_direct(client, "Yahoo Finance", yf_index_rss, cutoff_dt, ["美股", "标普500"])
 
     # =========================================================================
-    # 通用 RSS 辅助解析函数
+    # 通用 RSS 辅助解析与字段提取函数
     # =========================================================================
+    def _extract_rss_entry_fields(self, entry: Any, rss_url: str = "") -> tuple[str, str]:
+        """
+        解析 feedparser entry，提取并清洗 title 和 content。
+        1. 优先提取 entry.content (Atom/RSS2.0 全文)；无全文时依次提取 summary/description。
+        2. 清洗 HTML 标签，单向降级确定 final_content 与 final_title。
+        """
+        raw_title = getattr(entry, "title", "").strip()
+        if " - " in raw_title and "Google News" in rss_url:
+            raw_title = raw_title.rsplit(" - ", 1)[0].strip()
+
+        # 优先提取 entry.content (RSS/Atom 全文)
+        raw_content = ""
+        entry_content = getattr(entry, "content", None)
+        if isinstance(entry_content, list) and len(entry_content) > 0:
+            content_pieces = []
+            for item in entry_content:
+                if isinstance(item, dict) and "value" in item:
+                    content_pieces.append(item["value"])
+                elif hasattr(item, "value"):
+                    content_pieces.append(getattr(item, "value", ""))
+            raw_content = " ".join(content_pieces).strip()
+
+        raw_summary = getattr(entry, "summary", getattr(entry, "description", "")).strip()
+
+        clean_content = self._clean_html(raw_content) if raw_content else ""
+        clean_summary = self._clean_html(raw_summary) if raw_summary else ""
+
+        # 单向唯一链条兜底：正文 (全文 -> 摘要 -> 标题)，标题 (原生标题 -> 摘要截取 -> 正文截取)
+        final_content = clean_content or clean_summary or raw_title
+        final_title = raw_title or (clean_summary[:35] if clean_summary else clean_content[:35])
+
+        return final_title, final_content
+
     async def _fetch_rss_direct(
         self, client: httpx.AsyncClient, source_name: str, rss_url: str, cutoff_dt: datetime, default_tags: List[str]
     ) -> List[RawNewsSchema]:
@@ -328,21 +363,17 @@ class FlashNewsFetcher:
                     logger.info(f"[{source_name} RSS Early-Exit] 遇到 >{self.max_hours}h 前旧条目，熔断终止。")
                     break
 
-                title = getattr(entry, "title", "")
-                summary = self._clean_html(getattr(entry, "summary", getattr(entry, "description", title)))
-
-                if " - " in title and "Google News" in rss_url:
-                    title = title.rsplit(" - ", 1)[0]
+                title, content = self._extract_rss_entry_fields(entry, rss_url)
 
                 items.append(
                     RawNewsSchema(
-                        news_id=f"rss_{source_name}_{hash(title or summary)}",
+                        news_id=f"rss_{source_name}_{uuid.uuid4().hex[:12]}",
                         source=source_name,
-                        title=title if title else summary[:35],
-                        content=summary if summary else title,
+                        title=title,
+                        content=content,
                         publish_time=pub_dt,
                         category_tags=default_tags,
-                        importance=2 if any(k in title + summary for k in ["Fed", "China", "AI", "Chip", "芯片", "关税", "央行"]) else 1,
+                        importance=2 if any(k in title + content for k in ["Fed", "China", "AI", "Chip", "芯片", "关税", "央行"]) else 1,
                         channel_type="rss_channel",
                         raw_payload={"link": getattr(entry, "link", "")},
                     )
@@ -382,15 +413,14 @@ class FlashNewsFetcher:
                     if not self._is_within_time_window(pub_dt, cutoff_dt):
                         break
 
-                    title = getattr(entry, "title", "")
-                    summary = self._clean_html(getattr(entry, "summary", getattr(entry, "description", title)))
+                    title, content = self._extract_rss_entry_fields(entry)
 
                     items.append(
                         RawNewsSchema(
-                            news_id=f"rsshub_{source_name}_{getattr(entry, 'id', str(hash(title)))[-12:]}",
+                            news_id=f"rsshub_{source_name}_{uuid.uuid4().hex[:12]}",
                             source=source_name,
-                            title=title if title else summary[:35],
-                            content=summary,
+                            title=title,
+                            content=content,
                             publish_time=pub_dt,
                             category_tags=["RSSHub资讯"],
                             importance=1,
