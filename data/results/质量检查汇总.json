@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "check": "最新信号34项且名称唯一",
+      "passed": true,
+      "detail": "行数=34，唯一指标=34，缺失=[]，多余=[]"
+    },
+    {
+      "check": "研报时点复核34项且名称唯一",
+      "passed": true,
+      "detail": "行数=34，唯一指标=34"
+    },
+    {
+      "check": "最新汇总使用统一截面",
+      "passed": true,
+      "detail": "截面=['2026-07-24']"
+    },
+    {
+      "check": "不可用或过期指标不进入当前可用分数",
+      "passed": true,
+      "detail": "违规行数=0"
+    },
+    {
+      "check": "当前可用分数均已在截面日前生效",
+      "passed": true,
+      "detail": "违规行数=0"
+    },
+    {
+      "check": "指标输出日期有效、唯一且升序",
+      "passed": true,
+      "detail": "检查文件=29，异常=[]"
+    },
+    {
+      "check": "生效日期严格晚于观测日期",
+      "passed": true,
+      "detail": "异常=[]"
+    },
+    {
+      "check": "未发现明确双向填充未来数据",
+      "passed": true,
+      "detail": "命中=[]"
+    },
+    {
+      "check": "2022复核分类计数完整",
+      "passed": true,
+      "detail": "一致=19，不一致=4，不可比较=11"
+    }
+  ],
+  "review_direction_counts": {
+    "一致": 19,
+    "不一致": 4,
+    "不可比较": 11
+  }
+}

@@ -1,0 +1,678 @@
+[
+  {
+    "file": "flow\\北向资金信号_日度.csv",
+    "status": "PASS",
+    "rows": 2264,
+    "min_date": "2014-11-17",
+    "max_date": "2024-08-16",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "northbound_net_cny100m",
+      "mean120",
+      "std120",
+      "upper",
+      "lower",
+      "trigger",
+      "state"
+    ],
+    "non_null_value_count": 11084,
+    "all_values_null": false,
+    "data_age_days": 709,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "flow\\新增开户数_月度.csv",
+    "status": "PASS",
+    "rows": 101,
+    "min_date": "2015-04-30",
+    "max_date": "2023-08-31",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "new_investors_10k",
+      "rolling_6m_max"
+    ],
+    "non_null_value_count": 200,
+    "all_values_null": false,
+    "data_age_days": 1060,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "flow\\融资融券余额_日度.csv",
+    "status": "PASS",
+    "rows": 3961,
+    "min_date": "2010-03-31",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "margin_sh",
+      "margin_sz",
+      "margin_total",
+      "ma60",
+      "ma120",
+      "trend",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 26947,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\DR007偏离度_日度.csv",
+    "status": "PASS",
+    "rows": 4944,
+    "min_date": "2006-10-08",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "dr007",
+      "ma60",
+      "deviation",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 24584,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\M1-PPI剪刀差_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "m1_yoy",
+      "ppi_yoy",
+      "m1_ppi_spread",
+      "ma6",
+      "ma12",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 1477,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\M1同比_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "m1_yoy",
+      "m2_yoy",
+      "m1_ma6",
+      "m1_ma12",
+      "trend"
+    ],
+    "non_null_value_count": 881,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\M2-GDP利差_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "m2_yoy",
+      "gdp_yoy",
+      "m2_gdp_spread",
+      "ma6",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 1284,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\SHIBOR_1W_日度.csv",
+    "status": "PASS",
+    "rows": 2330,
+    "min_date": "2015-05-08",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "shibor_1w_pct",
+      "ma60",
+      "q10"
+    ],
+    "non_null_value_count": 6922,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\信贷脉冲_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "social_financing",
+      "sf_12m_sum",
+      "credit_impulse",
+      "ma6"
+    ],
+    "non_null_value_count": 847,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "liquidity\\国债收益率10Y_日度.csv",
+    "status": "PASS",
+    "rows": 6133,
+    "min_date": "2002-01-04",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "bond_yield_10y"
+    ],
+    "non_null_value_count": 6133,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "macro\\A股景气度_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "pmi",
+      "ppi",
+      "prosperity_index",
+      "ma6"
+    ],
+    "non_null_value_count": 886,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "macro\\CPI同比_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "cpi_yoy",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 596,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "macro\\PPI同比_月度.csv",
+    "status": "PASS",
+    "rows": 246,
+    "min_date": "2006-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "ppi_yoy",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 668,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "macro\\制造业PMI_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "pmi",
+      "ma6",
+      "ma12",
+      "trend",
+      "above_50"
+    ],
+    "non_null_value_count": 881,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "macro\\发电量同比_月度.csv",
+    "status": "PASS",
+    "rows": 238,
+    "min_date": "2003-12-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "power_yoy",
+      "ma6",
+      "ma12",
+      "trend"
+    ],
+    "non_null_value_count": 707,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "options\\QVIX_300ETF_日度.csv",
+    "status": "PASS",
+    "rows": 1586,
+    "min_date": "2019-12-23",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "vix_300_proxy"
+    ],
+    "non_null_value_count": 1586,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "options\\QVIX_日度.csv",
+    "status": "PASS",
+    "rows": 2774,
+    "min_date": "2015-02-09",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "vix_proxy",
+      "ma5",
+      "ma20",
+      "ma60",
+      "q10",
+      "q25",
+      "q50",
+      "q75",
+      "q90"
+    ],
+    "non_null_value_count": 23696,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "options\\SKEW_日度.csv",
+    "status": "PASS",
+    "rows": 2773,
+    "min_date": "2015-02-10",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "qvix_return",
+      "skew_20d",
+      "skew_60d"
+    ],
+    "non_null_value_count": 8291,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "sentiment\\NLP情绪_日度.csv",
+    "status": "FAIL",
+    "rows": 6048,
+    "min_date": "2010-01-01",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "post_count",
+      "sentiment_score",
+      "zscore"
+    ],
+    "non_null_value_count": 0,
+    "all_values_null": true,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": [
+      "所有指标值均为空（占位文件不能视为完成）"
+    ]
+  },
+  {
+    "file": "sentiment\\偏股基金仓位_日度.csv",
+    "status": "PASS",
+    "rows": 4910,
+    "min_date": "2007-10-01",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "equity_position",
+      "fund_count",
+      "position_ma5",
+      "position_ma20",
+      "position_ma40",
+      "position_ma60",
+      "position_ma120",
+      "position_mean",
+      "position_std",
+      "overheat_line",
+      "oversold_line",
+      "position_change"
+    ],
+    "non_null_value_count": 58806,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "sentiment\\成交热度_日度.csv",
+    "status": "PASS",
+    "rows": 5955,
+    "min_date": "2002-01-04",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "close",
+      "turnover_amount",
+      "heat_3m",
+      "rolling_mean",
+      "rolling_std",
+      "cold_line",
+      "hot_line",
+      "zscore"
+    ],
+    "non_null_value_count": 46298,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "sentiment\\行业分歧度_日度.csv",
+    "status": "PASS",
+    "rows": 1792,
+    "min_date": "2019-03-06",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "industry_count",
+      "divergence",
+      "ma20",
+      "cold_line",
+      "hot_line"
+    ],
+    "non_null_value_count": 7286,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "technical\\RSI_日度.csv",
+    "status": "PASS",
+    "rows": 4741,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "close",
+      "rsi6",
+      "rsi14",
+      "rsi24"
+    ],
+    "non_null_value_count": 18958,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "technical\\均线排列_日度.csv",
+    "status": "PASS",
+    "rows": 4741,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "close",
+      "ma10",
+      "ma30",
+      "ma60",
+      "ma90",
+      "bull_alignment",
+      "bear_alignment"
+    ],
+    "non_null_value_count": 33096,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "technical\\均线距离_日度.csv",
+    "status": "PASS",
+    "rows": 4741,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "close",
+      "ma10",
+      "ma60",
+      "distance_pct",
+      "distance_ma252",
+      "distance_std252",
+      "distance_zscore",
+      "regime"
+    ],
+    "non_null_value_count": 32861,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "technical\\布林带_日度.csv",
+    "status": "PASS",
+    "rows": 4741,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "close",
+      "mid",
+      "upper",
+      "lower",
+      "bb_width_pct",
+      "position"
+    ],
+    "non_null_value_count": 23669,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "technical\\新高新低_日度.csv",
+    "status": "PASS",
+    "rows": 1817,
+    "min_date": "2019-01-23",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "sector_count",
+      "nh_sectors",
+      "nl_sectors",
+      "nh_ratio",
+      "nl_ratio",
+      "nh_nl_diff",
+      "nh_ratio_20d",
+      "nl_ratio_20d",
+      "nh_nl_diff_20d",
+      "data_method"
+    ],
+    "non_null_value_count": 16341,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": false,
+    "issues": []
+  },
+  {
+    "file": "technical\\量价时钟_日度.csv",
+    "status": "PASS",
+    "rows": 4741,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-24",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "close",
+      "volatility_20d_ann",
+      "amt_ratio",
+      "quadrant"
+    ],
+    "non_null_value_count": 14204,
+    "all_values_null": false,
+    "data_age_days": 2,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "valuation\\AIAE_月度.csv",
+    "status": "PASS",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "market_cap",
+      "gdp",
+      "buffett_ratio",
+      "q10",
+      "q90"
+    ],
+    "non_null_value_count": 1064,
+    "all_values_null": false,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "valuation\\DCF估值_月度.csv",
+    "status": "FAIL",
+    "rows": 222,
+    "min_date": "2008-01-31",
+    "max_date": "2026-06-30",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "dcf_value",
+      "note"
+    ],
+    "non_null_value_count": 0,
+    "all_values_null": true,
+    "data_age_days": 26,
+    "starts_2008": true,
+    "issues": [
+      "所有指标值均为空（占位文件不能视为完成）"
+    ]
+  },
+  {
+    "file": "valuation\\ERP_日度.csv",
+    "status": "PASS",
+    "rows": 4744,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "earnings_yield",
+      "pe_ttm",
+      "bond_yield_10y",
+      "erp",
+      "q10",
+      "q25",
+      "q50",
+      "q75",
+      "q90"
+    ],
+    "non_null_value_count": 41451,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "valuation\\PB_日度.csv",
+    "status": "PASS",
+    "rows": 4744,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "pb",
+      "pb_median",
+      "q10",
+      "q25",
+      "q50",
+      "q75",
+      "q90"
+    ],
+    "non_null_value_count": 31963,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": true,
+    "issues": []
+  },
+  {
+    "file": "valuation\\PE_TTM_日度.csv",
+    "status": "PASS",
+    "rows": 4744,
+    "min_date": "2007-01-15",
+    "max_date": "2026-07-23",
+    "duplicate_dates": 0,
+    "value_columns": [
+      "pe_ttm",
+      "pe_percentile",
+      "q10",
+      "q25",
+      "q50",
+      "q75",
+      "q90"
+    ],
+    "non_null_value_count": 31963,
+    "all_values_null": false,
+    "data_age_days": 3,
+    "starts_2008": true,
+    "issues": []
+  }
+]

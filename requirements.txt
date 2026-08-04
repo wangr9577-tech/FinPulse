@@ -1,0 +1,52 @@
+# =================================================================
+# 智能投研信息引擎 第一/二阶段完整项目依赖清单 (backend/requirements.txt)
+# =================================================================
+
+# 1. 基础数据模型与配置校验
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+
+# 2. 开源金融 API 与数据分析/统计建模
+akshare>=1.18.0
+tushare>=1.4.0
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+statsmodels>=0.14.0
+openpyxl>=3.1.0
+
+# 3. HTTP 异步网络请求与爬虫支持
+httpx>=0.27.0
+requests>=2.31.0
+urllib3>=2.0.0
+curl_cffi>=0.7.0
+playwright>=1.40.0
+
+# 4. 文本清洗、XML 与 RSSFeed 解析器
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+feedparser>=6.0.0
+
+# 5. FastAPI 与 Web 后端服务
+fastapi>=0.100.0
+uvicorn>=0.20.0
+
+# 6. MongoDB 数据库与异步驱动
+pymongo>=4.6.0
+motor>=3.3.0
+
+# 7. LLM Agent 框架与 LangChain / LangGraph
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-openai>=0.1.0
+langgraph>=0.0.1
+openai>=1.0.0
+loguru>=0.7.0
+
+# 8. 研报 PDF 编译导出与文档生成
+reportlab>=4.0.0
+python-docx>=1.0.0
+
+# 9. 时间与通用辅助工具
+python-dateutil>=2.8.0

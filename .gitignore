@@ -1,0 +1,53 @@
+# =================================================================
+# Git Ignore Configuration for FinPulse Backend
+# =================================================================
+
+# Environment Variables & Sensitive Credentials (DO NOT COMMIT)
+.env
+.env.*
+!.env.example
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Logs & Temporary Log Files
+logs/
+*.log
+data/logs/
+
+# Generated Output & Reports (PDFs, HTML previews, etc.)
+output/*
+!output/.gitkeep
+
+# Databases & Local Data Stores
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing & Coverage Reports
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
