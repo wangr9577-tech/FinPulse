@@ -75,7 +75,7 @@ class FlashNewsFetcher:
         return clean_text
 
     def _is_within_time_window(self, pub_dt: datetime, cutoff_dt: datetime) -> bool:
-        """校验时间戳是否在时间窗口内 (统一转换为 UTC 比较)"""
+        """校验时间戳是否/在时间窗口内 (统一转换为 UTC 比较)"""
         pub_utc = pub_dt if pub_dt.tzinfo else pub_dt.replace(tzinfo=timezone.utc)
         cutoff_utc = cutoff_dt if cutoff_dt.tzinfo else cutoff_dt.replace(tzinfo=timezone.utc)
         return pub_utc >= cutoff_utc
