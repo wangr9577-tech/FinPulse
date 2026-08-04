@@ -1,0 +1,143 @@
+# ⚡ FinPulse Backend (智能投研后端服务与自动化数据引擎)
+
+> **FinPulse Backend** 是基于 AI Agent 多节点推演与 **国盛证券《择时六面图》** 35 项定量指标计算引擎打造的智能金融投研后端系统。系统支持全量 28 大财经媒体秒级抓取、三阶数据清洗、择时量化图谱计算、全自动化 PDF 金融研报生成以及 SMTP 每日定时邮件推送。
+
+---
+
+## 📁 目录结构 (Directory Structure)
+
+```text
+backend/
+├── app/                                  # 后端核心应用包 (FastAPI Core & Agent 体系)
+│   ├── api/                              # REST API v1 路由层 (health, insights, news, config)
+│   ├── agents/                           # LangGraph 多节点 Agent 引擎 (Analyst, Synthesizer, Auditor...)
+│   ├── core/                             # LLM 工厂、日志、状态图与排版验证基础设施
+│   ├── data_fetchers/                    # 28大媒体抓取引擎与4类特色特征算子
+│   ├── db/                               # MongoDB 异步驱动与连接池 (Motor)
+│   ├── models/                           # Pydantic Schema 数据校验模型
+│   ├── timing_hexagon/                   # 择时六面图 35 项量化指标计算与质量合规引擎
+│   └── main.py                           # FastAPI Core 服务主入口 (Port 8000)
+│
+├── data/                                 # 投研原始数据与 35 项指标数据集
+│   ├── raw/                              # 上交所/深交所/中证/期权等原始抓取数据
+│   ├── results/                          # 择时六面图 35 项指标计算输出与边界复查 CSV
+│   ├── source_data/                      # 基础宏观与行情源数据
+│   └── docs/                             # 基准研报与复现简报
+│
+├── scripts/                              # 运维测试与端到端自动化流水线脚本
+│   ├── run_end_to_end_pipeline.py        # 🚀 一键跑通全流程 (抓取->计算->落盘->AI推演->PDF导出)
+│   ├── convert_report_to_pdf.py          # Markdown/HTML 研报一键转换为高保真 PDF
+│   ├── import_source_data_to_db.py       # 源数据导入 MongoDB 数据库脚本
+│   └── view_db.py                        # 本地/远程 MongoDB 数据统计与查验脚本
+│
+├── logs/                                 # 日志存储目录 (自动轮转落盘 app_pipeline.log)
+├── output/                               # 自动生成的 HTML / PDF 每日研报导出目录
+├── daily_scheduler_7am.py                # ⏰ 每日早晨 07:00 常驻定时服务脚本
+├── send_daily_report_email.py            # 📧 单日研报 SMTP 邮件发送服务脚本
+├── requirements.txt                      # 后端 Python 依赖列表
+├── .env.example                          # 环境变量配置模板
+└── README.md                             # 项目说明文档
+```
+
+---
+
+## 🔥 核心功能与架构特性
+
+### 1. 全量 28 大财经媒体与投研源秒级抓取 (`app/data_fetchers/flash_news_fetcher.py`)
+- **覆盖数据源**：新浪财经、东方财富、财联社、华尔街见闻、36氪、IT之家、钛媒体、EE Times、机器之心、量子位、Reuters、Bloomberg、Yahoo Finance、TradingView、Kiplinger、Seeking Alpha、The Motley Fool、Morningstar、Benzinga、MarketWatch、FT、WSJ、CNBC、Investing.com、The Economist、Barron's、Forbes、Fortune。
+- **早停熔断机制 (`Early-Exit Short-Circuit`)**：倒序解析快讯，一旦发布时间超出指定窗口 (默认 24h) 自动切断网络请求，大幅提升采集效率。
+- **强类型 Schema & 动态落盘**：支持基于 `news_id` 唯一索引的 MongoDB 增量 `upsert`。
+
+### 2. 择时六面图 35 项定量指标计算引擎 (`app/timing_hexagon/`)
+基于国盛证券《择时六面图：流动性上行、景气度下行》基准研报：
+- **无未来函数设计**：严格引入保守发布延迟、历史分位数与 Z-score 标准化清洗。
+- **三阶合规流水线**：
+  1. `01_数据清洗.py`：对齐日期、格式标准化与基础质量审计。
+  2. `02_指标计算.py`：逐段计算 35 项择时信号（流动性、宏观、估值、资金、技术、情绪及期权等 6 大维度）。
+  3. `03_质量检查.py`：自动校验 35 项指标时间连续性与数据过期检查。
+
+### 3. LangChain / LangGraph 多节点 Agent 引擎 (`app/agents/`)
+- **Extractor Agent**：对海量资讯执行关联实体抽离与意图结构化。
+- **Analyst Agent**：结合两融资金、DR007 利差、ERP 溢价等定量指标执行多板块推理。
+- **Synthesizer Agent**：合成全局投研报告，消除跨板块矛盾与逻辑冲突。
+- **Report Validator**：校验修复 Markdown 结构缺陷，确保符合金融研报标准。
+
+### 4. 自动化定时调度与邮件投递 (`daily_scheduler_7am.py` & `send_daily_report_email.py`)
+- **常驻 Timer 服务**：每日早晨 `07:00:00` 自动触发端到端流水线。
+- **高保真 PDF 编译**：基于 Playwright 无头浏览器导出 PDF。
+- **SMTP 邮件推送**：通过 SSL (端口 465) 自动将单日研报投递至指定团队邮箱。
+
+---
+
+## 🛠️ 环境配置指南 (`.env`)
+
+本系统通过 `.env` 管理敏感凭证与运行时环境变量（本地已配置 `.gitignore`，请勿将 `.env` 提交至代码仓库）。
+
+复制模版文件创建本地配置：
+```bash
+cp .env.example .env
+```
+
+`.env` 常用参数说明：
+```ini
+# 1. LLM 配置
+LLM_API_KEY=your_deepseek_api_key_here
+LLM_BASE_URL=https://api.deepseek.com/v1
+FLASH_MODEL_NAME=deepseek-chat
+PRO_MODEL_NAME=deepseek-reasoner
+
+# 2. MongoDB 数据库配置
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB_NAME=intelligent_research_db
+
+# 3. 后端服务配置
+FASTAPI_PORT=8000
+```
+
+> 💡 **Dummy Mock 降级保护**：当 `LLM_API_KEY` 为空或使用 `mock` 前缀时，系统会自动切入内置 `DummyMockLLM` 模式，无 Token 消耗即可跑通完整流程。
+
+---
+
+## 🚀 快速开始
+
+### 1. 安装依赖
+支持 Python 3.10+ 环境：
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 运行端到端流水线 (Data -> Hexagon -> Agents -> PDF)
+```bash
+python scripts/run_end_to_end_pipeline.py
+```
+*运行完成后，研报结果将自动保存至 `output/market_insight_report.pdf`。*
+
+### 3. 启动 FastAPI 交互式后端服务
+```bash
+python app/main.py
+# 或使用 uvicorn
+uvicorn app.main:app --reload --port 8000
+```
+访问 API 文档地址: `http://localhost:8000/docs`
+
+### 4. 启动 07:00 每日自动化调度器
+```bash
+# 启动常驻定时服务 (每天 07:00 自动执行)
+python daily_scheduler_7am.py
+
+# 手动立即测试一次整套调度与邮件发送
+python daily_scheduler_7am.py --now
+```
+
+### 5. 单独触发研报邮件发送
+```bash
+python send_daily_report_email.py
+```
+
+---
+
+## 🔒 代码规范与安全说明
+
+- `.env` 密钥配置文件已加入 `.gitignore`。
+- 生成的 `logs/*.log` 与 `output/*.pdf/html` 不会上传至 Git 远程仓库。
+- `.env.example` 提供无敏感信息的配置模版，供团队成员部署使用。
