@@ -6,7 +6,7 @@
 1. 放置在 backend 目录下；
 2. 每日早上 07:00 自动启动全自动化单日流水线 (run_end_to_end_pipeline 过去24小时数据)；
 3. 全自动生成择时六面图研报并美化排版、编译导出 PDF 附件；
-4. 调用 send_daily_report_email() 将单日研报通过 QQ 邮箱 SMTP 精准发送至 395399805@qq.com 和 kfzhong@sina.com。
+4. 调用 send_daily_report_email() 将单日研报通过 QQ 邮箱 SMTP 精准发送至团队订阅邮箱。
 
 使用方式：
 - 常驻定时模式 (默认，每日 07:00 自动运行):
@@ -55,7 +55,7 @@ def execute_daily_task():
 
     # 2. 自动发送研报邮件
     try:
-        app_logger.info("📌 [STEP 2/2] 正在发送单日研报邮件至 395399805@qq.com / kfzhong@sina.com...")
+        app_logger.info("📌 [STEP 2/2] 正在发送单日研报邮件至默认团队订阅邮箱...")
         success = send_daily_report_email()
         if success:
             app_logger.info("🎉 [STEP 2/2] 单日研报邮件发送成功！")
