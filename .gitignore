@@ -38,6 +38,7 @@ output/*
 # IDE & Editor Configurations
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *.sublime-project

@@ -116,6 +116,7 @@ class ExtractorAgent:
                 research_value=research_val,
                 impact_rating=impact_val,
                 event_type=data.get("event_type", "产业动态"),
+                sector=raw_news.get("sector", "其他板块"),
                 key_metrics=data.get("key_metrics", {}),
                 category_tags=raw_news.get("category_tags", [])
             )
@@ -155,6 +156,7 @@ class ExtractorAgent:
             research_value=research_val,
             impact_rating=importance,
             event_type="产业动态",
+            sector=raw_news.get("sector", "其他板块"),
             key_metrics={},
             category_tags=raw_news.get("category_tags", [])
         )
@@ -164,8 +166,9 @@ class ExtractorAgent:
         news_id = raw_news.get("news_id", "unknown")
         content = raw_news.get("content", "")
         title = raw_news.get("title") or ""
+        sector_name = raw_news.get("sector", "其他板块")
         
-        user_prompt = f"新闻标题: {title}\n新闻正文: {content}\n来源: {raw_news.get('source', '')}\n已知标签: {raw_news.get('category_tags', [])}"
+        user_prompt = f"所属板块频道: {sector_name}\n新闻标题: {title}\n新闻正文: {content}\n来源: {raw_news.get('source', '')}\n已知标签: {raw_news.get('category_tags', [])}"
 
         log_agent_action("ExtractorAgent", "Extracting", f"news_id={news_id}, model_tier={self.model_tier}")
 

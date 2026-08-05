@@ -5,10 +5,11 @@ MongoDB 异步数据库驱动与连接池组件 (Motor / PyMongo)
 """
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from pymongo import UpdateOne
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, BulkWriteError
 
 from app.core.config import settings
 from app.core.logger import app_logger, log_data_pipeline
@@ -56,7 +57,7 @@ class MongoDBClient:
             return False
 
     async def init_indexes(self):
-        """初始化核心集合与索引结构"""
+        """初始化核心集合与索引结构 (含 365 天 TTL 自动过期清理索引)"""
         if not self.is_connected or self.db is None:
             return
         try:
@@ -64,15 +65,21 @@ class MongoDBClient:
             raw_coll = self.db["raw_news_collection"]
             await raw_coll.create_index([("publish_time", -1)])
 
-            # 2. structured_news_collection 索引 (processed_at 降序索引，用于过去 24h 研报卡片检索)
+            # 2. structured_news_collection 索引 (processed_at 降序索引与 365天 TTL 自动过期索引)
             struct_coll = self.db["structured_news_collection"]
             await struct_coll.create_index([("processed_at", -1)])
+            # 365 天 = 365 * 24 * 3600 秒 = 31536000 秒
+            await struct_coll.create_index(
+                [("processed_at", 1)],
+                expireAfterSeconds=31536000,
+                name="ttl_365d_processed_at"
+            )
 
             # 3. market_insight_reports 索引 (generation_time 降序索引，用于研报历史检索)
             report_coll = self.db["market_insight_reports"]
             await report_coll.create_index([("generation_time", -1)])
 
-            app_logger.info("✅ [MongoDB] 核心集合索引初始化完成 (raw_news, structured_news, market_insight_reports)！")
+            app_logger.info("✅ [MongoDB] 核心集合索引与 365 天 (1年) TTL 自动过期索引初始化完成！")
         except Exception as e:
             app_logger.error(f"[MongoDB 索引创建失败]: {e}")
 
@@ -111,12 +118,22 @@ class MongoDBClient:
         return []
 
     async def upsert_structured_news_batch(self, card_items: List[Dict[str, Any]]) -> int:
-        """8月5日新增：批量直接写入结构化情报卡片至 structured_news_collection"""
+        """8月5日新增：批量直接写入结构化情报卡片至 structured_news_collection (规范时间类型以支持 TTL)"""
         if not card_items:
             return 0
 
         if self.is_connected and self.db is not None:
             coll = self.db["structured_news_collection"]
+            now_dt = datetime.now(timezone.utc)
+            for card in card_items:
+                if "processed_at" not in card or not card["processed_at"]:
+                    card["processed_at"] = now_dt
+                elif isinstance(card["processed_at"], str):
+                    try:
+                        clean_pt = card["processed_at"].replace("Z", "+00:00")
+                        card["processed_at"] = datetime.fromisoformat(clean_pt)
+                    except Exception:
+                        card["processed_at"] = now_dt
             res = await coll.insert_many(card_items, ordered=False)
             count = len(res.inserted_ids)
             log_data_pipeline("upsert_structured_news_batch", "MongoDB-StructuredNews", count)
@@ -125,12 +142,28 @@ class MongoDBClient:
             app_logger.warning("MongoDB 未连接，结构化情报卡片数据未落盘。")
             return 0
 
-    async def get_structured_news_list(self, limit: int = 50, min_research_value: int = 1) -> List[Dict[str, Any]]:
-        """8月5日新增：查询结构化情报卡片列表 (支持按研报价值筛选)"""
+    async def get_structured_news_list(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """查询结构化情报卡片列表 (时间窗口下沉至数据库层，直接读取 settings.REPORT_HOURS_BACK 配置)"""
         if self.is_connected and self.db is not None:
-            query = {"research_value": {"$gte": min_research_value}}
-            cursor = self.db["structured_news_collection"].find(query, {"_id": 0}).sort("processed_at", -1).limit(limit)
-            return await cursor.to_list(length=limit)
+            query = {}
+            hours = settings.REPORT_HOURS_BACK
+            if hours and hours > 0:
+                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+                cutoff_iso = cutoff_time.isoformat()
+                query = {
+                    "$or": [
+                        {"processed_at": {"$gte": cutoff_time}},
+                        {"processed_at": {"$gte": cutoff_iso}},
+                        {"publish_time": {"$gte": cutoff_iso}},
+                        {"pub_time": {"$gte": cutoff_iso}}
+                    ]
+                }
+
+            cursor = self.db["structured_news_collection"].find(query, {"_id": 0}).sort("processed_at", -1)
+            if limit and limit > 0:
+                cursor = cursor.limit(limit)
+                return await cursor.to_list(length=limit)
+            return await cursor.to_list(length=None)
         return []
 
     async def save_insight_report(self, report_data: Dict[str, Any]) -> str:
@@ -152,26 +185,28 @@ class MongoDBClient:
     # 择时源数据 (timing_source_data) 与 择时信号 (timing_signals_summary) MongoDB 接口
     # =========================================================================
     async def upsert_timing_source_data_batch(self, indicator_name: str, records: List[Dict[str, Any]]) -> int:
-        """增量存入原始/代理择时源数据到 MongoDB ('timing_source_data') 集合"""
+        """批量高吞吐存入原始/代理择时源数据到 MongoDB ('timing_source_data') 集合 (单次 Batch 交互)"""
         if not records:
             return 0
         if self.is_connected and self.db is not None:
             coll = self.db["timing_source_data"]
-            count = 0
+            operations = []
             for r in records:
                 date_val = r.get("date") or r.get("日期") or r.get("报告日")
                 if date_val:
                     r_clean = dict(r)
+                    d_str = str(date_val)[:10]
                     r_clean["indicator_name"] = indicator_name
-                    r_clean["date"] = str(date_val)[:10]
-                    res = await coll.update_one(
-                        {"indicator_name": indicator_name, "date": r_clean["date"]},
-                        {"$set": r_clean},
-                        upsert=True
-                    )
-                    if res.acknowledged:
-                        count += 1
-            return count
+                    r_clean["date"] = d_str
+                    doc_id = f"{indicator_name}_{d_str}"
+                    r_clean["_id"] = doc_id
+                    operations.append(UpdateOne({"_id": doc_id}, {"$set": r_clean}, upsert=True))
+
+            if not operations:
+                return 0
+
+            res = await coll.bulk_write(operations, ordered=False)
+            return res.upserted_count + res.modified_count + res.matched_count
         return 0
 
     async def get_max_date_timing_source(self, indicator_name: str) -> Optional[str]:
@@ -184,26 +219,28 @@ class MongoDBClient:
         return None
 
     async def upsert_timing_signals_batch(self, signals: List[Dict[str, Any]]) -> int:
-        """增量存入 35 项择时指标计算信号到 MongoDB ('timing_signals_summary') 集合"""
+        """批量高吞吐存入 35 项择时指标计算信号到 MongoDB ('timing_signals_summary') 集合 (单次 Batch 交互)"""
         if not signals:
             return 0
         if self.is_connected and self.db is not None:
             coll = self.db["timing_signals_summary"]
-            count = 0
+            operations = []
             for sig in signals:
                 ind = sig.get("indicator")
                 d_val = sig.get("effective_date") or sig.get("date")
                 if ind and d_val:
                     sig_clean = dict(sig)
-                    sig_clean["date"] = str(d_val)[:10]
-                    res = await coll.update_one(
-                        {"indicator": ind, "date": sig_clean["date"]},
-                        {"$set": sig_clean},
-                        upsert=True
-                    )
-                    if res.acknowledged:
-                        count += 1
-            return count
+                    d_str = str(d_val)[:10]
+                    sig_clean["date"] = d_str
+                    doc_id = f"{ind}_{d_str}"
+                    sig_clean["_id"] = doc_id
+                    operations.append(UpdateOne({"_id": doc_id}, {"$set": sig_clean}, upsert=True))
+
+            if not operations:
+                return 0
+
+            res = await coll.bulk_write(operations, ordered=False)
+            return res.upserted_count + res.modified_count + res.matched_count
         return 0
 
     async def get_max_date_timing_signals(self, indicator: str) -> Optional[str]:

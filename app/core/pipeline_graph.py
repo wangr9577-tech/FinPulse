@@ -117,7 +117,7 @@ async def node_aggregate_async(state: PipelineGraphState) -> PipelineGraphState:
     db_client = MongoDBClient.get_instance()
     await db_client.connect()
     aggregator = NewsAggregator(db_client=db_client)
-    clusters = await aggregator.aggregate_clusters(hours=hours_back, min_research_value=1)
+    clusters = await aggregator.aggregate_clusters()
 
     state["aggregated_clusters"] = clusters or {}
     await db_client.close()
