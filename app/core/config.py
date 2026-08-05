@@ -33,7 +33,7 @@ class Settings:
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
     FLASH_MODEL_NAME: str = os.getenv("FLASH_MODEL_NAME", "deepseek-v4-flash")
-    PRO_MODEL_NAME: str = os.getenv("PRO_MODEL_NAME", "deepseek-reasoner")
+    PRO_MODEL_NAME: str = os.getenv("PRO_MODEL_NAME", "deepseek-v4-flash")
 
     # 3. MongoDB 数据库配置
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")

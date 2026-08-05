@@ -28,6 +28,8 @@ backend/
 │   ├── run_end_to_end_pipeline.py        # 🚀 一键跑通全流程 (抓取->计算->落盘->AI推演->PDF导出)
 │   ├── convert_report_to_pdf.py          # Markdown/HTML 研报一键转换为高保真 PDF
 │   ├── import_source_data_to_db.py       # 源数据导入 MongoDB 数据库脚本
+│   ├── test_mongodb_functions.py         # 🧪 MongoDB 核心接口单元测试脚本
+│   ├── test_aggregator.py                # 🧪 NewsAggregator 动态物理簇聚合测试脚本
 │   └── view_db.py                        # 本地/远程 MongoDB 数据统计与查验脚本
 │
 ├── logs/                                 # 日志存储目录 (自动轮转落盘 app_pipeline.log)
@@ -56,11 +58,14 @@ backend/
   2. `02_指标计算.py`：逐段计算 35 项择时信号（流动性、宏观、估值、资金、技术、情绪及期权等 6 大维度）。
   3. `03_质量检查.py`：自动校验 35 项指标时间连续性与数据过期检查。
 
-### 3. LangChain / LangGraph 多节点 Agent 引擎 (`app/agents/`)
-- **Extractor Agent**：对海量资讯执行关联实体抽离与意图结构化 (统一升级为 `deepseek-v4-flash` 高吞吐模型)。
-- **Analyst Agent**：结合两融资金、DR007 利差、ERP 溢价等定量指标执行多板块推理。
+### 3. LangChain / LangGraph 6 大全原生异步 Agent 节点流水线 (`app/agents/` & `app/core/pipeline_graph.py`)
+- **原生全异步 Node 架构**：全链路采用 `async def` 异步节点定义与单统一事件循环，避免了反复创建/销毁事件循环的开销，并全局复用高并发 MongoDB 连接池。
+- **Extractor Agent**：对海量资讯执行关联实体抽离与板块语义标注 (`sector`)，统一升级为 `deepseek-v4-flash` 高吞吐模型。
+- **NewsAggregator 动态物理簇**：放弃硬编码关键词正则匹配规则，依据原生 `sector` 标签直出动态 `Group-By` 归类，无缝兼容任意新增行业。
+- **Analyst Agent**：结合两融资金、DR007 利差、ERP 溢价等定量指标执行多板块深度推理。
 - **Synthesizer Agent**：合成全局投研报告，消除跨板块矛盾与逻辑冲突。
-- **Report Validator**：校验修复 Markdown 结构缺陷，确保符合金融研报标准。
+- **Auditor Agent**：金融数据真实性与防幻觉合规审查节点，实时比对指标数值与图表一致性。
+- **Report Validator**：校验修复 Markdown 结构缺陷，编译高保真金融 PDF 研报。
 
 ### 4. 自动化定时调度与邮件投递 (`daily_scheduler_7am.py` & `send_daily_report_email.py`)
 - **常驻 Timer 服务**：每日早晨 `07:00:00` 自动触发端到端流水线。
@@ -110,7 +115,7 @@ pip install -r requirements.txt
 ```bash
 python scripts/run_end_to_end_pipeline.py
 ```
-*运行完成后，研报结果将自动保存至 `output/market_insight_report.pdf`。*
+*运行完成后，研报结果将自动保存至 `output/` 目录下（包含最新研报 `market_insight_report.pdf` 以及在 MongoDB 中自动归档记录的带时间戳文件 `智能投研综合研报_择时六面图_YYYYMMDD_HHMMSS.pdf`）。*
 
 ### 3. 启动 FastAPI 交互式后端服务
 ```bash

@@ -172,7 +172,7 @@ class SynthesizerAgent:
     """
     Synthesizer Agent：首席策略分析师 / 投研主编智能体
     """
-    def __init__(self, llm_factory: Optional[LLMFactory] = None, model_tier: str = "pro"):
+    def __init__(self, llm_factory: Optional[LLMFactory] = None, model_tier: str = "flash"):
         self.llm_factory = llm_factory or LLMFactory(request_timeout=60.0, max_retries=3)
         self.model_tier = model_tier.lower()
         if self.model_tier == "flash":
