@@ -2,10 +2,11 @@
 LangGraph 自动化流水线编排模块 (PipelineGraph)
 满足 8月13日 WBS 交付要求：
 1. 用 LangGraph 构造 StateGraph 统一状态流 (PipelineGraphState)
-2. 依次连接 5 大核心 Agent 节点：
-   node_extract -> node_aggregate -> node_analyze -> node_synthesize -> node_validate_and_export
-3. 加入全程 Loguru 日志记录、Tenacity 指数退避重试与降级容错机制
-4. 提供可调用的编译工作流 runnable (build_research_pipeline_graph)
+2. 依次连接 6 大核心流水线节点：
+   node_extract -> node_aggregate -> node_analyze -> node_synthesize -> node_audit -> node_validate_and_export
+3. 原生全异步节点设计 (async def)，避免事件循环重复创建与开销
+4. 统一复用 MongoDB 异步连接池生命周期
+5. 提供可调用的编译工作流 runnable (build_research_pipeline_graph)
 """
 import sys
 import os
@@ -48,26 +49,20 @@ class PipelineGraphState(TypedDict, total=False):
 
 
 # =========================================================================
-# LangGraph 节点定义 (Nodes)
+# LangGraph 原生异步节点定义 (Async Nodes)
 # =========================================================================
 
-def node_extract(state: PipelineGraphState) -> PipelineGraphState:
+async def node_extract(state: PipelineGraphState) -> PipelineGraphState:
     """节点 1: Extractor Agent 智能提炼情报卡片并落库 structured_news_collection"""
     log_agent_action("LangGraph-Node1", "Executing", "node_extract (新闻卡片提炼与落库)")
     raw_news = state.get("raw_news_list", [])
-    hours_back = state.get("hours_back", 1.0)
+    db_client = MongoDBClient.get_instance()
     
     # 1. 若 state 未传入 raw_news，从 MongoDB 异步读取最新原始新闻
     if not raw_news:
-        async def _get_news_from_mongo():
-            db_client = MongoDBClient.get_instance()
-            if await db_client.connect():
-                items = await db_client.get_raw_news_list(limit=50)
-                await db_client.close()
-                return items
-            return []
         try:
-            raw_news = asyncio.run(_get_news_from_mongo())
+            await db_client.connect()
+            raw_news = await db_client.get_raw_news_list(limit=50)
         except Exception as e_m:
             app_logger.warning(f"从 MongoDB 提取原始新闻警示: {e_m}")
 
@@ -83,14 +78,10 @@ def node_extract(state: PipelineGraphState) -> PipelineGraphState:
 
         # 2. 将提炼好的结构化卡片落盘入库至 MongoDB 'structured_news_collection'
         if cards:
-            async def _save_cards_to_mongo():
-                db_client = MongoDBClient.get_instance()
-                if await db_client.connect():
-                    count = await db_client.upsert_structured_news_batch(cards)
-                    await db_client.close()
-                    app_logger.info(f"✅ [node_extract] 成功将 {count} 条结构化情报卡片存入 MongoDB ('structured_news_collection')！")
             try:
-                asyncio.run(_save_cards_to_mongo())
+                await db_client.connect()
+                count = await db_client.upsert_structured_news_batch(cards)
+                app_logger.info(f"✅ [node_extract] 成功将 {count} 条结构化情报卡片存入 MongoDB ('structured_news_collection')！")
             except Exception as e_sc:
                 app_logger.warning(f"⚠️ [node_extract] 卡片落库警示: {e_sc}")
 
@@ -99,10 +90,9 @@ def node_extract(state: PipelineGraphState) -> PipelineGraphState:
     return state
 
 
-async def node_aggregate_async(state: PipelineGraphState) -> PipelineGraphState:
-    """节点 2: 物理簇分类与全量特征算子抓取"""
+async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
+    """节点 2: 动态物理簇分类与全量特征算子抓取"""
     log_agent_action("LangGraph-Node2", "Executing", "node_aggregate (物理簇分类与特征抓取)")
-    hours_back = state.get("hours_back", 1.0)
     
     # 1. 抓取全量市场特征算子
     try:
@@ -113,25 +103,18 @@ async def node_aggregate_async(state: PipelineGraphState) -> PipelineGraphState:
         mf = load_default_market_features()
     state["market_features"] = mf
 
-    # 2. 从 MongoDB 聚合物理簇 (限定过去 hours_back 小时内真实增量数据，不假造数据)
+    # 2. 从 MongoDB 动态按 sector 聚合物理簇 (根据 .env 配置时间窗口下沉查询)
     db_client = MongoDBClient.get_instance()
     await db_client.connect()
     aggregator = NewsAggregator(db_client=db_client)
     clusters = await aggregator.aggregate_clusters()
 
     state["aggregated_clusters"] = clusters or {}
-    await db_client.close()
-
     log_data_pipeline("node_aggregate", "NewsAggregator", len(clusters), f"物理簇划分完成 ({list(clusters.keys())})")
     return state
 
 
-def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
-    """节点 2 同步包装函数"""
-    return asyncio.run(node_aggregate_async(state))
-
-
-def node_analyze(state: PipelineGraphState) -> PipelineGraphState:
+async def node_analyze(state: PipelineGraphState) -> PipelineGraphState:
     """节点 3: Analyst Agent 分板块纯资讯分析 (全覆盖所有活跃板块)"""
     log_agent_action("LangGraph-Node3", "Executing", "node_analyze (Analyst Agent 纯板块资讯分析)")
     clusters = state.get("aggregated_clusters", {})
@@ -151,7 +134,7 @@ def node_analyze(state: PipelineGraphState) -> PipelineGraphState:
     return state
 
 
-def node_synthesize(state: PipelineGraphState) -> PipelineGraphState:
+async def node_synthesize(state: PipelineGraphState) -> PipelineGraphState:
     """节点 4: Synthesizer Agent 首席主编全局报告合成"""
     log_agent_action("LangGraph-Node4", "Executing", "node_synthesize (Synthesizer Agent 全局报告合成)")
     sector_results = state.get("sector_analysis_results", [])
@@ -166,7 +149,7 @@ def node_synthesize(state: PipelineGraphState) -> PipelineGraphState:
     return state
 
 
-def node_audit(state: PipelineGraphState) -> PipelineGraphState:
+async def node_audit(state: PipelineGraphState) -> PipelineGraphState:
     """节点 4.5: Auditor Agent 金融数据真实性与防幻觉合规审查"""
     log_agent_action("LangGraph-NodeAudit", "Executing", "node_audit (Auditor Agent 金融数据真实性审查)")
     report = state.get("synthesized_report")
@@ -188,7 +171,7 @@ def node_audit(state: PipelineGraphState) -> PipelineGraphState:
     return state
 
 
-def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphState:
+async def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphState:
     """节点 5: ReportValidator 美化排版与 PDF 编译导出"""
     log_agent_action("LangGraph-Node5", "Executing", "node_validate_and_export (美化排版与 PDF 编译)")
     report = state.get("synthesized_report")
@@ -204,11 +187,11 @@ def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphState:
     clean_md = val_res.repaired_markdown
     state["validated_markdown"] = clean_md
 
-    # 2. 编译导出 PDF
+    # 2. 异步编译导出 PDF
     backend_root = Path(__file__).resolve().parent.parent.parent
     pdf_path = str(backend_root / "output" / "market_insight_report.pdf")
     
-    asyncio.run(compile_report_to_pdf(clean_md, pdf_path))
+    await compile_report_to_pdf(clean_md, pdf_path)
     state["pdf_output_path"] = pdf_path
 
     # 3. 将成品研报元数据保存至 MongoDB 'market_insight_reports' 集合
@@ -227,12 +210,9 @@ def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphState:
             "markdown_content": clean_md,
             "sector_count": report.sector_count if report else 0
         }
-        async def _save_report_async():
-            db_client = MongoDBClient.get_instance()
-            if await db_client.connect():
-                await db_client.save_insight_report(report_doc)
-                await db_client.close()
-        asyncio.run(_save_report_async())
+        db_client = MongoDBClient.get_instance()
+        await db_client.connect()
+        await db_client.save_insight_report(report_doc)
     except Exception as e_db:
         app_logger.warning(f"⚠️ [MongoDB] 研报文档落盘提示: {e_db}")
 
@@ -246,11 +226,11 @@ def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphState:
 
 def build_research_pipeline_graph():
     """
-    构造并编译 LangGraph 智能投研全自动化流水线状态图 (含 Auditor 审查节点)
+    构造并编译 LangGraph 智能投研全自动化流水线状态图 (含 Auditor 审查节点，支持全原生 async)
     """
     workflow = StateGraph(PipelineGraphState)
 
-    # 1. 注册 6 大核心节点
+    # 1. 注册 6 大核心异步节点
     workflow.add_node("extract", node_extract)
     workflow.add_node("aggregate", node_aggregate)
     workflow.add_node("analyze", node_analyze)
@@ -267,30 +247,42 @@ def build_research_pipeline_graph():
     workflow.add_edge("audit", "validate_and_export")
     workflow.add_edge("validate_and_export", END)
 
-    app_logger.info("✅ [LangGraph] 智能投研 6 节点 (含 Auditor 审查) PipelineGraph 状态图编译完成！")
+    app_logger.info("✅ [LangGraph] 智能投研 6 节点 (含 Auditor 审查) 原生异步 PipelineGraph 状态图编译完成！")
     return workflow.compile()
 
 
-def run_research_pipeline(hours_back: Optional[float] = None, raw_news_list: Optional[List[Dict]] = None) -> Dict[str, Any]:
+async def run_research_pipeline_async(hours_back: Optional[float] = None, raw_news_list: Optional[List[Dict]] = None) -> Dict[str, Any]:
     """
-    运行 LangGraph 智能投研 5 节点全自动化流水线图 (限定分析过去 hours_back 小时内数据，默认从 config.REPORT_HOURS_BACK 读取)
+    异步运行 LangGraph 智能投研 6 节点全自动化流水线 (复用统一事件循环与数据库连接池)
     - raw_news_list: 可选，直接传入原始新闻列表（来自 Stage 1.1 抓取结果），为空时节点自动从 MongoDB 读取
     """
     if hours_back is None:
         hours_back = settings.REPORT_HOURS_BACK
 
-    graph = build_research_pipeline_graph()
-    initial_state: PipelineGraphState = {
-        "hours_back": hours_back,
-        "raw_news_list": raw_news_list or [],
-        "extracted_cards": [],
-        "aggregated_clusters": {},
-        "market_features": {},
-        "sector_analysis_results": [],
-        "synthesized_report": None,
-        "validated_markdown": "",
-        "pdf_output_path": ""
-    }
-    final_state = graph.invoke(initial_state)
-    return final_state
+    db_client = MongoDBClient.get_instance()
+    await db_client.connect()
 
+    try:
+        graph = build_research_pipeline_graph()
+        initial_state: PipelineGraphState = {
+            "hours_back": hours_back,
+            "raw_news_list": raw_news_list or [],
+            "extracted_cards": [],
+            "aggregated_clusters": {},
+            "market_features": {},
+            "sector_analysis_results": [],
+            "synthesized_report": None,
+            "validated_markdown": "",
+            "pdf_output_path": ""
+        }
+        final_state = await graph.ainvoke(initial_state)
+        return final_state
+    finally:
+        await db_client.close()
+
+
+def run_research_pipeline(hours_back: Optional[float] = None, raw_news_list: Optional[List[Dict]] = None) -> Dict[str, Any]:
+    """
+    同步运行入口函数 (对外包装供脚本及 API 直接同步调用)
+    """
+    return asyncio.run(run_research_pipeline_async(hours_back, raw_news_list))
