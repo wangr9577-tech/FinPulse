@@ -72,7 +72,13 @@ def send_daily_report_email(
     :return: 是否发送成功
     """
     if receivers is None:
-        receivers = DEFAULT_RECEIVERS
+        receivers = list(DEFAULT_RECEIVERS) if DEFAULT_RECEIVERS else []
+    else:
+        receivers = list(receivers)
+
+    # 自动把发件人自己 (SENDER_EMAIL) 加入收件人列表（去重）
+    if SENDER_EMAIL and SENDER_EMAIL not in receivers:
+        receivers.append(SENDER_EMAIL)
 
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
     
