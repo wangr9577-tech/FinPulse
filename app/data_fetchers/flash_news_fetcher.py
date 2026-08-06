@@ -97,7 +97,7 @@ class FlashNewsFetcher:
     # 1. 新浪财经 (7x24直播快讯) - 原生 API 直连
     # =========================================================================
     async def fetch_sina_7x24(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        url = self.source_urls.get("sina_7x24", "https://zhibo.sina.com.cn/api/zhibo/feed?page=1&page_size=50&zhibo_id=152")
+        url = self.source_urls["sina_7x24"]
         headers = self._get_headers(referer="https://finance.sina.com.cn/7x24/")
         items: List[RawNewsSchema] = []
 
@@ -162,7 +162,7 @@ class FlashNewsFetcher:
     # 2. 东方财富网 (7x24快讯) - 官方 NewsAPI 直连
     # =========================================================================
     async def fetch_eastmoney(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        url = self.source_urls.get("eastmoney", "https://newsapi.eastmoney.com/kuaixun/v2/api/list?pageSize=50&pageIndex=1")
+        url = self.source_urls["eastmoney"]
         headers = self._get_headers(referer="https://kuaixun.eastmoney.com/")
         items: List[RawNewsSchema] = []
 
@@ -219,7 +219,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_36kr(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[36氪] 拉取硬科技与快讯通道...")
-        url = self.source_urls.get("36kr", "https://36kr.com/feed")
+        url = self.source_urls["36kr"]
         return await self._fetch_rss_direct(client, "36氪", url, cutoff_dt, ["硬科技", "AI/TMT"])
 
     # =========================================================================
@@ -227,7 +227,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_cailianpress(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[财联社 7x24] 正在拉取电报频道...")
-        route = self.source_urls.get("cailianpress_route", "/cls/telegraph")
+        route = self.source_urls["cailianpress_route"]
         return await self._fallback_rsshub(client, "财联社", route, cutoff_dt)
 
     # =========================================================================
@@ -235,7 +235,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_wallstreetcn(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[华尔街见闻] 拉取全球实时快讯...")
-        route = self.source_urls.get("wallstreetcn_route", "/wallstreetcn/live/global")
+        route = self.source_urls["wallstreetcn_route"]
         return await self._fallback_rsshub(client, "华尔街见闻", route, cutoff_dt)
 
     # =========================================================================
@@ -243,7 +243,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_ithome(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[IT之家] 拉取半导体与芯片专栏...")
-        url = self.source_urls.get("ithome", "https://www.ithome.com/rss/")
+        url = self.source_urls["ithome"]
         return await self._fetch_rss_direct(client, "IT之家", url, cutoff_dt, ["半导体", "芯片", "硬件"])
 
     # =========================================================================
@@ -251,7 +251,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_tmtpost(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[钛媒体] 拉取硬科技资讯频道...")
-        url = self.source_urls.get("tmtpost", "https://www.tmtpost.com/rss")
+        url = self.source_urls["tmtpost"]
         return await self._fetch_rss_direct(client, "钛媒体", url, cutoff_dt, ["硬科技", "半导体"])
 
     # =========================================================================
@@ -259,8 +259,8 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_eetchina(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[EE Times China] 拉取电子工程专辑与芯片产能动态...")
-        gnews_url = self.source_urls.get("eetchina_gnews", "https://news.google.com/rss/search?q=%E7%94%B5%E5%AD%90%E5%B7%A5%E7%A8%8B%E4%B8%93%E8%BE%91+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
-        route = self.source_urls.get("eetchina_route", "/eetchina/news")
+        gnews_url = self.source_urls["eetchina_gnews"]
+        route = self.source_urls["eetchina_route"]
         items = await self._fetch_rss_direct(client, "EE Times China", gnews_url, cutoff_dt, ["半导体", "晶圆产能", "芯片设计"])
         if items:
             return items
@@ -271,8 +271,8 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_jiqizhixin(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[机器之心] 拉取 AI 大模型与论文算法前沿...")
-        gnews_url = self.source_urls.get("jiqizhixin_gnews", "https://news.google.com/rss/search?q=%E6%9C%BA%E5%99%A8%E4%B9%8B%E5%BF%83+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
-        route = self.source_urls.get("jiqizhixin_route", "/jiqizhixin")
+        gnews_url = self.source_urls["jiqizhixin_gnews"]
+        route = self.source_urls["jiqizhixin_route"]
         items = await self._fetch_rss_direct(client, "机器之心", gnews_url, cutoff_dt, ["AI前沿", "大模型", "算法论文"])
         if items:
             return items
@@ -283,8 +283,8 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_qbitai(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[量子位] 拉取前沿科技与智能硬件动态...")
-        gnews_url = self.source_urls.get("qbitai_gnews", "https://news.google.com/rss/search?q=%E9%87%8F%E5%AD%90%E4%BD%8D+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
-        route = self.source_urls.get("qbitai_route", "/qbitai")
+        gnews_url = self.source_urls["qbitai_gnews"]
+        route = self.source_urls["qbitai_route"]
         items = await self._fetch_rss_direct(client, "量子位", gnews_url, cutoff_dt, ["硬科技", "AI产业", "智能硬件"])
         if items:
             return items
@@ -295,8 +295,8 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_reuters(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[Reuters 路透社] 拉取全球宏观与地缘政治...")
-        gnews_url = self.source_urls.get("reuters_gnews", "https://news.google.com/rss/search?q=site:reuters.com+when:24h&hl=en-US&gl=US&ceid=US:en")
-        route = self.source_urls.get("reuters_route", "/reuters/world")
+        gnews_url = self.source_urls["reuters_gnews"]
+        route = self.source_urls["reuters_route"]
         items = await self._fetch_rss_direct(client, "Reuters", gnews_url, cutoff_dt, ["海外宏观", "地缘政治", "美联储"])
         if items:
             return items
@@ -307,8 +307,8 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_bloomberg(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[Bloomberg 彭博社] 拉取全球市场头条与外资动态...")
-        bloomberg_rss = self.source_urls.get("bloomberg_rss", "https://feeds.bloomberg.com/markets/news.rss")
-        gnews_url = self.source_urls.get("bloomberg_gnews", "https://news.google.com/rss/search?q=site:bloomberg.com+when:24h&hl=en-US&gl=US&ceid=US:en")
+        bloomberg_rss = self.source_urls["bloomberg_rss"]
+        gnews_url = self.source_urls["bloomberg_gnews"]
         items = await self._fetch_rss_direct(client, "Bloomberg", bloomberg_rss, cutoff_dt, ["全球市场", "外资流向", "彭博头条"])
         if items:
             return items
@@ -458,7 +458,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_high_dividend(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[高股息板块] 拉取红利派息、高股息率与央国企市值管理专题资讯...")
-        gnews_url = self.source_urls.get("dividend_gnews", "https://news.google.com/rss/search?q=%E9%AB%98%E8%82%A1%E6%81%AF+OR+%E7%BA%A2%E5%88%A9+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
+        gnews_url = self.source_urls["dividend_gnews"]
         items = await self._fetch_rss_direct(client, "高股息/红利专题", gnews_url, cutoff_dt, ["高股息", "红利板块"])
         logger.info(f"[高股息板块] 成功整合 {len(items)} 条高股息/红利专题资讯！")
         return items
@@ -468,7 +468,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_low_valuation(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[低估值板块] 拉取破净、破发、估值修复与股份回购专题资讯...")
-        gnews_url = self.source_urls.get("lowval_gnews", "https://news.google.com/rss/search?q=%E7%A0%B4%E5%87%80+OR+%E4%BD%8E%E4%BC%B0%E5%80%BC+OR+%E8%82%A1%E4%BB%BD%E5%9B%9E%E8%B4%AD+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
+        gnews_url = self.source_urls["lowval_gnews"]
         items = await self._fetch_rss_direct(client, "低估值/破净专题", gnews_url, cutoff_dt, ["低估值", "破净板块"])
         logger.info(f"[低估值板块] 成功整合 {len(items)} 条低估值/破净专题资讯！")
         return items
@@ -478,7 +478,7 @@ class FlashNewsFetcher:
     # =========================================================================
     async def fetch_consumer_sector(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[消费板块] 拉取大消费、白酒、零售与消费品牌专题资讯...")
-        gnews_url = self.source_urls.get("consumer_gnews", "https://news.google.com/rss/search?q=%E5%A4%A7%E6%B6%88%E8%B4%B9+OR+%E7%99%BD%E9%85%92+OR+%E9%A3%9F%E5%93%81%E9%A5%AE%E6%96%99+OR+%E9%9B%B6%E5%94%AE%E6%B6%88%E8%B4%B9+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
+        gnews_url = self.source_urls["consumer_gnews"]
         items = await self._fetch_rss_direct(client, "大消费专题新闻", gnews_url, cutoff_dt, ["大消费", "消费板块"])
         logger.info(f"[消费板块] 成功整合 {len(items)} 条大消费专题资讯！")
         return items
