@@ -146,6 +146,7 @@ class FlashNewsFetcher:
                         content=rich_text,
                         publish_time=pub_dt,
                         category_tags=tags if tags else ["7x24快讯", "A股/宏观"],
+                        sector=self._infer_sector(title=title, content=rich_text, tags=tags, source_name="新浪财经7x24快讯"),
                         importance=3 if "【" in rich_text or raw_item.get("is_focus") == 1 else 1,
                         channel_type="json_api",
                         raw_payload=raw_item,
@@ -202,6 +203,7 @@ class FlashNewsFetcher:
                         content=digest,
                         publish_time=pub_dt,
                         category_tags=["7x24快讯", "A股"],
+                        sector=self._infer_sector(title=title, content=digest, tags=["7x24快讯", "A股"], source_name="东方财富网7x24"),
                         importance=2 if "重磅" in title or "央行" in title else 1,
                         channel_type="json_api",
                         raw_payload=raw_item,
@@ -362,6 +364,39 @@ class FlashNewsFetcher:
 
         return final_title, final_content
 
+    def _infer_sector(self, title: str = "", content: str = "", tags: List[str] = None, source_name: str = "") -> str:
+        text = (title or "") + " " + (content or "") + " " + (" ".join(tags) if tags else "") + " " + source_name
+
+        if any(k in source_name for k in ["高股息", "红利"]):
+            return "高股息/红利板块"
+        if any(k in source_name for k in ["低估值", "破净"]):
+            return "低估值/破净/回购板块"
+        if any(k in source_name for k in ["大消费", "消费"]):
+            return "大消费/白酒/零售板块"
+
+        if any(k in text for k in ["芯片", "半导体", "晶圆", "光刻", "中芯", "台积电", "封装", "集成电路", "硬件"]):
+            return "半导体与芯片"
+
+        if any(k in text for k in ["AI", "人工智能", "大模型", "算力", "英伟达", "NVIDIA", "华为", "机器人", "自动驾驶", "硬科技", "量子"]):
+            return "硬科技/人工智能"
+
+        if any(k in text for k in ["分红", "派息", "股息", "红利"]):
+            return "高股息/红利板块"
+
+        if any(k in text for k in ["破净", "回购", "增持", "破发"]):
+            return "低估值/破净/回购板块"
+
+        if any(k in text for k in ["白酒", "茅台", "五粮液", "消费", "零售", "超市", "食品", "饮料", "家电", "美妆", "旅游", "餐饮"]):
+            return "大消费/白酒/零售板块"
+
+        if any(k in text for k in ["美联储", "Fed", "降息", "加息", "非农", "关税", "拜登", "特朗普", "地缘", "乌克兰", "中东", "美股", "路透", "彭博", "美元"]):
+            return "海外宏观与地缘政治"
+
+        if any(k in text for k in ["央行", "逆回购", "社融", "GDP", "CPI", "PPI", "财政", "降准", "A股", "沪指", "深成指", "证券", "债券", "资金"]):
+            return "国内宏观与金融流动性"
+
+        return "国内宏观与金融流动性" if "7x24" in source_name or "快讯" in source_name else "其他板块"
+
     async def _fetch_rss_direct(
         self, client: httpx.AsyncClient, source_name: str, rss_url: str, cutoff_dt: datetime, default_tags: List[str]
     ) -> List[RawNewsSchema]:
@@ -384,6 +419,7 @@ class FlashNewsFetcher:
                     break
 
                 title, content = self._extract_rss_entry_fields(entry, rss_url)
+                sector_name = self._infer_sector(title=title, content=content, tags=default_tags, source_name=source_name)
 
                 items.append(
                     RawNewsSchema(
@@ -393,6 +429,7 @@ class FlashNewsFetcher:
                         content=content,
                         publish_time=pub_dt,
                         category_tags=default_tags,
+                        sector=sector_name,
                         importance=2 if any(k in title + content for k in ["Fed", "China", "AI", "Chip", "芯片", "关税", "央行"]) else 1,
                         channel_type="rss_channel",
                         raw_payload={"link": getattr(entry, "link", "")},
@@ -430,6 +467,7 @@ class FlashNewsFetcher:
                         break
 
                     title, content = self._extract_rss_entry_fields(entry)
+                    sector_name = self._infer_sector(title=title, content=content, tags=[], source_name=source_name)
 
                     items.append(
                         RawNewsSchema(
@@ -439,6 +477,7 @@ class FlashNewsFetcher:
                             content=content,
                             publish_time=pub_dt,
                             category_tags=["RSSHub资讯"],
+                            sector=sector_name,
                             importance=1,
                             channel_type="rsshub",
                             raw_payload={"link": getattr(entry, "link", "")},

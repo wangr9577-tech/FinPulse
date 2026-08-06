@@ -33,6 +33,15 @@ EXTRACTOR_SYSTEM_PROMPT = """你是一位资深的买方金融投研分析师与
    - 1星：日常噪音、营销广告或低价值快讯。
 6. 【市场冲击级别 (impact_rating, 1-5级)】：评估该新闻在 24-48 小时内对相关板块价格或市场情绪的冲击烈度（1为微弱，5为剧烈冲击）。
 7. 【事件分类 (event_type)】：只能归类为“宏观政策”、“产业动态”、“公司业绩”、“地缘政治”、“市场流动性”或“其他”。
+8. 【所属行业板块 (sector)】：结合新闻内容与已知标签，归类为以下具体行业/板块名称之一：
+   - "高股息/红利板块"
+   - "低估值/破净/回购板块"
+   - "大消费/白酒/零售板块"
+   - "硬科技/人工智能"
+   - "半导体与芯片"
+   - "国内宏观与金融流动性"
+   - "海外宏观与地缘政治"
+   - "其他板块"
 
 【输出要求】：
 必须且只能输出严格的纯 JSON 对象，格式如下：
@@ -44,7 +53,8 @@ EXTRACTOR_SYSTEM_PROMPT = """你是一位资深的买方金融投研分析师与
   "sentiment_score": 0.6,
   "research_value": 4,
   "impact_rating": 3,
-  "event_type": "产业动态"
+  "event_type": "产业动态",
+  "sector": "硬科技/人工智能"
 }
 """
 
@@ -103,6 +113,28 @@ class ExtractorAgent:
             impact_val = max(1, min(5, int(data.get("impact_rating", 2))))
             sent_score = max(-1.0, min(1.0, float(data.get("sentiment_score", 0.0))))
 
+            # 板块归类解析与智能推断
+            raw_sec = raw_news.get("sector", "")
+            sector_val = data.get("sector")
+            if not sector_val or sector_val == "其他板块":
+                tags = raw_news.get("category_tags", [])
+                if any(t in tags for t in ["高股息", "红利板块"]) or "高股息" in raw_sec:
+                    sector_val = "高股息/红利板块"
+                elif any(t in tags for t in ["低估值", "破净板块"]) or "低估值" in raw_sec:
+                    sector_val = "低估值/破净/回购板块"
+                elif any(t in tags for t in ["大消费", "消费板块"]) or "消费" in raw_sec:
+                    sector_val = "大消费/白酒/零售板块"
+                elif any(t in tags for t in ["半导体", "芯片", "硬件"]) or "半导体" in raw_sec:
+                    sector_val = "半导体与芯片"
+                elif any(t in tags for t in ["硬科技", "AI/TMT", "AI前沿", "大模型"]) or "硬科技" in raw_sec:
+                    sector_val = "硬科技/人工智能"
+                elif any(t in tags for t in ["海外宏观", "地缘政治", "美联储"]) or "海外" in raw_sec:
+                    sector_val = "海外宏观与地缘政治"
+                elif any(t in tags for t in ["7x24快讯", "A股/宏观", "A股"]) or "宏观" in raw_sec:
+                    sector_val = "国内宏观与金融流动性"
+                else:
+                    sector_val = raw_sec if raw_sec and raw_sec != "其他板块" else "其他板块"
+
             return StructuredNewsSchema(
                 raw_id=raw_news.get("news_id", "unknown_id"),
                 source=raw_news.get("source", "未知来源"),
@@ -114,7 +146,7 @@ class ExtractorAgent:
                 research_value=research_val,
                 impact_rating=impact_val,
                 event_type=data.get("event_type", "产业动态"),
-                sector=raw_news.get("sector", "其他板块"),
+                sector=sector_val,
                 key_metrics=data.get("key_metrics", {}),
                 category_tags=raw_news.get("category_tags", [])
             )
