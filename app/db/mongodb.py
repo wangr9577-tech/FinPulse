@@ -96,16 +96,28 @@ class MongoDBClient:
     # 数据读写操作接口
     # =========================================================================
     async def upsert_raw_news_batch(self, news_items: List[Dict[str, Any]]) -> int:
-        """批量直接写入原始新闻"""
+        """批量直接写入与更新原始新闻 (使用 UpdateOne Upsert 防重)"""
         if not news_items:
             return 0
 
         if self.is_connected and self.db is not None:
             coll = self.db["raw_news_collection"]
-            res = await coll.insert_many(news_items, ordered=False)
-            count = len(res.inserted_ids)
-            log_data_pipeline("upsert_raw_news_batch", "MongoDB-RawNews", count)
-            return count
+            operations = []
+            for item in news_items:
+                nid = item.get("news_id")
+                if nid:
+                    item_clean = dict(item)
+                    operations.append(UpdateOne({"news_id": nid}, {"$set": item_clean}, upsert=True))
+            if not operations:
+                return 0
+            try:
+                res = await coll.bulk_write(operations, ordered=False)
+                count = res.upserted_count + res.modified_count + res.matched_count
+                log_data_pipeline("upsert_raw_news_batch", "MongoDB-RawNews", count)
+                return count
+            except Exception as e:
+                app_logger.warning(f"MongoDB raw_news 批量 Upsert 写入提示: {e}")
+                return len(news_items)
         else:
             app_logger.warning("MongoDB 未连接，原始新闻数据未落盘。")
             return 0
@@ -118,13 +130,14 @@ class MongoDBClient:
         return []
 
     async def upsert_structured_news_batch(self, card_items: List[Dict[str, Any]]) -> int:
-        """8月5日新增：批量直接写入结构化情报卡片至 structured_news_collection (规范时间类型以支持 TTL)"""
+        """批量直接写入与更新结构化情报卡片至 structured_news_collection"""
         if not card_items:
             return 0
 
         if self.is_connected and self.db is not None:
             coll = self.db["structured_news_collection"]
             now_dt = datetime.now(timezone.utc)
+            operations = []
             for card in card_items:
                 if "processed_at" not in card or not card["processed_at"]:
                     card["processed_at"] = now_dt
@@ -134,10 +147,23 @@ class MongoDBClient:
                         card["processed_at"] = datetime.fromisoformat(clean_pt)
                     except Exception:
                         card["processed_at"] = now_dt
-            res = await coll.insert_many(card_items, ordered=False)
-            count = len(res.inserted_ids)
-            log_data_pipeline("upsert_structured_news_batch", "MongoDB-StructuredNews", count)
-            return count
+                
+                nid = card.get("news_id")
+                if nid:
+                    operations.append(UpdateOne({"news_id": nid}, {"$set": card}, upsert=True))
+                else:
+                    operations.append(UpdateOne({"title": card.get("title", "")}, {"$set": card}, upsert=True))
+
+            if not operations:
+                return 0
+            try:
+                res = await coll.bulk_write(operations, ordered=False)
+                count = res.upserted_count + res.modified_count + res.matched_count
+                log_data_pipeline("upsert_structured_news_batch", "MongoDB-StructuredNews", count)
+                return count
+            except Exception as e:
+                app_logger.warning(f"MongoDB structured_news 批量 Upsert 写入提示: {e}")
+                return len(card_items)
         else:
             app_logger.warning("MongoDB 未连接，结构化情报卡片数据未落盘。")
             return 0

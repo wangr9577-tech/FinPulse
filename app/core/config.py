@@ -14,42 +14,45 @@ PROJECT_ROOT = BACKEND_DIR.parent
 env_path_root = PROJECT_ROOT / ".env"
 env_path_backend = BACKEND_DIR / ".env"
 
-if env_path_root.exists():
-    load_dotenv(dotenv_path=env_path_root)
-elif env_path_backend.exists():
-    load_dotenv(dotenv_path=env_path_backend)
+if env_path_backend.exists():
+    load_dotenv(dotenv_path=env_path_backend, override=True)
+elif env_path_root.exists():
+    load_dotenv(dotenv_path=env_path_root, override=True)
 else:
-    load_dotenv()
+    load_dotenv(override=True)
 
 
 class Settings:
     """系统全局配置管理类"""
 
-    # 1. 研报数据分析与爬取时间窗口配置 (单位：小时，默认 24.0h)
-    REPORT_HOURS_BACK: float = float(os.getenv("REPORT_HOURS_BACK", os.getenv("CRAWL_MAX_HOURS", "24.0")))
-    CRAWL_REQUEST_TIMEOUT: float = float(os.getenv("CRAWL_REQUEST_TIMEOUT", "12.0"))
+    # 1. 研报数据分析与爬取时间窗口配置 (单位：小时)
+    REPORT_HOURS_BACK: float = float(os.getenv("REPORT_HOURS_BACK"))
+    CRAWL_REQUEST_TIMEOUT: float = float(os.getenv("CRAWL_REQUEST_TIMEOUT"))
 
-    # 2. LLM 与 Agent 模型选型配置
+    # 2. LLM 与 Agent 模型选型配置 (统一单模型)
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
-    LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
-    FLASH_MODEL_NAME: str = os.getenv("FLASH_MODEL_NAME", "deepseek-v4-flash")
-    PRO_MODEL_NAME: str = os.getenv("PRO_MODEL_NAME", "deepseek-v4-flash")
+    LLM_BASE_URL: str = os.getenv("LLM_BASE_URL")
+    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME")
+    FLASH_MODEL_NAME: str = LLM_MODEL_NAME
+    PRO_MODEL_NAME: str = LLM_MODEL_NAME
+    LLM_REQUEST_TIMEOUT: float = float(os.getenv("LLM_REQUEST_TIMEOUT"))
+    LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES"))
 
     # 3. MongoDB 数据库配置
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-    MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "intelligent_research_db")
-    MONGODB_MAX_POOL_SIZE: int = int(os.getenv("MONGODB_MAX_POOL_SIZE", "50"))
-    MONGODB_MIN_POOL_SIZE: int = int(os.getenv("MONGODB_MIN_POOL_SIZE", "5"))
+    MONGODB_URI: str = os.getenv("MONGODB_URI")
+    MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME")
+    MONGODB_MAX_POOL_SIZE: int = int(os.getenv("MONGODB_MAX_POOL_SIZE"))
+    MONGODB_MIN_POOL_SIZE: int = int(os.getenv("MONGODB_MIN_POOL_SIZE"))
 
     # 4. SMTP 邮件服务配置
-    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.qq.com")
-    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "465"))
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT"))
     SMTP_SENDER_EMAIL: str = os.getenv("SMTP_SENDER_EMAIL", "")
     SMTP_AUTH_CODE: str = os.getenv("SMTP_AUTH_CODE", "")
     DEFAULT_RECEIVERS: list = [r.strip() for r in os.getenv("DEFAULT_RECEIVERS", "").split(",") if r.strip()]
 
     # 5. FastAPI 服务配置
-    FASTAPI_PORT: int = int(os.getenv("FASTAPI_PORT", "8000"))
+    FASTAPI_PORT: int = int(os.getenv("FASTAPI_PORT"))
 
     # 6. 高频新闻抓取 URL 与 RSSHub 备用节点配置
     RSSHUB_INSTANCES: list = [

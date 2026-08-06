@@ -1,128 +1,56 @@
 """
 LangChain / LangGraph 环境集成与 LLM 工厂模块 (LLM Factory)
 配置 API Key、超时控制、指数退避重试 (Tenacity) 及 V4-Flash / V4-Pro 双阶模型实例化
-内建无 Key 状态下的 Graceful Fallback / Dummy LLM 运行机制
+绝无 Dummy / Mock 兜底逻辑，若配置不完整或 API 调用失败则直接抛出异常
 """
 import os
 from typing import Dict, Any, Optional, List
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-from langchain_core.outputs import ChatResult, ChatGeneration
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableSequence
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 
-from app.core.logger import app_logger, log_agent_action
-
-
-class DummyMockLLM(BaseChatModel):
-    """
-    当缺少真实 LLM API Key 或处于测试环境时使用的 Dummy LLM 兜底实现
-    完全遵循 LangChain BaseChatModel 接口契约
-    """
-    model_name: str = "Mock-V4-Flash-Dummy"
-
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        last_msg = messages[-1].content if messages else ""
-        mock_response = (
-            f"[Dummy LLM Output ({self.model_name})]: 已成功接收 Prompt 请求 ('{last_msg[:40]}...')。"
-            f"系统响应正常，LangChain 管道联调测试通过！"
-        )
-        generation = ChatGeneration(message=AIMessage(content=mock_response))
-        return ChatResult(generations=[generation])
-
-    @property
-    def _llm_type(self) -> str:
-        return "dummy_mock_llm"
-
-
 from app.core.config import settings
+from app.core.logger import app_logger, log_agent_action
 
 
 class LLMFactory:
     """
     LLM 工厂：管理 Data Agent (Flash) 与 Analyst Agent (Pro) 的 LangChain 实例化
-    支持自动从系统配置中心 (app.core.config.settings) 读取 API Key、Base URL 及模型选型
+    纯净从系统配置中心 (app.core.config.settings) 读取配置，无 Key 或调用失败时抛出异常
     """
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        request_timeout: float = 30.0,
-        max_retries: int = 3
-    ):
-        self.api_key = api_key or settings.LLM_API_KEY or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY")
-        self.base_url = base_url or settings.LLM_BASE_URL
-        self.request_timeout = request_timeout
-        self.max_retries = max_retries
-        self.flash_model_name = settings.FLASH_MODEL_NAME
-        self.pro_model_name = settings.PRO_MODEL_NAME
+    def __init__(self):
+        self.api_key = settings.LLM_API_KEY
+        self.base_url = settings.LLM_BASE_URL
+        self.request_timeout = settings.LLM_REQUEST_TIMEOUT
+        self.max_retries = settings.LLM_MAX_RETRIES
+        self.model_name = settings.LLM_MODEL_NAME
 
-    def _is_invalid_key(self, key: Optional[str]) -> bool:
-        if not key:
-            return True
-        k = key.lower()
-        return k.startswith("mock") or k.startswith("your_") or "here" in k
+        if not self.api_key:
+            raise ValueError("❌ 未检测到有效的 LLM_API_KEY！请在 .env 配置文件中设置 LLM_API_KEY。")
+
+    def get_llm(self) -> BaseChatModel:
+        """
+        获取统一 LLM 智能体模型 (读取 LLM_MODEL_NAME)
+        """
+        return ChatOpenAI(
+            model=self.model_name,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.request_timeout,
+            max_retries=self.max_retries,
+            temperature=0.1
+        )
 
     def get_flash_llm(self) -> BaseChatModel:
-        """
-        获取第二层 Data Agent 初筛模型 (V4-Flash / DeepSeek-Chat)
-        要求：极高吞吐、低延迟、格式化打分与实体提取
-        """
-        if self._is_invalid_key(self.api_key):
-            app_logger.warning(
-                f"⚠️未检测到真实 LLM API Key (当前为占位符)，已启动 Dummy Mock LLM ({self.flash_model_name} 模式)。"
-                f"如需接入真实 DeepSeek 模型，请在 .env 中填入您的真实 sk-xxx 密钥。"
-            )
-            return DummyMockLLM(model_name=f"Mock-{self.flash_model_name}")
-
-        try:
-            from langchain_openai import ChatOpenAI
-            return ChatOpenAI(
-                model=self.flash_model_name,
-                api_key=self.api_key,
-                base_url=self.base_url,
-                timeout=self.request_timeout,
-                max_retries=self.max_retries,
-                temperature=0.1
-            )
-        except Exception as e:
-            app_logger.error(f"LangChain DeepSeek/OpenAI 初始化异常: {e}，自动回退至 Dummy LLM")
-            return DummyMockLLM(model_name=f"Mock-{self.flash_model_name}")
+        """兼容性接口：获取统一 LLM 模型"""
+        return self.get_llm()
 
     def get_pro_llm(self) -> BaseChatModel:
-        """
-        获取第三层 Analyst Agent 深度研报模型 (V4-Pro 思考模式 / DeepSeek-Reasoner)
-        要求：长文本推理、深度归因与逻辑研报撰写
-        """
-        if self._is_invalid_key(self.api_key):
-            app_logger.warning(
-                f"⚠️未检测到真实 LLM API Key (当前为占位符)，已启动 Dummy Mock LLM ({self.pro_model_name} 模式)。"
-                f"如需接入真实 DeepSeek 模型，请在 .env 中填入您的真实 sk-xxx 密钥。"
-            )
-            return DummyMockLLM(model_name=f"Mock-{self.pro_model_name}")
-
-        try:
-            from langchain_openai import ChatOpenAI
-            return ChatOpenAI(
-                model=self.pro_model_name,
-                api_key=self.api_key,
-                base_url=self.base_url,
-                timeout=self.request_timeout,
-                max_retries=self.max_retries,
-                temperature=0.3
-            )
-        except Exception as e:
-            app_logger.error(f"原厂 LangChain Pro 初始化失败: {e}，回退至 Dummy LLM")
-            return DummyMockLLM(model_name=f"Mock-{self.pro_model_name}")
+        """兼容性接口：获取统一 LLM 模型"""
+        return self.get_llm()
 
     @retry(
         stop=stop_after_attempt(3),
@@ -140,7 +68,7 @@ class LLMFactory:
 def build_demo_langgraph_pipeline():
     """
     构建并返回一个最小化 LangGraph 工作流图 (StateGraph Demo)
-    演示 7.28 规划中 LangGraph Agent 逻辑节点的组合能力
+    演示 LangGraph Agent 逻辑节点的组合能力
     """
     class AgentState(dict):
         news_input: str

@@ -70,13 +70,9 @@ class AuditorAgent:
     """
     Auditor Agent：金融数据真实性审查智能体
     """
-    def __init__(self, llm_factory: Optional[LLMFactory] = None, model_tier: str = "flash"):
-        self.llm_factory = llm_factory or LLMFactory(request_timeout=30.0, max_retries=3)
-        self.model_tier = model_tier.lower()
-        if self.model_tier == "pro":
-            self.llm = self.llm_factory.get_pro_llm()
-        else:
-            self.llm = self.llm_factory.get_flash_llm()
+    def __init__(self, llm_factory: Optional[LLMFactory] = None):
+        self.llm_factory = llm_factory or LLMFactory()
+        self.llm = self.llm_factory.get_llm()
 
     def _repair_json_string(self, text: str) -> str:
         """JSON 自动修补辅助函数"""
@@ -135,24 +131,6 @@ class AuditorAgent:
         log_agent_action("AuditorAgent", "Auditing Financial Data Truth", f"Report Length: {len(report_markdown)}")
         gt_dict = self.extract_ground_truth_dict(market_features)
 
-        # 1. 规则硬审查：直接检查关键指标是否存在并完全对齐
-        verified = []
-        discrepancies = []
-        corrected_md = report_markdown
-
-        for name, truth_val in gt_dict.items():
-            # 搜索文本中是否提及该指标
-            if name in report_markdown or name.replace(" ", "") in report_markdown:
-                item = AuditMetric(
-                    metric_name=name,
-                    cited_value=truth_val,
-                    ground_truth_value=truth_val,
-                    is_matched=True,
-                    comment="源头数据规则硬核验通过"
-                )
-                verified.append(item)
-
-        # 2. 如果存在提示词 LLM 深度审查，则调用 LLM 进行文意核验与校正
         gt_summary = "\n".join([f"- {k}: {v}" for k, v in gt_dict.items()])
         user_prompt = (
             f"【真实择时六面图与特征算子权威基准库】:\n{gt_summary}\n\n"
@@ -165,6 +143,7 @@ class AuditorAgent:
             clean_json_str = self._repair_json_string(response_text)
             data = json.loads(clean_json_str)
 
+            discrepancies = []
             raw_discrepancies = data.get("discrepancies", [])
             for d in raw_discrepancies:
                 metric = AuditMetric(
@@ -175,6 +154,19 @@ class AuditorAgent:
                     comment=str(d.get("comment", ""))
                 )
                 discrepancies.append(metric)
+
+            verified = []
+            raw_verified = data.get("verified_metrics", [])
+            for v in raw_verified:
+                if isinstance(v, dict):
+                    metric = AuditMetric(
+                        metric_name=v.get("metric_name", "已核验指标"),
+                        cited_value=str(v.get("cited_value", "")),
+                        ground_truth_value=str(v.get("ground_truth_value", "")),
+                        is_matched=True,
+                        comment=str(v.get("comment", "LLM 核验通过"))
+                    )
+                    verified.append(metric)
 
             final_corrected_md = data.get("corrected_report_markdown", report_markdown)
             if not final_corrected_md or "## 一、总评" not in final_corrected_md:
@@ -189,19 +181,11 @@ class AuditorAgent:
                 verified_metrics=verified,
                 discrepancies=discrepancies,
                 corrected_report_markdown=final_corrected_md,
-                audit_summary=data.get("audit_summary", f"合规审查完成，核验通过 {len(verified)} 项金融指标。")
+                audit_summary=data.get("audit_summary", f"合规审查完成，核验项数: {len(verified)}，偏差项数: {len(discrepancies)}")
             )
             app_logger.info(f"✅ [Auditor Agent] 审查完成！(通过: {is_passed}, 核验项数: {result.total_metrics_checked}, 偏差项数: {result.discrepancy_count})")
             return result
 
         except Exception as e:
-            app_logger.warning(f"⚠️ [Auditor Agent] 审查解析异常 ({e})，切入规则降级审查模式。")
-            return AuditResult(
-                is_passed=True,
-                total_metrics_checked=len(verified),
-                discrepancy_count=0,
-                verified_metrics=verified,
-                discrepancies=[],
-                corrected_report_markdown=report_markdown,
-                audit_summary=f"规则降级审查模式完成，共对齐核验 {len(verified)} 项择时六面图指标。"
-            )
+            app_logger.error(f"❌ [Auditor Agent] LLM 审查异常: {e}")
+            raise e

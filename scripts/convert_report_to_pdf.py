@@ -339,31 +339,8 @@ async def compile_report_to_pdf(md_text: str, output_pdf_path: str) -> bool:
         return True
 
     except Exception as e_pw:
-        app_logger.warning(f"⚠️ [PDF Engine] Playwright 导出会话未响应 ({e_pw})，尝试使用 Python ReportLab / PDF 替代引擎导出...")
-
-        try:
-            # ReportLab 替代编译方案
-            from reportlab.lib.pagesizes import letter, A4
-            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.pdfgen import canvas
-
-            doc = SimpleDocTemplate(output_pdf_path, pagesize=A4)
-            styles = getSampleStyleSheet()
-            story = []
-
-            for line in clean_md.splitlines():
-                if line.strip():
-                    story.append(Paragraph(line.replace("#", "").strip(), styles['Normal']))
-                    story.append(Spacer(1, 6))
-
-            doc.build(story)
-            app_logger.info(f"🎉 [PDF Engine] 成功使用 ReportLab 引擎导出 PDF: {output_pdf_path}")
-            return True
-
-        except Exception as e_rl:
-            app_logger.error(f"❌ [PDF Engine] PDF 编译导出异常: {e_rl}")
-            return False
+        app_logger.error(f"❌ [PDF Engine] Playwright PDF 编译导出失败: {e_pw}")
+        raise e_pw
 
 
 if __name__ == "__main__":

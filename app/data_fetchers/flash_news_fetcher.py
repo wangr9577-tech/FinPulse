@@ -454,122 +454,32 @@ class FlashNewsFetcher:
         return items
 
     # =========================================================================
-    # 14. 高股息板块 (红利/派息/央国企分红) - 官方 API + 权威财经 RSS 组合源
+    # 14. 高股息板块 (红利/派息/央国企分红) - 专题 RSS 专属源
     # =========================================================================
     async def fetch_high_dividend(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        logger.info("[高股息板块] 拉取红利派息、高股息率与央国企市值管理资讯...")
-        items: List[RawNewsSchema] = []
-
-        # 源 1: 权威财经高股息/红利专题 Google News RSS 直连 (涵盖 21财经、证券时报、东财、新浪等)
+        logger.info("[高股息板块] 拉取红利派息、高股息率与央国企市值管理专题资讯...")
         gnews_url = self.source_urls.get("dividend_gnews", "https://news.google.com/rss/search?q=%E9%AB%98%E8%82%A1%E6%81%AF+OR+%E7%BA%A2%E5%88%A9+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
-        gnews_items = await self._fetch_rss_direct(client, "高股息/红利专题新闻", gnews_url, cutoff_dt, ["高股息", "红利板块"])
-        items.extend(gnews_items)
-
-        # 源 2: 东方财富 / 7x24 直连数据过滤（分红派息、高股息、红利）
-        url = self.source_urls.get("eastmoney", "https://newsapi.eastmoney.com/kuaixun/v2/api/list?pageSize=50&pageIndex=1")
-        try:
-            resp = await client.get(url, headers=self._get_headers(), timeout=self.request_timeout)
-            if resp.status_code == 200:
-                news_list = resp.json().get("news", [])
-                for raw in news_list:
-                    title = raw.get("title") or ""
-                    digest = self._clean_html(raw.get("digest") or title)
-                    text = title + " " + digest
-                    if any(k in text for k in ["股息", "红利", "分红", "派息", "分红预案", "股利"]):
-                        time_str = raw.get("showtime") or raw.get("ordertime") or ""
-                        try:
-                            pub_dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(timedelta(hours=8))).astimezone(timezone.utc)
-                        except Exception:
-                            pub_dt = datetime.now(timezone.utc)
-                        if self._is_within_time_window(pub_dt, cutoff_dt):
-                            items.append(
-                                RawNewsSchema(
-                                    news_id=f"dividend_eastmoney_{raw.get('newsid') or raw.get('id')}",
-                                    source="东方财富网-高股息",
-                                    title=title,
-                                    content=digest,
-                                    publish_time=pub_dt,
-                                    category_tags=["高股息", "红利板块", "A股"],
-                                    importance=2,
-                                    channel_type="json_api",
-                                    raw_payload=raw,
-                                )
-                            )
-        except Exception as e:
-            logger.debug(f"[高股息板块-东财 API 异常]: {e}")
-
+        items = await self._fetch_rss_direct(client, "高股息/红利专题", gnews_url, cutoff_dt, ["高股息", "红利板块"])
         logger.info(f"[高股息板块] 成功整合 {len(items)} 条高股息/红利专题资讯！")
         return items
 
     # =========================================================================
-    # 15. 低估值板块 (破净/估值修复/破发/回购) - 官方 API + 权威财经 RSS 组合源
+    # 15. 低估值板块 (破净/估值修复/破发/回购) - 专题 RSS 专属源
     # =========================================================================
     async def fetch_low_valuation(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        logger.info("[低估值板块] 拉取破净、破发、估值修复与股份回购资讯...")
-        items: List[RawNewsSchema] = []
-
-        # 源 1: 权威财经破净/低估值/回购专题 Google News RSS 直连
+        logger.info("[低估值板块] 拉取破净、破发、估值修复与股份回购专题资讯...")
         gnews_url = self.source_urls.get("lowval_gnews", "https://news.google.com/rss/search?q=%E7%A0%B4%E5%87%80+OR+%E4%BD%8E%E4%BC%B0%E5%80%BC+OR+%E8%82%A1%E4%BB%BD%E5%9B%9E%E8%B4%AD+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
-        gnews_items = await self._fetch_rss_direct(client, "低估值/破净/回购新闻", gnews_url, cutoff_dt, ["低估值", "破净板块"])
-        items.extend(gnews_items)
-
-        # 源 2: 东方财富 7x24 直连数据过滤（破净、低估值、PB<1、回购、增持）
-        url = self.source_urls.get("eastmoney", "https://newsapi.eastmoney.com/kuaixun/v2/api/list?pageSize=50&pageIndex=1")
-        try:
-            resp = await client.get(url, headers=self._get_headers(), timeout=self.request_timeout)
-            if resp.status_code == 200:
-                news_list = resp.json().get("news", [])
-                for raw in news_list:
-                    title = raw.get("title") or ""
-                    digest = self._clean_html(raw.get("digest") or title)
-                    text = title + " " + digest
-                    if any(k in text for k in ["破净", "低估值", "估值重塑", "破发", "回购注销", "大股东增持", "市净率"]):
-                        time_str = raw.get("showtime") or raw.get("ordertime") or ""
-                        try:
-                            pub_dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(timedelta(hours=8))).astimezone(timezone.utc)
-                        except Exception:
-                            pub_dt = datetime.now(timezone.utc)
-                        if self._is_within_time_window(pub_dt, cutoff_dt):
-                            items.append(
-                                RawNewsSchema(
-                                    news_id=f"lowval_eastmoney_{raw.get('newsid') or raw.get('id')}",
-                                    source="东方财富网-低估值",
-                                    title=title,
-                                    content=digest,
-                                    publish_time=pub_dt,
-                                    category_tags=["低估值", "破净板块", "A股"],
-                                    importance=2,
-                                    channel_type="json_api",
-                                    raw_payload=raw,
-                                )
-                            )
-        except Exception as e:
-            logger.debug(f"[低估值板块-东财 API 异常]: {e}")
-
+        items = await self._fetch_rss_direct(client, "低估值/破净专题", gnews_url, cutoff_dt, ["低估值", "破净板块"])
         logger.info(f"[低估值板块] 成功整合 {len(items)} 条低估值/破净专题资讯！")
         return items
 
     # =========================================================================
-    # 16. 消费板块 (大消费/白酒/食品/零售) - 官方 RSS / 界面新闻 / 36氪
+    # 16. 消费板块 (大消费/白酒/食品/零售) - 专题 RSS 专属源
     # =========================================================================
     async def fetch_consumer_sector(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        logger.info("[消费板块] 拉取大消费、白酒、零售与消费品牌资讯...")
-        items: List[RawNewsSchema] = []
-
-        # 源 1: 权威大消费/白酒/食品饮料 Google News RSS 直连
+        logger.info("[消费板块] 拉取大消费、白酒、零售与消费品牌专题资讯...")
         gnews_url = self.source_urls.get("consumer_gnews", "https://news.google.com/rss/search?q=%E5%A4%A7%E6%B6%88%E8%B4%B9+OR+%E7%99%BD%E9%85%92+OR+%E9%A3%9F%E5%93%81%E9%A5%AE%E6%96%99+OR+%E9%9B%B6%E5%94%AE%E6%B6%88%E8%B4%B9+when:24h&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
-        gnews_items = await self._fetch_rss_direct(client, "大消费专题新闻", gnews_url, cutoff_dt, ["大消费", "消费板块"])
-        items.extend(gnews_items)
-
-        # 源 2: 36氪大消费与零售品牌专栏
-        kr36_url = self.source_urls.get("36kr", "https://36kr.com/feed")
-        kr36_items = await self._fetch_rss_direct(client, "36氪-消费", kr36_url, cutoff_dt, ["大消费", "新消费"])
-        consumer_kr36 = [
-            it for it in kr36_items
-            if any(k in (it.title + " " + it.content) for k in ["消费", "白酒", "餐饮", "零售", "品牌", "快消", "食品", "商超"])
-        ]
-        items.extend(consumer_kr36)
-
+        items = await self._fetch_rss_direct(client, "大消费专题新闻", gnews_url, cutoff_dt, ["大消费", "消费板块"])
         logger.info(f"[消费板块] 成功整合 {len(items)} 条大消费专题资讯！")
         return items
 

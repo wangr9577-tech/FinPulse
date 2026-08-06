@@ -30,7 +30,10 @@ from app.core.logger import app_logger, log_data_pipeline, log_agent_action
 
 from app.data_fetchers.flash_news_fetcher import FlashNewsFetcher
 from app.timing_hexagon.pipeline import run_timing_hexagon_pipeline
-from app.core.config import settings
+from app.core.config import settings, PROJECT_ROOT as BASE_DIR
+from app.data_fetchers.feature_operators import FeatureOperatorEngine
+from app.core.pipeline_graph import run_research_pipeline
+
 
 
 def run_end_to_end_pipeline(hours_back: Optional[float] = None):
@@ -67,7 +70,7 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
 
             dicts = []
             if fetched_news:
-                dicts = [item.dict() for item in fetched_news]
+                dicts = [item.model_dump() for item in fetched_news]
                 db_client = MongoDBClient()
                 connected = await db_client.connect()
                 if connected:

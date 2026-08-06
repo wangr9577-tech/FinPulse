@@ -24,7 +24,7 @@ from app.db.aggregator import NewsAggregator
 
 from app.data_fetchers.feature_operators import FeatureOperatorEngine
 from app.agents.extractor_agent import ExtractorAgent
-from app.agents.analyst_agent import AnalystAgent, SectorAnalysisResult, load_default_market_features
+from app.agents.analyst_agent import AnalystAgent, SectorAnalysisResult
 from app.agents.synthesizer_agent import SynthesizerAgent, SynthesizedReportResult
 from app.agents.auditor_agent import AuditorAgent, AuditResult
 from app.core.report_validator import ReportValidator
@@ -68,11 +68,11 @@ async def node_extract(state: PipelineGraphState) -> PipelineGraphState:
 
     cards = []
     if raw_news:
-        extractor = ExtractorAgent(model_tier="flash")
+        extractor = ExtractorAgent()
         for n in raw_news[:20]:
             try:
                 card = extractor.extract(n)
-                cards.append(card.dict())
+                cards.append(card.model_dump())
             except Exception as e:
                 app_logger.warning(f"抽取新闻卡片异常 ({e})，跳过该条")
 
@@ -100,7 +100,7 @@ async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
         mf = engine.run_all()
     except Exception as e:
         app_logger.warning(f"实时抓取特征算子异常 ({e})，读取本地 JSON / 默认特征")
-        mf = load_default_market_features()
+        mf = {}
     state["market_features"] = mf
 
     # 2. 从 MongoDB 动态按 sector 聚合物理簇 (根据 .env 配置时间窗口下沉查询)
@@ -118,15 +118,15 @@ async def node_analyze(state: PipelineGraphState) -> PipelineGraphState:
     """节点 3: Analyst Agent 分板块纯资讯分析 (全覆盖所有活跃板块)"""
     log_agent_action("LangGraph-Node3", "Executing", "node_analyze (Analyst Agent 纯板块资讯分析)")
     clusters = state.get("aggregated_clusters", {})
-    hours_back = state.get("hours_back", 1.0)
+    hours_back = state.get("hours_back") or settings.REPORT_HOURS_BACK
 
-    analyst = AnalystAgent(model_tier="flash")
+    analyst = AnalystAgent()
     sector_results = []
 
     for sector_name, cluster_data in clusters.items():
         cards = cluster_data.get("cards", [])
         if cards:
-            res = analyst.analyze_sector(sector_name, cards, hours_back=hours_back)
+            res = analyst.analyze_sector(sector_name, cards)
             sector_results.append(res)
 
     state["sector_analysis_results"] = sector_results
@@ -139,10 +139,9 @@ async def node_synthesize(state: PipelineGraphState) -> PipelineGraphState:
     log_agent_action("LangGraph-Node4", "Executing", "node_synthesize (Synthesizer Agent 全局报告合成)")
     sector_results = state.get("sector_analysis_results", [])
     mf = state.get("market_features", {})
-    hours_back = state.get("hours_back", 24.0)
 
-    synthesizer = SynthesizerAgent(model_tier="flash")
-    report = synthesizer.synthesize_report(sector_results, mf, hours_back=hours_back)
+    synthesizer = SynthesizerAgent()
+    report = synthesizer.synthesize_report(sector_results, mf)
 
     state["synthesized_report"] = report
     log_data_pipeline("node_synthesize", "SynthesizerAgent", len(sector_results), "全局综合研报统稿完成")
@@ -156,7 +155,7 @@ async def node_audit(state: PipelineGraphState) -> PipelineGraphState:
     mf = state.get("market_features", {})
 
     if report and report.full_report_markdown:
-        auditor = AuditorAgent(model_tier="flash")
+        auditor = AuditorAgent()
         audit_res = auditor.audit_report(report.full_report_markdown, mf)
         state["audit_result"] = audit_res
 
