@@ -37,6 +37,7 @@ backend/
 ├── daily_scheduler_7am.py                # ⏰ 每日早晨 07:00 常驻定时服务脚本
 ├── send_daily_report_email.py            # 📧 单日研报 SMTP 邮件发送服务脚本
 ├── requirements.txt                      # 后端 Python 依赖列表
+├── pyproject.toml                        # 📦 PEP 517/518 项目打包与可编辑安装配置文件
 ├── .env.example                          # 环境变量配置模板
 └── README.md                             # 项目说明文档
 ```
@@ -117,6 +118,19 @@ FASTAPI_PORT=8000
 ```
 
 > 💡 **Dummy Mock 降级保护**：当 `LLM_API_KEY` 为空或使用 `mock` 前缀时，系统会自动切入内置 `DummyMockLLM` 模式，无 Token 消耗即可跑通完整流程。
+
+---
+
+## 📦 项目打包与路径解析 (`pyproject.toml`)
+
+`pyproject.toml` 是符合 **PEP 517 / PEP 518** 现代 Python 官方打包标准的配置文件，主要作用为：
+
+1. **自动包发现 (`Package Finding`)**：
+   配置 `[tool.setuptools.packages.find]` 显式包含 `app` 与 `scripts` 源码目录，无需手动维护依赖列表。
+2. **可编辑模式一键安装 (`Editable Installation`)**：
+   在 `backend` 目录下执行 `pip install -e .` 即可将当前工程注册为本地可编辑包，彻底解决跨目录脚本（如根目录下的 `daily_scheduler_7am.py` 或 `scripts/` 子目录下的测试脚本）因找不到包路径而引发的 `ModuleNotFoundError: No module named 'app'` 导入异常。
+3. **跨平台兼容与构建隔离**：
+   标准规范支持与 `uv` / `poetry` / `pip` 等现代 Python 包管理工具协同工作，保障在不同开发与生产服务器环境下的包路径一致性。
 
 ---
 
