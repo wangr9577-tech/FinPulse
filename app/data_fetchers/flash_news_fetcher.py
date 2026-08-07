@@ -365,37 +365,9 @@ class FlashNewsFetcher:
         return final_title, final_content
 
     def _infer_sector(self, title: str = "", content: str = "", tags: List[str] = None, source_name: str = "") -> str:
-        text = (title or "") + " " + (content or "") + " " + (" ".join(tags) if tags else "") + " " + source_name
-
-        if any(k in source_name for k in ["高股息", "红利"]):
-            return "高股息/红利板块"
-        if any(k in source_name for k in ["低估值", "破净"]):
-            return "低估值/破净/回购板块"
-        if any(k in source_name for k in ["大消费", "消费"]):
-            return "大消费/白酒/零售板块"
-
-        if any(k in text for k in ["芯片", "半导体", "晶圆", "光刻", "中芯", "台积电", "封装", "集成电路", "硬件"]):
-            return "半导体与芯片"
-
-        if any(k in text for k in ["AI", "人工智能", "大模型", "算力", "英伟达", "NVIDIA", "华为", "机器人", "自动驾驶", "硬科技", "量子"]):
-            return "硬科技/人工智能"
-
-        if any(k in text for k in ["分红", "派息", "股息", "红利"]):
-            return "高股息/红利板块"
-
-        if any(k in text for k in ["破净", "回购", "增持", "破发"]):
-            return "低估值/破净/回购板块"
-
-        if any(k in text for k in ["白酒", "茅台", "五粮液", "消费", "零售", "超市", "食品", "饮料", "家电", "美妆", "旅游", "餐饮"]):
-            return "大消费/白酒/零售板块"
-
-        if any(k in text for k in ["美联储", "Fed", "降息", "加息", "非农", "关税", "拜登", "特朗普", "地缘", "乌克兰", "中东", "美股", "路透", "彭博", "美元"]):
-            return "海外宏观与地缘政治"
-
-        if any(k in text for k in ["央行", "逆回购", "社融", "GDP", "CPI", "PPI", "财政", "降准", "A股", "沪指", "深成指", "证券", "债券", "资金"]):
-            return "国内宏观与金融流动性"
-
-        return "国内宏观与金融流动性" if "7x24" in source_name or "快讯" in source_name else "其他板块"
+        if tags and len(tags) > 0:
+            return tags[0]
+        return source_name or "未分类"
 
     async def _fetch_rss_direct(
         self, client: httpx.AsyncClient, source_name: str, rss_url: str, cutoff_dt: datetime, default_tags: List[str]
