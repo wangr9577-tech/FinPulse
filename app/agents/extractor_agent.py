@@ -105,9 +105,9 @@ class ExtractorAgent:
             impact_val = max(1, min(5, int(data.get("impact_rating", 2))))
             sent_score = max(-1.0, min(1.0, float(data.get("sentiment_score", 0.0))))
 
-            # 严格使用大模型返回的标签/板块作为分类标准
+            # 严格保留爬虫抓取源所绑定的固定 sector 标签（不是 LLM 覆盖打标签）
             raw_sec = raw_news.get("sector", "")
-            sector_val = data.get("sector") or raw_sec or "其他板块"
+            sector_val = raw_sec if (raw_sec and raw_sec != "未分类" and raw_sec != "其他板块") else (data.get("sector") or "其他板块")
 
             return StructuredNewsSchema(
                 raw_id=raw_news.get("news_id", "unknown_id"),

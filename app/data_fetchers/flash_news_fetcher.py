@@ -146,7 +146,7 @@ class FlashNewsFetcher:
                         content=rich_text,
                         publish_time=pub_dt,
                         category_tags=tags if tags else ["7x24快讯", "A股/宏观"],
-                        sector=self._infer_sector(title=title, content=rich_text, tags=tags, source_name="新浪财经7x24快讯"),
+                        sector="国内宏观与金融流动性",
                         importance=3 if "【" in rich_text or raw_item.get("is_focus") == 1 else 1,
                         channel_type="json_api",
                         raw_payload=raw_item,
@@ -203,7 +203,7 @@ class FlashNewsFetcher:
                         content=digest,
                         publish_time=pub_dt,
                         category_tags=["7x24快讯", "A股"],
-                        sector=self._infer_sector(title=title, content=digest, tags=["7x24快讯", "A股"], source_name="东方财富网7x24"),
+                        sector="国内宏观与金融流动性",
                         importance=2 if "重磅" in title or "央行" in title else 1,
                         channel_type="json_api",
                         raw_payload=raw_item,
@@ -222,7 +222,7 @@ class FlashNewsFetcher:
     async def fetch_36kr(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[36氪] 拉取硬科技与快讯通道...")
         url = self.source_urls["36kr"]
-        return await self._fetch_rss_direct(client, "36氪", url, cutoff_dt, ["硬科技", "AI/TMT"])
+        return await self._fetch_rss_direct(client, "36氪", url, cutoff_dt, ["硬科技", "AI/TMT"], default_sector="硬科技/人工智能")
 
     # =========================================================================
     # 4. 财联社 (7x24电报)
@@ -230,7 +230,7 @@ class FlashNewsFetcher:
     async def fetch_cailianpress(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[财联社 7x24] 正在拉取电报频道...")
         route = self.source_urls["cailianpress_route"]
-        return await self._fallback_rsshub(client, "财联社", route, cutoff_dt)
+        return await self._fallback_rsshub(client, "财联社", route, cutoff_dt, default_sector="国内宏观与金融流动性")
 
     # =========================================================================
     # 5. 华尔街见闻 (全球实时快讯)
@@ -238,7 +238,7 @@ class FlashNewsFetcher:
     async def fetch_wallstreetcn(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[华尔街见闻] 拉取全球实时快讯...")
         route = self.source_urls["wallstreetcn_route"]
-        return await self._fallback_rsshub(client, "华尔街见闻", route, cutoff_dt)
+        return await self._fallback_rsshub(client, "华尔街见闻", route, cutoff_dt, default_sector="海外宏观与地缘政治")
 
     # =========================================================================
     # 6. IT之家 (半导体/芯片专栏) - 官方 RSS
@@ -246,7 +246,7 @@ class FlashNewsFetcher:
     async def fetch_ithome(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[IT之家] 拉取半导体与芯片专栏...")
         url = self.source_urls["ithome"]
-        return await self._fetch_rss_direct(client, "IT之家", url, cutoff_dt, ["半导体", "芯片", "硬件"])
+        return await self._fetch_rss_direct(client, "IT之家", url, cutoff_dt, ["半导体", "芯片", "硬件"], default_sector="半导体与芯片")
 
     # =========================================================================
     # 7. 钛媒体 (硬科技频道) - 官方 RSS
@@ -254,7 +254,7 @@ class FlashNewsFetcher:
     async def fetch_tmtpost(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[钛媒体] 拉取硬科技资讯频道...")
         url = self.source_urls["tmtpost"]
-        return await self._fetch_rss_direct(client, "钛媒体", url, cutoff_dt, ["硬科技", "半导体"])
+        return await self._fetch_rss_direct(client, "钛媒体", url, cutoff_dt, ["硬科技", "半导体"], default_sector="硬科技/人工智能")
 
     # =========================================================================
     # 8. EE Times China (电子工程专辑)
@@ -263,10 +263,10 @@ class FlashNewsFetcher:
         logger.info("[EE Times China] 拉取电子工程专辑与芯片产能动态...")
         gnews_url = self.source_urls["eetchina_gnews"]
         route = self.source_urls["eetchina_route"]
-        items = await self._fetch_rss_direct(client, "EE Times China", gnews_url, cutoff_dt, ["半导体", "晶圆产能", "芯片设计"])
+        items = await self._fetch_rss_direct(client, "EE Times China", gnews_url, cutoff_dt, ["半导体", "晶圆产能", "芯片设计"], default_sector="半导体与芯片")
         if items:
             return items
-        return await self._fallback_rsshub(client, "EE Times China", route, cutoff_dt)
+        return await self._fallback_rsshub(client, "EE Times China", route, cutoff_dt, default_sector="半导体与芯片")
 
     # =========================================================================
     # 9. 机器之心 (Jiqizhixin)
@@ -275,10 +275,10 @@ class FlashNewsFetcher:
         logger.info("[机器之心] 拉取 AI 大模型与论文算法前沿...")
         gnews_url = self.source_urls["jiqizhixin_gnews"]
         route = self.source_urls["jiqizhixin_route"]
-        items = await self._fetch_rss_direct(client, "机器之心", gnews_url, cutoff_dt, ["AI前沿", "大模型", "算法论文"])
+        items = await self._fetch_rss_direct(client, "机器之心", gnews_url, cutoff_dt, ["AI前沿", "大模型", "算法论文"], default_sector="硬科技/人工智能")
         if items:
             return items
-        return await self._fallback_rsshub(client, "机器之心", route, cutoff_dt)
+        return await self._fallback_rsshub(client, "机器之心", route, cutoff_dt, default_sector="硬科技/人工智能")
 
     # =========================================================================
     # 10. 量子位 (QbitAI)
@@ -287,10 +287,10 @@ class FlashNewsFetcher:
         logger.info("[量子位] 拉取前沿科技与智能硬件动态...")
         gnews_url = self.source_urls["qbitai_gnews"]
         route = self.source_urls["qbitai_route"]
-        items = await self._fetch_rss_direct(client, "量子位", gnews_url, cutoff_dt, ["硬科技", "AI产业", "智能硬件"])
+        items = await self._fetch_rss_direct(client, "量子位", gnews_url, cutoff_dt, ["硬科技", "AI产业", "智能硬件"], default_sector="硬科技/人工智能")
         if items:
             return items
-        return await self._fallback_rsshub(client, "量子位", route, cutoff_dt)
+        return await self._fallback_rsshub(client, "量子位", route, cutoff_dt, default_sector="硬科技/人工智能")
 
     # =========================================================================
     # 11. Reuters (路透社)
@@ -299,10 +299,10 @@ class FlashNewsFetcher:
         logger.info("[Reuters 路透社] 拉取全球宏观与地缘政治...")
         gnews_url = self.source_urls["reuters_gnews"]
         route = self.source_urls["reuters_route"]
-        items = await self._fetch_rss_direct(client, "Reuters", gnews_url, cutoff_dt, ["海外宏观", "地缘政治", "美联储"])
+        items = await self._fetch_rss_direct(client, "Reuters", gnews_url, cutoff_dt, ["海外宏观", "地缘政治", "美联储"], default_sector="海外宏观与地缘政治")
         if items:
             return items
-        return await self._fallback_rsshub(client, "Reuters", route, cutoff_dt)
+        return await self._fallback_rsshub(client, "Reuters", route, cutoff_dt, default_sector="海外宏观与地缘政治")
 
     # =========================================================================
     # 12. Bloomberg (彭博社)
@@ -311,10 +311,10 @@ class FlashNewsFetcher:
         logger.info("[Bloomberg 彭博社] 拉取全球市场头条与外资动态...")
         bloomberg_rss = self.source_urls["bloomberg_rss"]
         gnews_url = self.source_urls["bloomberg_gnews"]
-        items = await self._fetch_rss_direct(client, "Bloomberg", bloomberg_rss, cutoff_dt, ["全球市场", "外资流向", "彭博头条"])
+        items = await self._fetch_rss_direct(client, "Bloomberg", bloomberg_rss, cutoff_dt, ["全球市场", "外资流向", "彭博头条"], default_sector="海外宏观与地缘政治")
         if items:
             return items
-        return await self._fetch_rss_direct(client, "Bloomberg", gnews_url, cutoff_dt, ["全球市场", "彭博头条"])
+        return await self._fetch_rss_direct(client, "Bloomberg", gnews_url, cutoff_dt, ["全球市场", "彭博头条"], default_sector="海外宏观与地缘政治")
 
     # =========================================================================
     # 13. Yahoo Finance
@@ -323,10 +323,10 @@ class FlashNewsFetcher:
         logger.info("[Yahoo Finance] 拉取美股市场与隔夜宏观...")
         yf_rss = self.source_urls.get("yahoofinance_rss", "https://finance.yahoo.com/news/rssindex")
         yf_index_rss = self.source_urls.get("yahoofinance_index_rss", "https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US")
-        items = await self._fetch_rss_direct(client, "Yahoo Finance", yf_rss, cutoff_dt, ["美股", "隔夜宏观", "全球股市"])
+        items = await self._fetch_rss_direct(client, "Yahoo Finance", yf_rss, cutoff_dt, ["美股", "隔夜宏观", "全球股市"], default_sector="海外宏观与地缘政治")
         if items:
             return items
-        return await self._fetch_rss_direct(client, "Yahoo Finance", yf_index_rss, cutoff_dt, ["美股", "标普500"])
+        return await self._fetch_rss_direct(client, "Yahoo Finance", yf_index_rss, cutoff_dt, ["美股", "标普500"], default_sector="海外宏观与地缘政治")
 
     # =========================================================================
     # 通用 RSS 辅助解析与字段提取函数
@@ -364,13 +364,8 @@ class FlashNewsFetcher:
 
         return final_title, final_content
 
-    def _infer_sector(self, title: str = "", content: str = "", tags: List[str] = None, source_name: str = "") -> str:
-        if tags and len(tags) > 0:
-            return tags[0]
-        return source_name or "未分类"
-
     async def _fetch_rss_direct(
-        self, client: httpx.AsyncClient, source_name: str, rss_url: str, cutoff_dt: datetime, default_tags: List[str]
+        self, client: httpx.AsyncClient, source_name: str, rss_url: str, cutoff_dt: datetime, default_tags: List[str], default_sector: str = "其他板块"
     ) -> List[RawNewsSchema]:
         items: List[RawNewsSchema] = []
         try:
@@ -391,7 +386,6 @@ class FlashNewsFetcher:
                     break
 
                 title, content = self._extract_rss_entry_fields(entry, rss_url)
-                sector_name = self._infer_sector(title=title, content=content, tags=default_tags, source_name=source_name)
 
                 items.append(
                     RawNewsSchema(
@@ -401,7 +395,7 @@ class FlashNewsFetcher:
                         content=content,
                         publish_time=pub_dt,
                         category_tags=default_tags,
-                        sector=sector_name,
+                        sector=default_sector,
                         importance=2 if any(k in title + content for k in ["Fed", "China", "AI", "Chip", "芯片", "关税", "央行"]) else 1,
                         channel_type="rss_channel",
                         raw_payload={"link": getattr(entry, "link", "")},
@@ -415,7 +409,7 @@ class FlashNewsFetcher:
             return []
 
     async def _fallback_rsshub(
-        self, client: httpx.AsyncClient, source_name: str, route: str, cutoff_dt: datetime
+        self, client: httpx.AsyncClient, source_name: str, route: str, cutoff_dt: datetime, default_sector: str = "其他板块"
     ) -> List[RawNewsSchema]:
         items: List[RawNewsSchema] = []
 
@@ -439,7 +433,6 @@ class FlashNewsFetcher:
                         break
 
                     title, content = self._extract_rss_entry_fields(entry)
-                    sector_name = self._infer_sector(title=title, content=content, tags=[], source_name=source_name)
 
                     items.append(
                         RawNewsSchema(
@@ -449,7 +442,7 @@ class FlashNewsFetcher:
                             content=content,
                             publish_time=pub_dt,
                             category_tags=["RSSHub资讯"],
-                            sector=sector_name,
+                            sector=default_sector,
                             importance=1,
                             channel_type="rsshub",
                             raw_payload={"link": getattr(entry, "link", "")},
@@ -470,7 +463,7 @@ class FlashNewsFetcher:
     async def fetch_high_dividend(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
         logger.info("[高股息板块] 拉取红利派息、高股息率与央国企市值管理专题资讯...")
         gnews_url = self.source_urls["dividend_gnews"]
-        items = await self._fetch_rss_direct(client, "高股息/红利专题", gnews_url, cutoff_dt, ["高股息", "红利板块"])
+        items = await self._fetch_rss_direct(client, "高股息/红利专题", gnews_url, cutoff_dt, ["高股息", "红利板块"], default_sector="高股息/红利板块")
         logger.info(f"[高股息板块] 成功整合 {len(items)} 条高股息/红利专题资讯！")
         return items
 
