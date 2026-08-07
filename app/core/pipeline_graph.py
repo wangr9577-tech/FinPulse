@@ -20,7 +20,7 @@ from langgraph.graph import StateGraph, START, END
 from app.core.logger import app_logger, log_agent_action, log_data_pipeline
 from app.core.config import settings
 from app.db.mongodb import MongoDBClient
-from app.db.aggregator import NewsAggregator
+from app.db.aggregator import SectorGrouper
 
 from app.data_fetchers.feature_operators import FeatureOperatorEngine
 from app.agents.extractor_agent import ExtractorAgent
@@ -38,7 +38,7 @@ class PipelineGraphState(TypedDict, total=False):
     hours_back: float                                 # 0. 数据分析限定时间窗口 (小时)
     raw_news_list: List[Dict[str, Any]]               # 1. 原始抓取新闻
     extracted_cards: List[Dict[str, Any]]             # 2. Extractor Agent 提炼的情报卡片
-    aggregated_clusters: Dict[str, Any]               # 3. NewsAggregator 划分的物理簇
+    aggregated_clusters: Dict[str, Any]               # 3. 按板块 Sector 标签直出的分组字典
     market_features: Dict[str, Any]                   # 4. 特征算子引擎数据 (两融/流动性/ERP)
     sector_analysis_results: List[SectorAnalysisResult] # 5. 各板块 Analyst Agent 研报
     synthesized_report: Optional[SynthesizedReportResult] # 6. Synthesizer Agent 全局研报
@@ -91,8 +91,8 @@ async def node_extract(state: PipelineGraphState) -> PipelineGraphState:
 
 
 async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
-    """节点 2: 动态物理簇分类与全量特征算子抓取"""
-    log_agent_action("LangGraph-Node2", "Executing", "node_aggregate (物理簇分类与特征抓取)")
+    """节点 2: 按 Sector 分类标签直接分组与全量特征算子抓取"""
+    log_agent_action("LangGraph-Node2", "Executing", "node_aggregate (按板块分类标签直接分组)")
     
     # 1. 抓取全量市场特征算子
     try:
@@ -103,14 +103,14 @@ async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
         raise RuntimeError(f"[node_aggregate 失败] 特征算子引擎异常: {e}") from e
     state["market_features"] = mf
 
-    # 2. 从 MongoDB 动态按 sector 聚合物理簇 (根据 .env 配置时间窗口下沉查询)
+    # 2. 从 MongoDB 直接按 sector 分类标签分组（纯字典分组，无需复杂聚类算法）
     db_client = MongoDBClient.get_instance()
     await db_client.connect()
-    aggregator = NewsAggregator(db_client=db_client)
-    clusters = await aggregator.aggregate_clusters()
+    grouper = SectorGrouper(db_client=db_client)
+    clusters = await grouper.group_by_sector()
 
     state["aggregated_clusters"] = clusters or {}
-    log_data_pipeline("node_aggregate", "NewsAggregator", len(clusters), f"物理簇划分完成 ({list(clusters.keys())})")
+    log_data_pipeline("node_aggregate", "SectorGrouper", len(clusters), f"按板块分类分组完成 ({list(clusters.keys())})")
     return state
 
 
