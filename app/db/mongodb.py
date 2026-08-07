@@ -48,12 +48,12 @@ class MongoDBClient:
             await self.client.admin.command("ping")
             self.db = self.client[self.db_name]
             self.is_connected = True
-            app_logger.info(f"✅ [MongoDB] 数据库连接成功！当前使用数据库: {self.db_name}")
+            app_logger.info(f"[MongoDB] 数据库连接成功！当前使用数据库: {self.db_name}")
             await self.init_indexes()
             return True
         except (ConnectionFailure, ServerSelectionTimeoutError, Exception) as e:
             self.is_connected = False
-            app_logger.warning(f"⚠️ [MongoDB 未开启/无法连接]: {e}")
+            app_logger.warning(f"[MongoDB 未开启/无法连接]: {e}")
             return False
 
     async def init_indexes(self):
@@ -79,7 +79,7 @@ class MongoDBClient:
             report_coll = self.db["market_insight_reports"]
             await report_coll.create_index([("generation_time", -1)])
 
-            app_logger.info("✅ [MongoDB] 核心集合索引与 365 天 (1年) TTL 自动过期索引初始化完成！")
+            app_logger.info("[MongoDB] 核心集合索引与 365 天 (1年) TTL 自动过期索引初始化完成！")
         except Exception as e:
             app_logger.error(f"[MongoDB 索引创建失败]: {e}")
 

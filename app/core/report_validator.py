@@ -111,9 +111,9 @@ class ReportValidator:
         is_valid = len(errors) == 0
 
         if is_valid:
-            app_logger.info(f"✅ [ReportValidator] 研报格式校验通过！识别到 {len(h2_matches)} 个二级章节，{found_sections} 个核心必备块。")
+            app_logger.info(f"[ReportValidator] 研报格式校验通过！识别到 {len(h2_matches)} 个二级章节，{found_sections} 个核心必备块。")
         else:
-            app_logger.warning(f"⚠️ [ReportValidator] 研报存在 {len(errors)} 个错误，{len(warnings)} 个警告。")
+            app_logger.warning(f"[ReportValidator] 研报存在 {len(errors)} 个错误，{len(warnings)} 个警告。")
 
         return ValidationResult(
             is_valid=is_valid,

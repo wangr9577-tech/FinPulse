@@ -183,9 +183,9 @@ class AuditorAgent:
                 corrected_report_markdown=final_corrected_md,
                 audit_summary=data.get("audit_summary", f"合规审查完成，核验项数: {len(verified)}，偏差项数: {len(discrepancies)}")
             )
-            app_logger.info(f"✅ [Auditor Agent] 审查完成！(通过: {is_passed}, 核验项数: {result.total_metrics_checked}, 偏差项数: {result.discrepancy_count})")
+            app_logger.info(f"[Auditor Agent] 审查完成！(通过: {is_passed}, 核验项数: {result.total_metrics_checked}, 偏差项数: {result.discrepancy_count})")
             return result
 
         except Exception as e:
-            app_logger.error(f"❌ [Auditor Agent] LLM 审查异常: {e}")
+            app_logger.error(f"[Auditor Agent] LLM 审查异常: {e}")
             raise e

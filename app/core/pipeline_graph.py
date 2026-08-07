@@ -81,9 +81,9 @@ async def node_extract(state: PipelineGraphState) -> PipelineGraphState:
             try:
                 await db_client.connect()
                 count = await db_client.upsert_structured_news_batch(cards)
-                app_logger.info(f"✅ [node_extract] 成功将 {count} 条结构化情报卡片存入 MongoDB ('structured_news_collection')！")
+                app_logger.info(f"[node_extract] 成功将 {count} 条结构化情报卡片存入 MongoDB ('structured_news_collection')！")
             except Exception as e_sc:
-                app_logger.warning(f"⚠️ [node_extract] 卡片落库警示: {e_sc}")
+                app_logger.warning(f"[node_extract] 卡片落库警示: {e_sc}")
 
     state["extracted_cards"] = cards
     log_data_pipeline("node_extract", "ExtractorAgent", len(cards), "情报卡片提炼与落库完成")
@@ -99,7 +99,7 @@ async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
         engine = FeatureOperatorEngine()
         mf = engine.run_all()
     except Exception as e:
-        app_logger.error(f"❌ [node_aggregate] 实时计算特征算子异常: {e}")
+        app_logger.error(f"[node_aggregate] 实时计算特征算子异常: {e}")
         raise RuntimeError(f"[node_aggregate 失败] 特征算子引擎异常: {e}") from e
     state["market_features"] = mf
 
@@ -213,7 +213,7 @@ async def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphSt
         await db_client.connect()
         await db_client.save_insight_report(report_doc)
     except Exception as e_db:
-        app_logger.warning(f"⚠️ [MongoDB] 研报文档落盘提示: {e_db}")
+        app_logger.warning(f"[MongoDB] 研报文档落盘提示: {e_db}")
 
     log_data_pipeline("node_validate_and_export", "ReportValidator/PDFEngine/MongoDB", 1, f"PDF 文件导出成功: {pdf_path}")
     return state
@@ -246,7 +246,7 @@ def build_research_pipeline_graph():
     workflow.add_edge("audit", "validate_and_export")
     workflow.add_edge("validate_and_export", END)
 
-    app_logger.info("✅ [LangGraph] 智能投研 6 节点 (含 Auditor 审查) 原生异步 PipelineGraph 状态图编译完成！")
+    app_logger.info("[LangGraph] 智能投研 6 节点 (含 Auditor 审查) 原生异步 PipelineGraph 状态图编译完成！")
     return workflow.compile()
 
 

@@ -29,7 +29,7 @@ class LLMFactory:
         self.model_name = settings.LLM_MODEL_NAME
 
         if not self.api_key:
-            raise ValueError("❌ 未检测到有效的 LLM_API_KEY！请在 .env 配置文件中设置 LLM_API_KEY。")
+            raise ValueError("未检测到有效的 LLM_API_KEY！请在 .env 配置文件中设置 LLM_API_KEY。")
 
     def get_llm(self) -> BaseChatModel:
         """

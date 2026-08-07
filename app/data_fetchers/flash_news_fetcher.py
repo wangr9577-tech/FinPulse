@@ -493,7 +493,7 @@ class FlashNewsFetcher:
     async def fetch_all_flash_news(self) -> List[RawNewsSchema]:
         now_utc = datetime.now(timezone.utc)
         cutoff_dt = now_utc - timedelta(hours=self.max_hours)
-        logger.info(f"🚀 [Data Agent] 开启全量 16 大媒体、专题与投研源 24h 增量并发抓取...")
+        logger.info(f"[Data Agent] 开启全量 16 大媒体、专题与投研源 24h 增量并发抓取...")
 
         async with httpx.AsyncClient(verify=False, follow_redirects=True) as client:
             tasks = [
@@ -542,5 +542,5 @@ class FlashNewsFetcher:
         for idx, item in enumerate(all_news, 1):
             item.news_id = f"news_{idx}"
 
-        logger.info(f"🎉 [Data Agent] 全量抓取完成！本轮共成功整合 {len(all_news)} 条增量唯一资讯卡片 (已按入库顺序赋予自增 ID: news_1 ~ news_{len(all_news)})。")
+        logger.info(f"[Data Agent] 全量抓取完成！本轮共成功整合 {len(all_news)} 条增量唯一资讯卡片 (已按入库顺序赋予自增 ID: news_1 ~ news_{len(all_news)})。")
         return all_news

@@ -34,5 +34,5 @@ class SectorGrouper:
             sector_groups[sector_name]["card_count"] += 1
 
         log_data_pipeline("group_by_sector", "SectorGrouper", len(all_cards), extra_info=f"Active Sectors: {list(sector_groups.keys())}")
-        app_logger.info(f"✅ [SectorGrouper] 按板块分类分组完成！共包含 {len(sector_groups)} 个板块 ({list(sector_groups.keys())})")
+        app_logger.info(f"[SectorGrouper] 按板块分类分组完成！共包含 {len(sector_groups)} 个板块 ({list(sector_groups.keys())})")
         return sector_groups

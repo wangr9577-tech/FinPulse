@@ -63,7 +63,10 @@ def setup_logger():
         mod_logger = logging.getLogger(logger_name)
         mod_logger.handlers = [InterceptHandler()]
 
-    logger.info("✅ [Loguru Logger] 统一流转日志引擎初始化完成 (终端控制台 + 本地日志文件 `logs/app_pipeline.log`)")
+    logging.getLogger("matplotlib").setLevel(logging.ERROR)
+    logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+
+    logger.info("[Loguru Logger] 统一流转日志引擎初始化完成 (终端控制台 + 本地日志文件 `logs/app_pipeline.log`)")
     return logger
 
 

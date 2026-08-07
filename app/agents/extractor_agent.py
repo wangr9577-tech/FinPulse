@@ -125,7 +125,7 @@ class ExtractorAgent:
                 category_tags=raw_news.get("category_tags", [])
             )
         except Exception as e:
-            app_logger.error(f"❌ Extractor Agent JSON 解析失败: {e}")
+            app_logger.error(f"[Extractor Agent] JSON 解析失败: {e}")
             raise ValueError(f"Extractor Agent JSON 解析失败: {e}")
 
     def extract(self, raw_news: Dict[str, Any]) -> StructuredNewsSchema:
@@ -145,11 +145,11 @@ class ExtractorAgent:
             response_text = self.llm_factory.invoke_with_circuit_breaker(self.llm, prompt)
             
             card = self._parse_llm_json_response(raw_news, response_text)
-            app_logger.info(f"✅ [Extractor Agent] 成功萃取卡片 (raw_id={news_id}, 研报价值={card.research_value}⭐, 情绪={card.sentiment.value})")
+            app_logger.info(f"[Extractor Agent] 成功萃取卡片 (raw_id={news_id}, 研报价值={card.research_value}星, 情绪={card.sentiment.value})")
             return card
 
         except Exception as e:
-            app_logger.error(f"❌ [Extractor Agent] 执行异常: {e}")
+            app_logger.error(f"[Extractor Agent] 执行异常: {e}")
             raise e
 
     def extract_batch(self, raw_news_list: List[Dict[str, Any]]) -> List[StructuredNewsSchema]:

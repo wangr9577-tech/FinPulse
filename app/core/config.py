@@ -25,6 +25,9 @@ else:
 class Settings:
     """系统全局配置管理类"""
 
+    BASE_DIR: Path = BACKEND_DIR
+    OUTPUT_DIR: Path = BACKEND_DIR / "output"
+
     # 1. 研报数据分析与爬取时间窗口配置 (单位：小时)
     REPORT_HOURS_BACK: float = float(os.getenv("REPORT_HOURS_BACK"))
     CRAWL_REQUEST_TIMEOUT: float = float(os.getenv("CRAWL_REQUEST_TIMEOUT"))

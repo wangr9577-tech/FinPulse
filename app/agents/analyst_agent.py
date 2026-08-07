@@ -31,16 +31,18 @@ class SectorAnalysisResult(BaseModel):
 ANALYST_SYSTEM_PROMPT = """你是一位资深的买方金融投研【资讯分析师】。
 你的任务是根据特定行业/主题板块归拢的精炼情报卡片，撰写一份既有【整体趋势研判结论】又有【核心事件事实支撑】的高质量行业资讯总结。
 
-【核心撰写要求】：
-1. **整体研判结论先行**：在总结开头用简练语言给出该板块的整体资讯研判与走势结论（如：“当前板块受‘技术突破与政策红利’驱动呈现偏积极走势”）。
-2. **值得关注的核心事件事实**：明确提炼并总结近期发生的 2~3 个最值得关注的具体核心动态与事件事实（如：重要产品发布、政策落地、企业合作或产业链价格异动等），让读者能够清晰掌握发生了什么关键事实。
-3. **严禁引入量化金融指标**：严禁引入两融占比、Shibor、ERP、炸板率等量化资金数据（此类指标由算子引擎统一处理）。
+【核心撰写与排版分行要求】：
+1. **【整体结论】**：在总结开头用简练语言给出该板块的整体资讯研判与走势结论。标题 `#### 【整体结论】` 与后续内容之间必须使用双换行 `\n\n` 分开！
+2. **【整体结论】与【关键事件】之间分行**：两个大章节之间必须使用双换行 `\n\n` 分开！
+3. **【关键事件】**：标题 `#### 【关键事件】` 与后续主要内容之间必须使用双换行 `\n\n` 分开！
+4. **事件逐条分行**：【关键事件】列表中的每一个事件（如 1. ... 2. ...）之间必须使用双换行 `\n\n` 清晰分开！
+5. **严禁引入量化金融指标**：严禁引入两融占比、Shibor、ERP、炸板率等量化资金数据（此类指标由算子引擎统一处理）。
 
-【输出格式要求】：
+【输出格式与排版示例】：
 你必须且只能输出严格的 JSON 格式对象，结构如下：
 {
   "sentiment_bias": "看多",  // 只能为 "看多", "看空", "中性" 之一
-  "summary": "【整体结论】...\n【关键事件】\n1. ...\n2. ..."
+  "summary": "#### 【整体结论】\n\n当前板块受‘技术突破与政策红利’驱动呈现偏积极走势...\n\n#### 【关键事件】\n\n1. 某某核心厂商发布新一代产品...\n\n2. 行业政策利好落地..."
 }
 """
 
@@ -101,7 +103,7 @@ class AnalystAgent:
                 f"新闻[{idx}]: {c.get('title', '')}\n"
                 f"  - 核心事实: {'; '.join(c.get('core_facts', []))}\n"
                 f"  - 涉及实体: {', '.join(c.get('entities', []))}\n"
-                f"  - 研报价值: {c.get('research_value', 1)}⭐ | 情绪: {c.get('sentiment', '中性')}"
+                f"  - 研报价值: {c.get('research_value', 1)}星 | 情绪: {c.get('sentiment', '中性')}"
             )
         cards_input = "\n\n".join(card_summaries)
 
@@ -129,9 +131,9 @@ class AnalystAgent:
                 summary=data.get("summary", f"【{sector_name}板块资讯总结】已完成提炼。")
             )
 
-            app_logger.info(f"✅ [Analyst Agent] 成功完成纯资讯板块总结 ({sector_name}, 情绪偏向: {result.sentiment_bias.value})")
+            app_logger.info(f"[Analyst Agent] 成功完成纯资讯板块总结 ({sector_name}, 情绪偏向: {result.sentiment_bias.value})")
             return result
 
         except Exception as e:
-            app_logger.error(f"❌ [Analyst Agent] 纯资讯总结解析异常: {e}")
+            app_logger.error(f"[Analyst Agent] 纯资讯总结解析异常: {e}")
             raise e

@@ -169,6 +169,28 @@ tr:nth-child(even) {
     background-color: #f8fafc;
 }
 
+/* 研报图表及雷达图容器 */
+.chart-container {
+    text-align: center;
+    margin: 16px 0;
+    page-break-inside: avoid;
+}
+
+.report-chart {
+    max-width: 95%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.chart-caption {
+    font-size: 8.5pt;
+    color: #64748b;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
 /* 页脚落款 */
 .footer-note {
     margin-top: 30px;
@@ -234,6 +256,19 @@ def convert_markdown_to_html(md_text: str) -> str:
     html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
     html = re.sub(r"`(.+?)`", r"<code>\1</code>", html)
 
+    # 2.5 转换 Markdown 图片 ![alt](src)
+    def _replace_img(match: re.Match) -> str:
+        alt = match.group(1)
+        src = match.group(2)
+        # 将绝对 file:/// URI 转换为以 HTML 文件为相对基准的相对路径
+        if "output/charts/" in src or "output\\charts\\" in src:
+            parts = re.split(r'output[/\\]charts[/\\]', src)
+            if len(parts) > 1:
+                src = f"charts/{parts[-1]}"
+        return f'<div class="chart-container"><img src="{src}" alt="{alt}" class="report-chart" /><div class="chart-caption">{alt}</div></div>'
+
+    html = re.sub(r"!\[(.*?)\]\((.*?)\)", _replace_img, html)
+
     # 3. 转换列表项
     html = re.sub(r"^\s*-\s+(.+)$", r"<li>\1</li>", html, flags=re.MULTILINE)
     html = re.sub(r"(<li>.*?</li>(?:\n<li>.*?</li>)*)", r"<ul>\1</ul>", html, flags=re.DOTALL)
@@ -245,7 +280,7 @@ def convert_markdown_to_html(md_text: str) -> str:
         p_str = p.strip()
         if not p_str:
             continue
-        if not p_str.startswith("<h") and not p_str.startswith("<ul") and not p_str.startswith("<blockquote") and not p_str.startswith("<table"):
+        if not (p_str.startswith("<h") or p_str.startswith("<ul") or p_str.startswith("<blockquote") or p_str.startswith("<table") or p_str.startswith("<div")):
             formatted_p.append(f"<p>{p_str}</p>")
         else:
             formatted_p.append(p_str)
@@ -310,7 +345,7 @@ async def compile_report_to_pdf(md_text: str, output_pdf_path: str) -> bool:
     with open(timestamped_html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    app_logger.info(f"✅ [PDF Engine] 已生成美化 HTML 视图文件:\n   - 规范时间戳命名: {timestamped_html_path}\n   - 静态链接命名: {html_path}")
+    app_logger.info(f"[PDF Engine] 已生成美化 HTML 视图文件:\n   - 规范时间戳命名: {timestamped_html_path}\n   - 静态链接命名: {html_path}")
 
     # 尝试使用 Playwright / Patchright 导出无损 PDF
     try:
@@ -318,7 +353,8 @@ async def compile_report_to_pdf(md_text: str, output_pdf_path: str) -> bool:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            await page.set_content(html_content, wait_until="load")
+            # 使用 file:// 协议定位目标 HTML，确保跨域安全策略下能正常读取同级/下级本地图片资源
+            await page.goto(html_path.resolve().as_uri(), wait_until="networkidle")
             
             # 同时生成时间戳文件与默认链接文件
             await page.pdf(
@@ -335,11 +371,11 @@ async def compile_report_to_pdf(md_text: str, output_pdf_path: str) -> bool:
             )
             await browser.close()
             
-        app_logger.info(f"🎉 [PDF Engine] 成功使用 Playwright 导出高保真研报 PDF:\n   - 规范时间戳研报: {timestamped_pdf_path}\n   - 通用研发路径: {output_pdf_path}")
+        app_logger.info(f"[PDF Engine] 成功使用 Playwright 导出高保真研报 PDF:\n   - 规范时间戳研报: {timestamped_pdf_path}\n   - 通用研发路径: {output_pdf_path}")
         return True
 
     except Exception as e_pw:
-        app_logger.error(f"❌ [PDF Engine] Playwright PDF 编译导出失败: {e_pw}")
+        app_logger.error(f"[PDF Engine] Playwright PDF 编译导出失败: {e_pw}")
         raise e_pw
 
 
@@ -350,12 +386,12 @@ if __name__ == "__main__":
 今日全市场运行核心逻辑为“内外流动性分化下的结构性行情”。两融交易占比 **11.70%**，Shibor 7D 利差为 **-0.3%**，全 A ERP 溢价为 **1.6824%**。
 
 ## 二、核心宏观与市场风险警示
-- ⚠️ 外部利率上行风险：10年期美债收益率攀升，压制全市场高估值板块。
-- ⚠️ 信用传导不畅：M2-M1 剪刀差 4.0%，资金于金融体系内淤积。
+- [风险警示] 外部利率上行风险：10年期美债收益率攀升，压制全市场高估值板块。
+- [风险警示] 信用传导不畅：M2-M1 剪刀差 4.0%，资金于金融体系内淤积。
 
 ## 三、重点板块深度解析
-### 📌 【半导体芯片】
-核心博弈聚焦于国产 3nm 芯片突破与全球晶圆代工涨价周期。
-"""
-    pdf_target = str(backend_dir / "output" / "market_insight_report.pdf")
+### 【半导体芯片】
+核心博弈聚焦于国产 3nm 芯片突破与全球晶圆代工涨价周期。"""
+    from app.core.config import settings
+    pdf_target = str(settings.OUTPUT_DIR / "market_insight_report.pdf")
     asyncio.run(compile_report_to_pdf(sample_md, pdf_target))
