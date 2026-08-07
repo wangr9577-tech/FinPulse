@@ -81,7 +81,8 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
 
         raw_news_dicts = asyncio.run(_fetch_and_store_news())
     except Exception as e_news:
-        app_logger.warning(f"⚠️ [STAGE 1.1] 新闻快讯抓取或 MongoDB 入库警示 ({e_news})，继续推进后续算子与数据层。")
+        app_logger.error(f"❌ [STAGE 1.1] 新闻快讯抓取或 MongoDB 入库失败: {e_news}")
+        raise RuntimeError(f"[STAGE 1.1 异常中断] 新闻抓取或入库失败: {e_news}") from e_news
 
     # 1.2 择时六面图 35 项核心指标爬虫调度
     try:
@@ -97,9 +98,11 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
         if proc.returncode == 0:
             app_logger.info("✅ [STAGE 1.2] 择时 35 项指标数据更新成功！")
         else:
-            app_logger.warning(f"⚠️ [STAGE 1.2] 爬虫运行提示 (退出码: {proc.returncode})，将使用本地缓存与接口降级。")
+            app_logger.error(f"❌ [STAGE 1.2] 爬虫运行失败 (退出码: {proc.returncode}): {proc.stderr or proc.stdout}")
+            raise RuntimeError(f"[STAGE 1.2 异常中断] 爬虫运行失败，退出码: {proc.returncode}")
     except Exception as e_crawl:
-        app_logger.warning(f"⚠️ [STAGE 1.2] 爬虫调度异常: {e_crawl}")
+        app_logger.error(f"❌ [STAGE 1.2] 爬虫调度异常: {e_crawl}")
+        raise RuntimeError(f"[STAGE 1.2 异常中断] 爬虫调度异常: {e_crawl}") from e_crawl
 
     s1_elapsed = time.time() - s1_start
     print(f"   └─ STAGE 1 完成，耗时: {s1_elapsed:.2f} 秒\n")
@@ -115,9 +118,11 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
         if success:
             app_logger.info("✅ [STAGE 2] 择时六面图 01清洗 -> 02计算 -> 03质量检查 全部成功！")
         else:
-            app_logger.warning("⚠️ [STAGE 2] 择时流水线返回未完全成功状态，使用已处理结果落盘。")
+            app_logger.error("❌ [STAGE 2] 择时流水线未完全成功，中断流程。")
+            raise RuntimeError("[STAGE 2 异常中断] 择时六面图清洗计算质量检查未完全通过")
     except Exception as e_timing:
         app_logger.error(f"❌ [STAGE 2] 择时六面图计算异常: {e_timing}")
+        raise RuntimeError(f"[STAGE 2 异常中断] 择时六面图计算异常: {e_timing}") from e_timing
 
     s2_elapsed = time.time() - s2_start
     print(f"   └─ STAGE 2 完成，耗时: {s2_elapsed:.2f} 秒\n")
@@ -134,7 +139,8 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
         feat_report = engine.run_all()
         app_logger.info("✅ [STAGE 3.1] FeatureOperatorEngine 算子计算与 JSON 导出成功！")
     except Exception as e_feat:
-        app_logger.warning(f"⚠️ [STAGE 3.1] 特征算子计算异常: {e_feat}")
+        app_logger.error(f"❌ [STAGE 3.1] 特征算子计算异常: {e_feat}")
+        raise RuntimeError(f"[STAGE 3.1 异常中断] 特征算子计算失败: {e_feat}") from e_feat
 
     # 3.2 运行数据库入库脚本
     try:
@@ -148,9 +154,11 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
         if proc_db.returncode == 0:
             app_logger.info("✅ [STAGE 3.2] source_data 与最新信号数据成功存入 MongoDB！")
         else:
-            app_logger.warning(f"⚠️ [STAGE 3.2] MongoDB 数据导入提示: {proc_db.stderr}")
+            app_logger.error(f"❌ [STAGE 3.2] MongoDB 数据导入失败: {proc_db.stderr or proc_db.stdout}")
+            raise RuntimeError(f"[STAGE 3.2 异常中断] 数据库导入失败 (退出码: {proc_db.returncode})")
     except Exception as e_db:
-        app_logger.warning(f"⚠️ [STAGE 3.2] 数据库导入脚本异常: {e_db}")
+        app_logger.error(f"❌ [STAGE 3.2] 数据库导入脚本异常: {e_db}")
+        raise RuntimeError(f"[STAGE 3.2 异常中断] 数据库导入脚本异常: {e_db}") from e_db
 
     s3_elapsed = time.time() - s3_start
     print(f"   └─ STAGE 3 完成，耗时: {s3_elapsed:.2f} 秒\n")

@@ -99,8 +99,8 @@ async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
         engine = FeatureOperatorEngine()
         mf = engine.run_all()
     except Exception as e:
-        app_logger.warning(f"实时抓取特征算子异常 ({e})，读取本地 JSON / 默认特征")
-        mf = {}
+        app_logger.error(f"❌ [node_aggregate] 实时计算特征算子异常: {e}")
+        raise RuntimeError(f"[node_aggregate 失败] 特征算子引擎异常: {e}") from e
     state["market_features"] = mf
 
     # 2. 从 MongoDB 动态按 sector 聚合物理簇 (根据 .env 配置时间窗口下沉查询)
