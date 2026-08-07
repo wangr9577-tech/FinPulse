@@ -47,7 +47,7 @@ backend/
 
 ### 1. 全量 28 大财经媒体与投研源秒级抓取 (`app/data_fetchers/flash_news_fetcher.py`)
 - **覆盖数据源与源头纯化**：新浪财经、东方财富、财联社、华尔街见闻、36氪、IT之家、钛媒体、EE Times、机器之心、量子位、Reuters、Bloomberg、Yahoo Finance，扩展“高股息/红利”、“低估值/破净/回购”与“大消费/白酒/零售”三大垂直板块。
-- **纯源头 RSS 架构 (取消人工二次关键词过滤)**：三大垂直板块全面切换为源头级的专业 RSS / Google News 专题订阅源，无需 Python 硬编码二次关键词规则，确保抓取的增量新闻 100% 契合板块且无杂质。
+- **数据源绑定固定 Sector 标签 (`Source-to-Sector Binding`)**：抓取阶段各数据源直接绑定其固定主题 Sector 标签（如国内宏观、海外宏观、半导体芯片、硬科技/AI、高股息、低估值、大消费等），后续扩展新源无需改动后端计算链条。
 - **早停熔断机制 (`Early-Exit Short-Circuit`)**：倒序解析快讯，一旦发布时间超出指定窗口 (由 `settings.REPORT_HOURS_BACK` 全局控制) 自动切断网络请求，同时支持 Google News RSS 智能兜底容灾。
 - **强类型 Schema & 极速批量落盘**：采用 Pydantic V2 `model_dump()` 标准导出与纯自增序列 ID（`news_1`, `news_2` ...），结合 `insert_many(..., ordered=False)` 批量直接追加落盘与 `publish_time` 时间降序索引。
 
@@ -63,8 +63,8 @@ backend/
 - **配置驱动架构 (Env-Driven & Fail-Fast)**：移除所有硬编码参数默认值，强制从 `.env` 读取配置并启用 `override=True`；彻底移除所有 Heuristic 降级/兜底硬规则（包括 AnalystAgent、SynthesizerAgent、AuditorAgent 与 Playwright PDF 引擎），遇到异常即严格抛错并记录 App Logger。
 - **动态日期约束**：Prompt 模板动态注入系统当前实时日期 (`today_str`)，强约束研报标题及一级 Markdown 标题必须以当前实时日期开头，确保内容时效性。
 - **原生全异步 Node 架构**：全链路采用 `async def` 异步节点定义与单统一事件循环，避免反复创建/销毁事件循环的开销，并全局复用高并发 MongoDB 连接池。
-- **Extractor Agent**：对海量资讯执行关联实体抽离与板块语义标注 (`sector`)，统一升级为 `deepseek-v4-flash` 高吞吐模型。
-- **NewsAggregator 动态物理簇**：依据原生 `sector` 标签直出动态 `Group-By` 归类，无缝兼容任意新增行业。
+- **Extractor Agent**：对海量资讯执行关联实体抽离、事实提取与情绪标注，并严格继承保留数据源落库时的固定 Sector 标签。
+- **SectorGrouper 板块分类分组**：彻底取消聚类算法，依据卡片原生 `sector` 分类标签进行高效字典 `Group-By` 分组，无缝兼容任意新增行业。
 - **Analyst Agent**：结合两融资金、DR007 利差、ERP 溢价等定量指标执行多板块深度推理。
 - **Synthesizer Agent**：合成全局投研报告，消除跨板块矛盾与逻辑冲突。
 - **Auditor Agent**：纯 LLM 驱动的金融真实性与防幻觉合规审查节点，实时比对指标数值与图表一致性。
