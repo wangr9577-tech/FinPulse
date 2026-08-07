@@ -418,9 +418,11 @@ class FeatureOperatorEngine:
                     summary["dimension_counts"][dim] = {"看多": 0, "看空": 0, "中性": 0}
                 
                 score_val = float(score) if pd.notna(score) else None
+                latest_val = row.get("latest_value")
                 item = {
                     "dimension": dim,
                     "indicator": ind,
+                    "latest_value": latest_val if pd.notna(latest_val) else None,
                     "signal_score": score_val,
                     "signal_text": text,
                     "replication_level": grade,
