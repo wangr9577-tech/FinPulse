@@ -39,30 +39,30 @@ from send_daily_report_email import send_daily_report_email
 def execute_daily_task():
     """执行单日研报全流程流水线并发送邮件"""
     app_logger.info("=" * 80)
-    app_logger.info("⏰ [07:00 定时任务触发] 启动单日智能投研流水线与邮件自动分发...")
+    app_logger.info("[07:00 定时任务触发] 启动单日智能投研流水线与邮件自动分发...")
     app_logger.info(f" 触发时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     app_logger.info("=" * 80)
 
     # 1. 跑通单日全自动化流水线 (分析过去 24 小时数据)
     try:
-        app_logger.info("📌 [STEP 1/2] 正在运行单日全自动化投研流水线 (数据时间窗口来自 config 配置)...")
+        app_logger.info("[STEP 1/2] 正在运行单日全自动化投研流水线 (数据时间窗口来自 config 配置)...")
         run_end_to_end_pipeline()
-        app_logger.info("✅ [STEP 1/2] 单日研报生成与 PDF 编译导出成功！")
+        app_logger.info("[STEP 1/2] 单日研报生成与 PDF 编译导出成功！")
 
     except Exception as e_pipeline:
-        app_logger.error(f"❌ [STEP 1/2] 研报流水线运行异常: {e_pipeline}")
+        app_logger.error(f"[STEP 1/2] 研报流水线运行异常: {e_pipeline}")
         # 即使流水线局部报警，仍尝试发送已有或最新研报
 
     # 2. 自动发送研报邮件
     try:
-        app_logger.info("📌 [STEP 2/2] 正在发送单日研报邮件至默认团队订阅邮箱...")
+        app_logger.info("[STEP 2/2] 正在发送单日研报邮件至默认团队订阅邮箱...")
         success = send_daily_report_email()
         if success:
-            app_logger.info("🎉 [STEP 2/2] 单日研报邮件发送成功！")
+            app_logger.info("[STEP 2/2] 单日研报邮件发送成功！")
         else:
-            app_logger.warning("⚠️ [STEP 2/2] 研报邮件发送未能完全成功，请检查 SMTP 状态。")
+            app_logger.warning("[STEP 2/2] 研报邮件发送未能完全成功，请检查 SMTP 状态。")
     except Exception as e_email:
-        app_logger.error(f"❌ [STEP 2/2] 邮件分发脚本异常: {e_email}")
+        app_logger.error(f"[STEP 2/2] 邮件分发脚本异常: {e_email}")
 
     app_logger.info("=" * 80 + "\n")
 
@@ -74,7 +74,7 @@ def start_scheduler(target_time_str: str = "07:00"):
     """
     target_hour, target_minute = map(int, target_time_str.split(":"))
     app_logger.info("=" * 80)
-    app_logger.info(f"⏱️ 智能投研每日 07:00 定时调度服务启动 (目标时间: 每日 {target_time_str})")
+    app_logger.info(f"[定时服务启动] 智能投研每日 07:00 定时调度服务启动 (目标时间: 每日 {target_time_str})")
     app_logger.info(" 监控服务开启中，按 Ctrl+C 退出进程...")
     app_logger.info("=" * 80 + "\n")
 
@@ -97,10 +97,10 @@ def start_scheduler(target_time_str: str = "07:00"):
             # 轮询间隔 15 秒
             time.sleep(15)
         except KeyboardInterrupt:
-            app_logger.info("⏹️ 接收到终止信号，定时调度器安全退出。")
+            app_logger.info("[退出] 接收到终止信号，定时调度器安全退出。")
             break
         except Exception as e_loop:
-            app_logger.error(f"⚠️ 调度主循环发生异常: {e_loop}")
+            app_logger.error(f"[异常] 调度主循环发生异常: {e_loop}")
             time.sleep(30)
 
 

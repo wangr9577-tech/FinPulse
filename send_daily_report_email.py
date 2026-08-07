@@ -89,53 +89,15 @@ def send_daily_report_email(
 
     # 构建邮件主体
     msg = MIMEMultipart("mixed")
-    subject = custom_subject or f"⚡ 智能投研单日报告 | 国盛择时六面图与全量舆情推演 ({today_str})"
+    subject = custom_subject or f"[智能投研单日报告] 国盛择时六面图与全量舆情推演 ({today_str})"
     msg["Subject"] = Header(subject, "utf-8")
     
     # 使用 formataddr 规范 RFC5322 From 与 To 头
     msg["From"] = formataddr(("智能投研引擎", SENDER_EMAIL))
     msg["To"] = ", ".join(receivers)
 
-    # 构建 HTML 邮件正文
-    html_content = ""
-    if target_html and target_html.exists():
-        try:
-            with open(target_html, "r", encoding="utf-8") as f:
-                html_content = f.read()
-        except Exception as e:
-            app_logger.warning(f"[EMAIL] 读取 HTML 视图文件失败: {e}")
-
-    if not html_content:
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, 'PingFang SC', sans-serif; color: #333; line-height: 1.6;">
-            <div style="max-width: 650px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff; padding: 24px; text-align: center;">
-                    <h1 style="margin: 0; font-size: 22px; letter-spacing: 1px;">⚡ 智能投研每日报告</h1>
-                    <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 14px;">国盛证券择时六面图 & 28大媒体舆情推演 | {today_str}</p>
-                </div>
-                <div style="padding: 24px; background-color: #ffffff;">
-                    <p>尊贵的投研团队 / 订阅用户：</p>
-                    <p>您好！单日智能投研自动化流水线已运行完成。附件中为您呈送最新的高保真 PDF 金融研报。</p>
-                    <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 0 6px 6px 0;">
-                        <h4 style="margin: 0 0 8px 0; color: #1e3a8a;">📊 本期研报亮点</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #475569;">
-                            <li><b>全量舆情抓取</b>：覆盖 28 大核心财经媒体与专业投研站点增量快讯。</li>
-                            <li><b>择时六面图引擎</b>：35 项定量指标无未来函数标准化清洗与计算。</li>
-                            <li><b>AI 多节点推演</b>：Analyst Agent 融合真实资金证据与板块连锁逻辑统稿。</li>
-                        </ul>
-                    </div>
-                    <p>详情请查看随信附带的 <b>market_insight_report.pdf</b> 附件。</p>
-                </div>
-                <div style="background-color: #f1f5f9; padding: 12px 24px; text-align: center; color: #64748b; font-size: 12px;">
-                    本邮件由 智能投研信息引擎 自动化发送，请勿直接回复。
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-
-    msg.attach(MIMEText(html_content, "html", "utf-8"))
+    # 邮件部分不需要正文
+    msg.attach(MIMEText("", "plain", "utf-8"))
 
     # 挂载 PDF 附件
     if target_pdf and target_pdf.exists():
