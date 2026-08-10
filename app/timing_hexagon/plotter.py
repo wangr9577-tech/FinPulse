@@ -577,6 +577,26 @@ def format_weighted_score_line(scores: OrderedDict) -> str:
     )
 
 
+def force_weighted_score_line_in_markdown(markdown: str, summary_csv_path: Path) -> str:
+    """强制用权威 CSV 的维度加权得分行替换 markdown 中已有的加权行。
+
+    用途：Auditor Agent 用 LLM 重写整篇研报 Markdown 后，可能把代码确定性生成的
+    '维度加权得分' 行改错（如把 +0.50 幻觉成 0.00）。此函数重新计算权威值并
+    替换回原文，确保雷达图顶点与文字行永远一致。若原文没有加权行则原样返回。
+    """
+    import re as _re
+    pattern = _re.compile(r"> \*\*维度加权得分\*\*：.*")
+    if not pattern.search(markdown):
+        return markdown
+    try:
+        scores = compute_dimension_weighted_scores(summary_csv_path)
+        line = format_weighted_score_line(scores)
+        return pattern.sub(f"> **维度加权得分**：{line}", markdown, count=1)
+    except Exception as e:
+        app_logger.error(f"[Plotter Engine] 强制修正维度加权得分行失败: {e}")
+        return markdown
+
+
 def plot_radar_chart(summary_csv_path: Path) -> Optional[Path]:
     """绘制择时六维度合规雷达图（维度加权得分 = 各维度看多/看空/中性信号均值）"""
     if not summary_csv_path.exists():

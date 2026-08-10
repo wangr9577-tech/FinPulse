@@ -172,6 +172,17 @@ class AuditorAgent:
             if not final_corrected_md or "## 一、总评" not in final_corrected_md:
                 final_corrected_md = report_markdown
 
+            # 维度加权得分行是代码确定性产物（与雷达图同源），LLM 重写全文时
+            # 可能将其幻觉改错；此处强制用权威 CSV 重新计算并替换，保证图文一致。
+            try:
+                from app.timing_hexagon.plotter import (
+                    SUMMARY_CSV,
+                    force_weighted_score_line_in_markdown,
+                )
+                final_corrected_md = force_weighted_score_line_in_markdown(final_corrected_md, SUMMARY_CSV)
+            except Exception as e_force:
+                app_logger.warning(f"[AuditorAgent] 强制修正维度加权得分行警示: {e_force}")
+
             is_passed = len(discrepancies) == 0 and data.get("is_passed", True)
 
             result = AuditResult(

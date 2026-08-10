@@ -20,6 +20,7 @@ from app.timing_hexagon.plotter import (
     format_score_value,
     score_direction,
     format_weighted_score_line,
+    force_weighted_score_line_in_markdown,
     plot_radar_chart,
 )
 
@@ -92,6 +93,25 @@ def test_format_helpers():
     assert line == "流动性 0.00 [中性] | 技术面 -0.14 [看空] | 经济面 +0.50 [看多]", line
 
 
+def test_force_weighted_score_line_in_markdown():
+    """Auditor LLM 重写全文可能把加权行幻觉改错，force 函数应强制用权威 CSV 替换。"""
+    import pandas as pd
+    path = _write_temp_csv(CSV_CONTENT)
+    bad_md = (
+        "## 一、总评\n\n过去24小时，加权得分显示：宏观经济（0.00）中性。\n\n"
+        "> **维度加权得分**：流动性 0.00 [中性] | 宏观经济 0.00 [中性] | 估值 0.00 [中性] | 资金面 +1.00 [看多] | 技术面 -0.14 [看空] | 情绪与期权面 -0.67 [看空]\n\n"
+        "## 二、择时六面图\n正文内容。"
+    )
+    fixed = force_weighted_score_line_in_markdown(bad_md, path)
+    # 加权行应被权威值覆盖（宏观经济 +0.50 看多）
+    assert "宏观经济 +0.50 [看多]" in fixed, fixed
+    assert "宏观经济 0.00 [中性]" not in fixed, fixed
+    # 无加权行的文本应原样返回
+    plain_md = "## 一、总评\n\n无加权行内容。"
+    assert force_weighted_score_line_in_markdown(plain_md, path) == plain_md
+    path.unlink()
+
+
 def test_plot_radar_smoke():
     assert plot_radar_chart(Path("不存在的文件.csv")) is None
     path = _write_temp_csv(CSV_CONTENT)
@@ -154,6 +174,7 @@ if __name__ == "__main__":
         "test_weighted_scores",
         "test_missing_file_all_zero",
         "test_format_helpers",
+        "test_force_weighted_score_line_in_markdown",
         "test_plot_radar_smoke",
         "test_synthesizer_chapter_contains_weighted_line",
         "test_synthesizer_chapter_with_real_indicators",
