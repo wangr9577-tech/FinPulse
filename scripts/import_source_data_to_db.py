@@ -12,9 +12,9 @@ from pymongo import MongoClient
 
 from app.core.config import settings
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-SOURCE_DATA_DIR = BASE_DIR / "backend" / "data" / "source_data"
-RESULTS_DIR = BASE_DIR / "backend" / "data" / "results"
+BASE_DIR = Path(__file__).resolve().parent.parent
+SOURCE_DATA_DIR = BASE_DIR / "data" / "source_data"
+RESULTS_DIR = BASE_DIR / "data" / "results"
 
 MONGO_URI = settings.MONGODB_URI
 DB_NAME = settings.MONGODB_DB_NAME

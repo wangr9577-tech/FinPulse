@@ -30,7 +30,7 @@ from app.core.logger import app_logger, log_data_pipeline, log_agent_action
 
 from app.data_fetchers.flash_news_fetcher import FlashNewsFetcher
 from app.timing_hexagon.pipeline import run_timing_hexagon_pipeline
-from app.core.config import settings, PROJECT_ROOT as BASE_DIR
+from app.core.config import settings, BACKEND_DIR as BASE_DIR
 from app.data_fetchers.feature_operators import FeatureOperatorEngine
 from app.core.pipeline_graph import run_research_pipeline
 
@@ -148,7 +148,7 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
 
     # 3.2 运行数据库入库脚本
     try:
-        db_script = BASE_DIR / "backend" / "scripts" / "import_source_data_to_db.py"
+        db_script = BASE_DIR / "scripts" / "import_source_data_to_db.py"
         proc_db = subprocess.run(
             [sys.executable, str(db_script)],
             cwd=BASE_DIR,
@@ -187,9 +187,9 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
         app_logger.info(f"[STAGE 4] 将 {len(raw_news_dicts)} 条原始新闻直接传入 AI 流水线进行情报卡片提炼...")
         final_state = run_research_pipeline(hours_back=hours_back, raw_news_list=raw_news_dicts)
         
-        pdf_path = BASE_DIR / "backend" / "output" / "market_insight_report.pdf"
-        html_path = BASE_DIR / "backend" / "output" / "market_insight_report.html"
-        json_path = BASE_DIR / "backend" / "output" / "feature_operators_output.json"
+        pdf_path = BASE_DIR / "output" / "market_insight_report.pdf"
+        html_path = BASE_DIR / "output" / "market_insight_report.html"
+        json_path = BASE_DIR / "output" / "feature_operators_output.json"
 
         s4_elapsed = time.time() - s4_start
         total_elapsed = time.time() - start_total_time

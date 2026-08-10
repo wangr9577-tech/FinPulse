@@ -35,7 +35,7 @@ from typing import Optional, List, Dict, Any
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from app.core.config import settings, PROJECT_ROOT as BASE_DIR
+from app.core.config import settings, BACKEND_DIR as BASE_DIR
 from app.core.logger import app_logger, log_data_pipeline
 from app.data_fetchers.flash_news_fetcher import FlashNewsFetcher
 from app.timing_hexagon.pipeline import run_timing_hexagon_pipeline
@@ -46,7 +46,7 @@ from app.db.mongodb import MongoDBClient
 
 def ensure_output_dirs() -> Path:
     """创建并返回分步输出文件夹"""
-    output_dir = BASE_DIR / "backend" / "output" / "pipeline_steps"
+    output_dir = BASE_DIR / "output" / "pipeline_steps"
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
@@ -229,7 +229,7 @@ def run_pipeline_and_export_all(hours_back: Optional[float] = None):
 
     # 择时爬虫
     try:
-        backend_dir = BASE_DIR / "backend"
+        backend_dir = BASE_DIR
         subprocess.run([sys.executable, "-m", "app.data_fetchers.crawler.run_all"], cwd=backend_dir, capture_output=True, text=True)
     except Exception as e:
         app_logger.warning(f"爬虫调度提示: {e}")
@@ -263,7 +263,7 @@ def run_pipeline_and_export_all(hours_back: Optional[float] = None):
     export_stage6_report_summary_to_csv(report, output_steps_dir / "06_report_summary.csv")
 
     # 复制最终 PDF/HTML 至 pipeline_steps 目录
-    main_output_dir = BASE_DIR / "backend" / "output"
+    main_output_dir = BASE_DIR / "output"
     pdf_source = main_output_dir / "market_insight_report.pdf"
     html_source = main_output_dir / "market_insight_report.html"
 
