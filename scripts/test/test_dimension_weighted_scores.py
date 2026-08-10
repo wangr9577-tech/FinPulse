@@ -120,6 +120,35 @@ def test_synthesizer_chapter_contains_weighted_line():
     assert "维度加权得分" in md, md[:500]
 
 
+def test_synthesizer_chapter_with_real_indicators():
+    """用真实最新信号汇总 CSV 的指标列表构建第二章，覆盖 _format_val 的 pd.isna 路径。"""
+    import pandas as pd
+    from app.timing_hexagon.plotter import SUMMARY_CSV
+    from app.agents.synthesizer_agent import build_timing_hexagon_markdown_chapter
+
+    df = pd.read_csv(SUMMARY_CSV, encoding="utf-8-sig")
+    indicators = []
+    for _, row in df.iterrows():
+        score = row.get("signal_score")
+        indicators.append({
+            "dimension": str(row.get("dimension", "")),
+            "indicator": str(row.get("indicator", "")),
+            "latest_value": None if pd.isna(row.get("latest_value")) else row.get("latest_value"),
+            "signal_score": float(score) if pd.notna(score) else None,
+            "signal_text": str(row.get("signal_text", "")),
+        })
+    assert len(indicators) > 0
+    md = build_timing_hexagon_markdown_chapter(
+        timing_data={"timing_hexagon": {"indicators": indicators}, "operators": {}},
+        hours_back=24.0,
+        llm_factory=_StubLLMFactory(),
+        chart_paths_map={},
+    )
+    assert "维度加权得分" in md, md[:500]
+    assert "**流动性**" not in md  # 占位符不应用于真实指标
+    assert any("结论" in line for line in md.splitlines()), md[:500]
+
+
 if __name__ == "__main__":
     selected = sys.argv[1:] or [
         "test_weighted_scores",
@@ -127,6 +156,7 @@ if __name__ == "__main__":
         "test_format_helpers",
         "test_plot_radar_smoke",
         "test_synthesizer_chapter_contains_weighted_line",
+        "test_synthesizer_chapter_with_real_indicators",
     ]
     for name in selected:
         globals()[name]()
