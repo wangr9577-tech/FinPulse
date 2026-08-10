@@ -519,6 +519,64 @@ def plot_single_indicator_chart(dim_name: str, ind_name: str, cfg: Dict[str, Any
         return None
 
 
+# ========== 维度加权得分计算 ==========
+# 六面图维度名映射（CSV 维度 → 报告标准名）
+DIMENSION_MAP = OrderedDict([
+    ("流动性", "流动性"),
+    ("经济面", "宏观经济"),
+    ("估值面", "估值"),
+    ("资金面", "资金面"),
+    ("技术面", "技术面"),
+    ("情绪面", "情绪与期权面"),
+])
+# 不参与加权统计的指标（数据独立性不足，不得与同维度重复计分）
+EXCLUDED_WEIGHTED_INDICATORS = {"DR007偏离度"}
+
+
+def compute_dimension_weighted_scores(summary_csv_path: Path) -> OrderedDict:
+    """按维度计算加权得分：看多=+1 / 看空=-1 / 中性=0 的非空信号均值。"""
+    scores = OrderedDict((name, 0.0) for name in DIMENSION_MAP.values())
+    if not Path(summary_csv_path).exists():
+        return scores
+    try:
+        summary = pd.read_csv(summary_csv_path, encoding="utf-8-sig")
+        for csv_dim, display_name in DIMENSION_MAP.items():
+            sub = summary[
+                (summary["dimension"] == csv_dim)
+                & (summary["signal_score"].notna())
+                & (~summary["indicator"].isin(EXCLUDED_WEIGHTED_INDICATORS))
+            ]
+            if len(sub) > 0:
+                scores[display_name] = float(sub["signal_score"].mean())
+    except Exception as e:
+        app_logger.error(f"[Plotter Engine] 计算维度加权得分失败: {e}")
+    return scores
+
+
+def format_score_value(value: float) -> str:
+    """格式化得分值：正数带 + 号，保留两位小数。"""
+    if value > 0:
+        return f"+{value:.2f}"
+    return f"{value:.2f}"
+
+
+def score_direction(value: float) -> str:
+    """按得分符号给出方向标签。"""
+    if value > 0:
+        return "看多"
+    if value < 0:
+        return "看空"
+    return "中性"
+
+
+def format_weighted_score_line(scores: OrderedDict) -> str:
+    """生成研报第二章维度加权得分一行文字。"""
+    return " | ".join(
+        f"{dim} {format_score_value(v)} [{score_direction(v)}]"
+        for dim, v in scores.items()
+    )
+
+
 def plot_radar_chart(summary_csv_path: Path) -> Optional[Path]:
     """绘制择时六维度合规雷达图"""
     if not summary_csv_path.exists():
