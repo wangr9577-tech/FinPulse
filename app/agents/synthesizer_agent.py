@@ -332,6 +332,19 @@ def build_timing_hexagon_markdown_chapter(
     if "RADAR_CHART" in chart_paths_map:
         chapter_intro += f"\n\n![择时六维雷达图]({chart_paths_map['RADAR_CHART']})"
 
+    # 维度加权得分一行（紧跟雷达图之后）
+    try:
+        from app.timing_hexagon.plotter import (
+            compute_dimension_weighted_scores,
+            format_weighted_score_line,
+            SUMMARY_CSV,
+        )
+        weighted_scores = compute_dimension_weighted_scores(SUMMARY_CSV)
+        weighted_line = format_weighted_score_line(weighted_scores)
+        chapter_intro += f"\n\n> **维度加权得分**：{weighted_line}"
+    except Exception as e:
+        app_logger.warning(f"[SynthesizerAgent] 生成维度加权得分一行失败: {e}")
+
     chapter_sections = [chapter_intro]
 
     for dim_key, header in dim_headers.items():
