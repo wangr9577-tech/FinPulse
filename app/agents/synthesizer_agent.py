@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.core.logger import app_logger, log_agent_action
 from app.core.config import settings
 from app.core.llm_factory import LLMFactory
+from app.core.skill_loader import SkillLoader
 from app.agents.analyst_agent import SectorAnalysisResult
 
 
@@ -476,7 +477,10 @@ class SynthesizerAgent:
         # 2. 渲染第三章：资讯分析
         ch3_news_md = build_sector_analysis_markdown_chapter(sector_results)
 
-        # 3. 构造给 CIO LLM 生成第一章【总评】的输入
+        # 3. 动态从 skills 目录加载 premarket-audio-analysis 技能指导
+        skill_prompt = SkillLoader.load_skill_prompt("premarket-audio-analysis")
+
+        # 构造给 CIO LLM 生成第一章【总评】的输入
         user_prompt = (
             f"【今日日期】: {today_str}\n\n"
             f"【时间窗口说明】: 本次研报仅分析过去 {hours_back:.1f} 小时内的增量数据与市场特征。\n\n"
@@ -485,7 +489,7 @@ class SynthesizerAgent:
             f"{ch3_news_md}\n\n"
             f"请根据上述量化信号与板块资讯，撰写第一章【## 一、总评】内容，按系统提示词规定的 JSON 格式输出。"
         )
-        prompt = f"{SYNTHESIZER_SYSTEM_PROMPT}\n\n{user_prompt}"
+        prompt = f"{SYNTHESIZER_SYSTEM_PROMPT}\n\n{skill_prompt}\n\n{user_prompt}"
 
         try:
             response_text = self.llm_factory.invoke_with_circuit_breaker(self.llm, prompt)
