@@ -32,6 +32,10 @@ backend/
 │   ├── test_aggregator.py                # 🧪 NewsAggregator 动态物理簇聚合测试脚本
 │   └── view_db.py                        # 本地/远程 MongoDB 数据统计与查验脚本
 │
+├── skills/                               # 🧠 Agent 技能库 (遵守 skill-creator 规范)
+│   ├── premarket-audio-analysis/         # 08:00 盘前语音买方分析 Skill (SKILL.md, heuristics.md, scripts)
+│   └── skill-creator/                    # Agent Skill 编写规范与自动化评估工具包
+│
 ├── logs/                                 # 日志存储目录 (自动轮转落盘 app_pipeline.log)
 ├── output/                               # 自动生成的 HTML / PDF 每日研报导出目录
 ├── daily_scheduler_7am.py                # ⏰ 每日早晨 07:00 常驻定时服务脚本
@@ -80,7 +84,17 @@ backend/
 - **Auditor Agent**：纯 LLM 驱动的金融真实性与防幻觉合规审查节点，实时比对指标数值与图表一致性。
 - **Report Validator**：校验修复 Markdown 结构缺陷，编译高保真金融 PDF 研报。
 
-### 4. 自动化定时调度与邮件投递 (`daily_scheduler_7am.py` & `send_daily_report_email.py`)
+### 4. 基于 `skill-creator` 规范的买方 Agent 技能库与动态装载引擎 (`skills/` & `app/core/skill_loader.py`)
+- **渐进式 Skill 架构**：严格遵循 `skill-creator` 规范，沉淀买方顶级博主 08:00 盘前分析逻辑（`premarket-audio-analysis`），包含 `SKILL.md`（5 步买方分析协议与 Theory of Mind）、`references/heuristics.md`（启发式规则手册与研报冲突消解矩阵）、`assets/`（盘前语音样本）以及 `scripts/extract_audio_insights.py`（自动化信号审计脚本）。
+- **买方核心判断规则**：
+  - **“真金白银”回购审计**：严格区分“注销式缩股回购” [特大利好] 与“员工持股/股权激励回购” [中性]。
+  - **Q2 环比加速 (QoQ)**：重视基本面二季度经营斜率向上，优先级高于受低基数干扰的单季同比高增 (YoY)。
+  - **海外与产业链传导**：美股云巨头 Capex 映射国内算力/光模块，日韩 MLCC/存储涨价函 1-2 季度滞后传导。
+  - **“三个收敛”配置**：上下游收敛、中外折价收敛与科技/非科技风格收敛。
+- **Agent 动态挂载引擎 (`SkillLoader`)**：`AnalystAgent` 与 `SynthesizerAgent` 在运行时通过 `SkillLoader.load_skill_prompt("premarket-audio-analysis")` 动态装载并注入 Prompt 增强上下文，无缝约束 AI 行为。
+- **本地自包含原则 (Zero External Dependency)**：Skill 脚本与数据严格自包含于 `backend/` 内部目录，禁止调用任何 `backend` 以外的路径。
+
+### 5. 自动化定时调度与邮件投递 (`daily_scheduler_7am.py` & `send_daily_report_email.py`)
 - **常驻 Timer 服务**：每日早晨 `07:00:00` 自动触发端到端流水线。
 - **高保真 PDF 编译**：基于 Playwright 无头浏览器导出 PDF。
 - **SMTP 邮件推送**：通过 SSL (端口 465) 自动将单日研报投递至指定团队邮箱。
@@ -165,7 +179,16 @@ python daily_scheduler_7am.py
 python daily_scheduler_7am.py --now
 ```
 
-### 5. 单独触发研报邮件发送
+### 5. 测试 Agent Skill 自动化审计与动态加载
+```bash
+# 1. 运行盘前语音文本信号审计脚本
+python skills/premarket-audio-analysis/scripts/extract_audio_insights.py
+
+# 2. 验证 SkillLoader 动态装载买方 Skill 指导 Prompt
+python -c "from app.core.skill_loader import SkillLoader; print(SkillLoader.load_skill_prompt('premarket-audio-analysis'))"
+```
+
+### 6. 单独触发研报邮件发送
 ```bash
 python send_daily_report_email.py
 ```
