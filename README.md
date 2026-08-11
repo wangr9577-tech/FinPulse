@@ -121,7 +121,7 @@ cp .env.example .env
 LLM_API_KEY=your_deepseek_api_key_here
 LLM_BASE_URL=https://api.deepseek.com/v1
 FLASH_MODEL_NAME=deepseek-v4-flash
-PRO_MODEL_NAME=deepseek-reasoner
+PRO_MODEL_NAME=deepseek-v4-pro
 
 # 2. MongoDB 数据库配置
 MONGODB_URI=mongodb://localhost:27017
@@ -130,8 +130,6 @@ MONGODB_DB_NAME=intelligent_research_db
 # 3. 后端服务配置
 FASTAPI_PORT=8000
 ```
-
-> 💡 **Dummy Mock 降级保护**：当 `LLM_API_KEY` 为空或使用 `mock` 前缀时，系统会自动切入内置 `DummyMockLLM` 模式，无 Token 消耗即可跑通完整流程。
 
 ---
 
