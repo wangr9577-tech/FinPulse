@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.core.logger import app_logger, log_agent_action
 from app.core.config import settings
 from app.core.llm_factory import LLMFactory
+from app.core.skill_loader import SkillLoader
 from app.models.news_schema import SentimentType
 
 
@@ -107,11 +108,12 @@ class AnalystAgent:
             )
         cards_input = "\n\n".join(card_summaries)
 
+        skill_prompt = SkillLoader.load_skill_prompt("premarket-audio-analysis")
         user_prompt = (
             f"【待分析板块】: {sector_name}\n\n"
             f"【归类情报卡片列表】({len(cards)}条):\n{cards_input}"
         )
-        prompt = f"{ANALYST_SYSTEM_PROMPT}\n\n{user_prompt}"
+        prompt = f"{ANALYST_SYSTEM_PROMPT}\n\n{skill_prompt}\n\n{user_prompt}"
 
         try:
             response_text = self.llm_factory.invoke_with_circuit_breaker(self.llm, prompt)
