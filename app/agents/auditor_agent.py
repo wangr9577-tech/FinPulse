@@ -66,6 +66,22 @@ AUDITOR_SYSTEM_PROMPT = """你是一位资深的买方合规风控官与金融�
 """
 
 
+def force_weighted_score_line_in_markdown(md_text: str) -> str:
+    """强制使用最新信号汇总.csv计算的维度加权得分重写 Markdown 中的相关得分行，杜绝 LLM 幻觉"""
+    try:
+        from app.timing_hexagon.plotter import format_weighted_score_markdown_line
+        auth_line = format_weighted_score_markdown_line()
+
+        if "> **维度加权得分**：" in md_text:
+            md_text = re.sub(r'> \*\*维度加权得分\*\*：[^\n]+', auth_line, md_text)
+        elif "![择时六维雷达图]" in md_text:
+            md_text = re.sub(r'(!\[择时六维雷达图\]\([^\)]+\))', r'\1\n\n' + auth_line, md_text)
+        return md_text
+    except Exception as e:
+        app_logger.warning(f"⚠️ 强制重写维度加权得分行异常: {e}")
+        return md_text
+
+
 class AuditorAgent:
     """
     Auditor Agent：金融数据真实性审查智能体
@@ -171,6 +187,8 @@ class AuditorAgent:
             final_corrected_md = data.get("corrected_report_markdown", report_markdown)
             if not final_corrected_md or "## 一、总评" not in final_corrected_md:
                 final_corrected_md = report_markdown
+
+            final_corrected_md = force_weighted_score_line_in_markdown(final_corrected_md)
 
             is_passed = len(discrepancies) == 0 and data.get("is_passed", True)
 

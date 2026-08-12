@@ -58,18 +58,18 @@ async def node_extract(state: PipelineGraphState) -> PipelineGraphState:
     raw_news = state.get("raw_news_list", [])
     db_client = MongoDBClient.get_instance()
     
-    # 1. 若 state 未传入 raw_news，从 MongoDB 异步读取最新原始新闻
+    # 1. 若 state 未传入 raw_news，从 MongoDB 异步读取最新原始新闻 (全量时间窗口)
     if not raw_news:
         try:
             await db_client.connect()
-            raw_news = await db_client.get_raw_news_list(limit=50)
+            raw_news = await db_client.get_raw_news_list(limit=None)
         except Exception as e_m:
             app_logger.warning(f"从 MongoDB 提取原始新闻警示: {e_m}")
 
     cards = []
     if raw_news:
         extractor = ExtractorAgent()
-        for n in raw_news[:20]:
+        for n in raw_news:
             try:
                 card = extractor.extract(n)
                 cards.append(card.model_dump())

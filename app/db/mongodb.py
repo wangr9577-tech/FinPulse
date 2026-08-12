@@ -122,11 +122,25 @@ class MongoDBClient:
             app_logger.warning("MongoDB 未连接，原始新闻数据未落盘。")
             return 0
 
-    async def get_raw_news_list(self, limit: int = 50) -> List[Dict[str, Any]]:
-        """获取最新原始新闻列表"""
+    async def get_raw_news_list(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """获取指定时间窗口内的全量原始新闻列表 (按 publish_time 降序)"""
         if self.is_connected and self.db is not None:
-            cursor = self.db["raw_news_collection"].find({}, {"_id": 0}).sort("publish_time", -1).limit(limit)
-            return await cursor.to_list(length=limit)
+            query = {}
+            hours = settings.REPORT_HOURS_BACK
+            if hours and hours > 0:
+                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+                cutoff_iso = cutoff_time.isoformat()
+                query = {
+                    "$or": [
+                        {"publish_time": {"$gte": cutoff_iso}},
+                        {"publish_time": {"$gte": cutoff_time}}
+                    ]
+                }
+            cursor = self.db["raw_news_collection"].find(query, {"_id": 0}).sort("publish_time", -1)
+            if limit and limit > 0:
+                cursor = cursor.limit(limit)
+                return await cursor.to_list(length=limit)
+            return await cursor.to_list(length=None)
         return []
 
     async def upsert_structured_news_batch(self, card_items: List[Dict[str, Any]]) -> int:

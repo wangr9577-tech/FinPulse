@@ -97,61 +97,69 @@ class FlashNewsFetcher:
     # 1. 新浪财经 (7x24直播快讯) - 原生 API 直连
     # =========================================================================
     async def fetch_sina_7x24(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        url = self.source_urls["sina_7x24"]
         headers = self._get_headers(referer="https://finance.sina.com.cn/7x24/")
         items: List[RawNewsSchema] = []
+        page = 1
+        max_pages = 5
+        early_exit = False
 
         try:
-            logger.info("[新浪财经 7x24] 拉取高频直播快讯...")
-            resp = await client.get(url, headers=headers, timeout=self.request_timeout)
-            if resp.status_code != 200:
-                return []
-
-            res_json = resp.json()
-            feed_dict = res_json.get("result", {}).get("data", {}).get("feed", {})
-            feed_list = feed_dict.get("list", []) if isinstance(feed_dict, dict) else []
-
-            for raw_item in feed_list:
-                if not isinstance(raw_item, dict):
-                    continue
-
-                time_str = raw_item.get("create_time") or raw_item.get("update_time") or ""
-                if not time_str:
-                    continue
-
-                try:
-                    naive_dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
-                    pub_dt = naive_dt.replace(tzinfo=timezone(timedelta(hours=8))).astimezone(timezone.utc)
-                except Exception:
-                    pub_dt = datetime.now(timezone.utc)
-
-                if not self._is_within_time_window(pub_dt, cutoff_dt):
-                    logger.info(f"[新浪财经 Early-Exit] 遇到 >{self.max_hours}h 旧条目，熔断终止。")
+            logger.info("[新浪财经 7x24] 正在跨页拉取高频直播快讯 (Past Window)...")
+            while page <= max_pages and not early_exit:
+                page_url = f"https://zhibo.sina.com.cn/api/zhibo/feed?page={page}&page_size=100&zhibo_id=152"
+                resp = await client.get(page_url, headers=headers, timeout=self.request_timeout)
+                if resp.status_code != 200:
                     break
 
-                rich_text = self._clean_html(raw_item.get("rich_text", ""))
-                if not rich_text:
-                    continue
+                res_json = resp.json()
+                feed_dict = res_json.get("result", {}).get("data", {}).get("feed", {})
+                feed_list = feed_dict.get("list", []) if isinstance(feed_dict, dict) else []
+                if not feed_list:
+                    break
 
-                news_id = f"sina_{raw_item.get('id')}"
-                title_match = re.match(r"【(.*?)】", rich_text)
-                title = title_match.group(1) if title_match else (rich_text[:35] + "..." if len(rich_text) > 35 else rich_text)
-                tags = [t["name"] for t in raw_item.get("tag", []) if isinstance(t, dict) and "name" in t]
+                for raw_item in feed_list:
+                    if not isinstance(raw_item, dict):
+                        continue
 
-                items.append(
-                    RawNewsSchema(
-                        news_id=news_id,
-                        source="新浪财经",
-                        title=title,
-                        content=rich_text,
-                        publish_time=pub_dt,
-                        category_tags=tags if tags else ["7x24快讯", "A股/宏观"],
-                        sector="国内宏观与金融流动性",
-                        importance=3 if "【" in rich_text or raw_item.get("is_focus") == 1 else 1,
-                        channel_type="json_api",
-                        raw_payload=raw_item,
+                    time_str = raw_item.get("create_time") or raw_item.get("update_time") or ""
+                    if not time_str:
+                        continue
+
+                    try:
+                        naive_dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+                        pub_dt = naive_dt.replace(tzinfo=timezone(timedelta(hours=8))).astimezone(timezone.utc)
+                    except Exception:
+                        pub_dt = datetime.now(timezone.utc)
+
+                    if not self._is_within_time_window(pub_dt, cutoff_dt):
+                        logger.info(f"[新浪财经 Early-Exit] 遇到 >{self.max_hours}h 旧条目，熔断终止。")
+                        early_exit = True
+                        break
+
+                    rich_text = self._clean_html(raw_item.get("rich_text", ""))
+                    if not rich_text:
+                        continue
+
+                    news_id = f"sina_{raw_item.get('id')}"
+                    title_match = re.match(r"【(.*?)】", rich_text)
+                    title = title_match.group(1) if title_match else (rich_text[:35] + "..." if len(rich_text) > 35 else rich_text)
+                    tags = [t["name"] for t in raw_item.get("tag", []) if isinstance(t, dict) and "name" in t]
+
+                    items.append(
+                        RawNewsSchema(
+                            news_id=news_id,
+                            source="新浪财经",
+                            title=title,
+                            content=rich_text,
+                            publish_time=pub_dt,
+                            category_tags=tags if tags else ["7x24快讯", "A股/宏观"],
+                            sector="国内宏观与金融流动性",
+                            importance=3 if "【" in rich_text or raw_item.get("is_focus") == 1 else 1,
+                            channel_type="json_api",
+                            raw_payload=raw_item,
+                        )
                     )
-                )
+                page += 1
 
             logger.info(f"[新浪财经] 成功抓取 {len(items)} 条 {self.max_hours}h 增量快讯！")
             return items
@@ -163,52 +171,60 @@ class FlashNewsFetcher:
     # 2. 东方财富网 (7x24快讯) - 官方 NewsAPI 直连
     # =========================================================================
     async def fetch_eastmoney(self, client: httpx.AsyncClient, cutoff_dt: datetime) -> List[RawNewsSchema]:
-        url = self.source_urls["eastmoney"]
         headers = self._get_headers(referer="https://kuaixun.eastmoney.com/")
         items: List[RawNewsSchema] = []
+        page = 1
+        max_pages = 5
+        early_exit = False
 
         try:
-            logger.info("[东方财富网] 拉取 7x24 快讯 NewsAPI...")
-            resp = await client.get(url, headers=headers, timeout=self.request_timeout)
-            if resp.status_code != 200:
-                return []
-
-            res_json = resp.json()
-            news_list = res_json.get("news", [])
-
-            for raw_item in news_list:
-                time_str = raw_item.get("showtime") or raw_item.get("ordertime") or ""
-                if time_str:
-                    try:
-                        naive_dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
-                        pub_dt = naive_dt.replace(tzinfo=timezone(timedelta(hours=8))).astimezone(timezone.utc)
-                    except Exception:
-                        pub_dt = datetime.now(timezone.utc)
-                else:
-                    pub_dt = datetime.now(timezone.utc)
-
-                if not self._is_within_time_window(pub_dt, cutoff_dt):
-                    logger.info(f"[东方财富 Early-Exit] 遇到旧条目，熔断终止。")
+            logger.info("[东方财富网] 正在跨页拉取 7x24 快讯 NewsAPI (Past Window)...")
+            while page <= max_pages and not early_exit:
+                page_url = f"https://newsapi.eastmoney.com/kuaixun/v2/api/list?pageSize=100&pageIndex={page}"
+                resp = await client.get(page_url, headers=headers, timeout=self.request_timeout)
+                if resp.status_code != 200:
                     break
 
-                title = raw_item.get("title") or ""
-                digest = self._clean_html(raw_item.get("digest") or title)
-                news_id = f"eastmoney_{raw_item.get('newsid') or raw_item.get('id')}"
+                res_json = resp.json()
+                news_list = res_json.get("news", [])
+                if not news_list:
+                    break
 
-                items.append(
-                    RawNewsSchema(
-                        news_id=news_id,
-                        source="东方财富网",
-                        title=title if title else digest[:35],
-                        content=digest,
-                        publish_time=pub_dt,
-                        category_tags=["7x24快讯", "A股"],
-                        sector="国内宏观与金融流动性",
-                        importance=2 if "重磅" in title or "央行" in title else 1,
-                        channel_type="json_api",
-                        raw_payload=raw_item,
+                for raw_item in news_list:
+                    time_str = raw_item.get("showtime") or raw_item.get("ordertime") or ""
+                    if time_str:
+                        try:
+                            naive_dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+                            pub_dt = naive_dt.replace(tzinfo=timezone(timedelta(hours=8))).astimezone(timezone.utc)
+                        except Exception:
+                            pub_dt = datetime.now(timezone.utc)
+                    else:
+                        pub_dt = datetime.now(timezone.utc)
+
+                    if not self._is_within_time_window(pub_dt, cutoff_dt):
+                        logger.info(f"[东方财富 Early-Exit] 遇到旧条目，熔断终止。")
+                        early_exit = True
+                        break
+
+                    title = raw_item.get("title") or ""
+                    digest = self._clean_html(raw_item.get("digest") or title)
+                    news_id = f"eastmoney_{raw_item.get('newsid') or raw_item.get('id')}"
+
+                    items.append(
+                        RawNewsSchema(
+                            news_id=news_id,
+                            source="东方财富网",
+                            title=title if title else digest[:35],
+                            content=digest,
+                            publish_time=pub_dt,
+                            category_tags=["7x24快讯", "A股"],
+                            sector="国内宏观与金融流动性",
+                            importance=2 if "重磅" in title or "央行" in title else 1,
+                            channel_type="json_api",
+                            raw_payload=raw_item,
+                        )
                     )
-                )
+                page += 1
 
             logger.info(f"[东方财富网] 成功抓取 {len(items)} 条 {self.max_hours}h 增量快讯！")
             return items

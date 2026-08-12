@@ -519,21 +519,84 @@ def plot_single_indicator_chart(dim_name: str, ind_name: str, cfg: Dict[str, Any
         return None
 
 
-def plot_radar_chart(summary_csv_path: Path) -> Optional[Path]:
-    """绘制择时六维度合规雷达图"""
-    if not summary_csv_path.exists():
+def compute_dimension_weighted_scores(summary_csv_path: Optional[Path] = None) -> Dict[str, float]:
+    """
+    计算择时六维度的加权得分
+    - 将 CSV 维度映射到六面图标准名 (流动性、宏观经济、估值、资金面、技术面、情绪与期权面)
+    - 对每个维度下 signal_score 非 NaN 且 indicator != 'DR007偏离度' 的指标求均值 (排除 DR007 重复计分)
+    - 无有效指标时回退 0.0
+    """
+    dimension_names = ["流动性", "宏观经济", "估值", "资金面", "技术面", "情绪与期权面"]
+    default_scores = OrderedDict([(d, 0.0) for d in dimension_names])
+
+    target_path = summary_csv_path or SUMMARY_CSV
+    if not target_path.exists():
+        return default_scores
+
+    try:
+        df = pd.read_csv(target_path, encoding="utf-8-sig")
+        if "dimension" not in df.columns or "signal_score" not in df.columns:
+            return default_scores
+
+        dim_mapping = {
+            "流动性": ["流动性"],
+            "宏观经济": ["经济面", "宏观经济", "宏观"],
+            "估值": ["估值面", "估值"],
+            "资金面": ["资金面"],
+            "技术面": ["技术面"],
+            "情绪与期权面": ["情绪面", "情绪与期权面", "情绪", "期权"]
+        }
+
+        scores = OrderedDict()
+        for std_dim, alias_list in dim_mapping.items():
+            pattern = "|".join(alias_list)
+            dim_mask = df["dimension"].astype(str).str.contains(pattern, na=False)
+            valid_mask = dim_mask & df["signal_score"].notna()
+            
+            if "indicator" in df.columns:
+                valid_mask = valid_mask & (df["indicator"] != "DR007偏离度")
+
+            dim_data = df[valid_mask]
+            if len(dim_data) > 0:
+                score = float(dim_data["signal_score"].mean())
+                scores[std_dim] = round(score, 4)
+            else:
+                scores[std_dim] = 0.0
+
+        return scores
+    except Exception as e:
+        app_logger.error(f"[Plotter Engine] 计算六维度加权得分异常: {e}")
+        return default_scores
+
+
+def format_weighted_score_markdown_line(summary_csv_path: Optional[Path] = None) -> str:
+    """
+    格式化六维度加权得分的 Markdown 行文本
+    格式：> **维度加权得分**：流动性 0.00 [中性] | 宏观经济 +0.50 [看多] | 资金面 +1.00 [看多] | ...
+    """
+    scores = compute_dimension_weighted_scores(summary_csv_path)
+    parts = []
+    for d, s in scores.items():
+        if s > 0:
+            direction = "看多"
+            val_str = f"+{s:.2f}"
+        elif s < 0:
+            direction = "看空"
+            val_str = f"{s:.2f}"
+        else:
+            direction = "中性"
+            val_str = "0.00"
+        parts.append(f"{d} {val_str} [{direction}]")
+    return "> **维度加权得分**：" + " | ".join(parts)
+
+
+def plot_radar_chart(summary_csv_path: Optional[Path] = None) -> Optional[Path]:
+    """绘制择时六维度合规雷达图 (Radar_Six_Dimensions.png)"""
+    target_path = summary_csv_path or SUMMARY_CSV
+    if not target_path.exists():
         return None
     try:
-        summary = pd.read_csv(summary_csv_path, encoding="utf-8-sig")
-        dimension_names = ["流动性", "宏观经济", "估值", "资金面", "技术面", "情绪与期权面"]
-
-        dimension_scores = OrderedDict()
-        for dim in dimension_names:
-            dim_data = summary[(summary["dimension"].str.contains(dim[:2])) & (summary["usable_current_score"].notna())]
-            if len(dim_data) > 0:
-                dimension_scores[dim] = dim_data["usable_current_score"].mean()
-            else:
-                dimension_scores[dim] = 0.0
+        dimension_scores = compute_dimension_weighted_scores(target_path)
 
         labels = list(dimension_scores.keys())
         n = len(labels)

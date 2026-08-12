@@ -99,7 +99,7 @@ class AnalystAgent:
         log_agent_action("AnalystAgent", "Analyzing Sector News Summary", f"Sector: {sector_name}, Card Count: {len(cards)}")
 
         card_summaries = []
-        for idx, c in enumerate(cards[:20], 1):
+        for idx, c in enumerate(cards, 1):
             card_summaries.append(
                 f"新闻[{idx}]: {c.get('title', '')}\n"
                 f"  - 核心事实: {'; '.join(c.get('core_facts', []))}\n"
