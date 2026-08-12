@@ -20,8 +20,19 @@ import pandas as pd
 BASE_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 SOURCE_DIR = BASE_DIR / "source_data"
 PROCESSED_DIR = BASE_DIR / "processed"
+RAW_DIR = BASE_DIR / "raw"
 CLEAN_DIR = BASE_DIR / "cleaned_data"
 CLEAN_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def read_newest_raw(relative_glob):
+    """从 raw 目录读取最新日期快照（文件名按 YYYYMMDD 排序，末尾为最新）。"""
+    matches = sorted(RAW_DIR.glob(relative_glob))
+    if not matches:
+        raise FileNotFoundError(f"raw 目录未找到匹配文件: {relative_glob}")
+    df = pd.read_csv(matches[-1], encoding="utf-8-sig")
+    df = df.dropna(how="all", axis=1)
+    return df
 
 
 def read_csv(file_name):
@@ -189,6 +200,22 @@ ppi_clean["ppi_available_date"] = conservative_monthly_available_date(ppi_clean[
 
 prices = pd.merge(cpi_clean, ppi_clean, on="date", how="outer").sort_values("date").reset_index(drop=True)
 save_csv(prices, "CPI_PPI_清洗后.csv")
+
+
+# ============================================================
+# 5b. CPI 链式定基指数（供席勒CAPE通胀调整）
+# 用 NBS 月度环比构建链式定基指数（隐含锚定起始月前一期=100），
+# 并附保守可用日，避免把统计期末当成已知日。
+# ============================================================
+cpi_raw = read_newest_raw("nbs/cpi/cpi_*.csv")
+cpi_mom_col = "全国-环比增长" if "全国-环比增长" in cpi_raw.columns else cpi_raw.columns[3]
+cpi_chain = pd.DataFrame()
+cpi_chain["date"] = cpi_raw["月份"].map(month_end_from_chinese)
+cpi_chain["cpi_mom_pct"] = pd.to_numeric(cpi_raw[cpi_mom_col], errors="coerce")
+cpi_chain = finish_table(cpi_chain).dropna(subset=["cpi_mom_pct"])
+cpi_chain["cpi_chain_index"] = 100.0 * (1 + cpi_chain["cpi_mom_pct"] / 100.0).cumprod()
+cpi_chain["cpi_available_date"] = conservative_monthly_available_date(cpi_chain["date"])
+save_csv(cpi_chain, "CPI定基指数_清洗后.csv")
 
 
 # ============================================================
@@ -361,23 +388,31 @@ save_csv(accounts_clean, "新增投资者_清洗后.csv")
 
 
 # ============================================================
-# 15. 沪深融资融券余额
+# 15. 沪深融资融券余额（含融资/融券明细，供两融增量计算）
 # ============================================================
 margin_sh = read_csv("上交所两融.csv")
 margin_sh_clean = pd.DataFrame()
 margin_sh_clean["date"] = pd.to_datetime(margin_sh["日期"], errors="coerce")
 margin_sh_clean["margin_sh"] = pd.to_numeric(margin_sh["融资融券余额"], errors="coerce")
+margin_sh_clean["margin_rz_sh"] = pd.to_numeric(margin_sh["融资余额"], errors="coerce")
+margin_sh_clean["margin_rq_sh"] = pd.to_numeric(margin_sh["融券余额"], errors="coerce")
 margin_sh_clean = finish_table(margin_sh_clean)
 
 margin_sz = read_csv("深交所两融.csv")
 margin_sz_clean = pd.DataFrame()
 margin_sz_clean["date"] = pd.to_datetime(margin_sz["日期"], errors="coerce")
 margin_sz_clean["margin_sz"] = pd.to_numeric(margin_sz["融资融券余额"], errors="coerce")
+margin_sz_clean["margin_rz_sz"] = pd.to_numeric(margin_sz["融资余额"], errors="coerce")
+margin_sz_clean["margin_rq_sz"] = pd.to_numeric(margin_sz["融券余额"], errors="coerce")
 margin_sz_clean = finish_table(margin_sz_clean)
 
 margin = pd.merge(margin_sh_clean, margin_sz_clean, on="date", how="outer").sort_values("date").reset_index(drop=True)
 margin["both_markets_available"] = margin["margin_sh"].notna() & margin["margin_sz"].notna()
 # 两市任一缺失时不把单市场余额误当作全市场合计。
+margin["margin_rz_total"] = margin[["margin_rz_sh", "margin_rz_sz"]].sum(axis=1, min_count=2)
+margin["margin_rq_total"] = margin[["margin_rq_sh", "margin_rq_sz"]].sum(axis=1, min_count=2)
+# 净两融额 = 融资余额 - 融券余额
+margin["margin_net"] = margin["margin_rz_total"] - margin["margin_rq_total"]
 margin["margin_total"] = margin[["margin_sh", "margin_sz"]].sum(axis=1, min_count=2)
 save_csv(margin, "融资融券余额_清洗后.csv")
 

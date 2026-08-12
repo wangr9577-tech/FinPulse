@@ -252,6 +252,12 @@ try:
         save_path = RAW / "nbs" / "gdp"
         save_path.mkdir(parents=True, exist_ok=True)
         df_gdp.to_csv(save_path / f"gdp_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
+        # 同步GDP现价累计值到 source_data（01_数据清洗读GDP现价累计值.csv，供M2-GDP利差等使用）
+        try:
+            save_processed(df_gdp, "GDP现价累计值.csv", "macro")
+            print(f"  [OK] GDP现价累计值同步source_data: {len(df_gdp)}条")
+        except Exception as e_gdp_src:
+            print(f"  [WARN] GDP现价累计值同步source_data失败: {e_gdp_src}")
         print(f"  [OK] GDP: {len(df_gdp)}条")
         log_fetch("nbs", "OK", f"GDP {len(df_gdp)}条")
 except Exception as e:

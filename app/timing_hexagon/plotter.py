@@ -242,25 +242,28 @@ def _build_indicators_config() -> OrderedDict:
                 "ylabel": "同比 (%)",
                 "benchmark_lines": []
             },
-            "CPI同比": {
-                "file": INDICATOR_DIR / "06_CPI历史分位信号_月度.csv",
+            "通胀方向因子": {
+                "file": INDICATOR_DIR / "06_通胀方向因子_月度.csv",
                 "date_col": "date",
-                "value_cols": ["cpi_yoy_pct", "historical_q10", "historical_q90"],
-                "value_labels": ["CPI同比 (%)", "历史10%分位", "历史90%分位"],
+                "value_cols": ["inflation_direction", "cpi_smooth", "ppi_yoy_pct"],
+                "value_labels": ["通胀方向因子 (%)", "CPI同比MA3 (%)", "PPI同比 (%)"],
                 "signal_col": "signal_score",
-                "title": "CPI同比 — 通胀分位信号",
-                "ylabel": "同比 (%)",
+                "title": "通胀方向因子 — 通胀走向信号",
+                "ylabel": "同比 (百分点)",
                 "benchmark_lines": []
             },
-            "PPI同比": {
-                "file": INDICATOR_DIR / "07_PPI历史分位信号_月度.csv",
+            "通胀强度因子": {
+                "file": INDICATOR_DIR / "07_通胀强度因子_日度.csv",
                 "date_col": "date",
-                "value_cols": ["ppi_yoy_pct", "historical_q10", "historical_q90"],
-                "value_labels": ["PPI同比 (%)", "历史10%分位", "历史90%分位"],
+                "value_cols": ["intensity_factor"],
+                "value_labels": ["通胀强度因子 (σ)"],
                 "signal_col": "signal_score",
-                "title": "PPI同比 — 工业品价格分位",
-                "ylabel": "同比 (%)",
-                "benchmark_lines": []
+                "title": "通胀强度因子 — 通胀预期差强度 (±1.5σ 触发)",
+                "ylabel": "标准差 (σ)",
+                "benchmark_lines": [
+                    {"value": 1.5, "label": "+1.5σ (看空触发)", "color": "#E63946", "style": "--"},
+                    {"value": -1.5, "label": "-1.5σ (看多触发)", "color": "#2A9D8F", "style": "--"}
+                ]
             }
         }),
         "估值": OrderedDict({
@@ -284,14 +287,14 @@ def _build_indicators_config() -> OrderedDict:
                 "ylabel": "PB (倍)",
                 "benchmark_lines": [{"value": 1.4, "label": "1.4倍 (看多阈值)", "color": "#E63946", "style": "--"}]
             },
-            "股权风险溢价": {
+            "中证800股权风险溢价": {
                 "file": INDICATOR_DIR / "10_股权风险溢价_日度.csv",
                 "date_col": "date",
-                "value_cols": ["erp_z5y", "erp_ratio"],
-                "value_labels": ["ERP Z-score (5年)", "ERP比率"],
+                "value_cols": ["erp_z6y", "shiller_erp_pct"],
+                "value_labels": ["席勒ERP Z-score (6年)", "席勒ERP (%)"],
                 "signal_col": "signal_score",
-                "title": "股权风险溢价 (ERP) — 股债性价比",
-                "ylabel": "Z-score / 比率",
+                "title": "席勒股权风险溢价 (Shiller CAPE) — 股债性价比",
+                "ylabel": "Z-score / %",
                 "benchmark_lines": [
                     {"value": 1.5, "label": "+1.5σ (看多)", "color": "#FFD8C0", "style": "--"},
                     {"value": -1.5, "label": "-1.5σ (看空)", "color": "#B5E8B5", "style": "--"}
@@ -319,15 +322,15 @@ def _build_indicators_config() -> OrderedDict:
                 "ylabel": "百万元",
                 "benchmark_lines": [{"value": 0, "label": "零轴", "color": "#888888", "style": "-"}]
             },
-            "融资融券余额": {
-                "file": PROXY_DIR / "P05_融资融券余额趋势_MA60_MA120_日度.csv",
+            "两融增量": {
+                "file": PROXY_DIR / "P05_两融增量_MA120_MA240_日度.csv",
                 "date_col": "date",
-                "value_cols": ["margin_total", "ma60", "ma120"],
-                "value_labels": ["两融余额 (元)", "MA60", "MA120"],
+                "value_cols": ["net_delta_ma120", "net_delta_ma240"],
+                "value_labels": ["净两融额120日均增量 (元)", "净两融额240日均增量 (元)"],
                 "signal_col": "signal_score",
-                "title": "融资融券余额 — 杠杆资金趋势",
-                "ylabel": "余额 (元)",
-                "benchmark_lines": []
+                "title": "两融增量 — 净两融额日增量趋势",
+                "ylabel": "增量 (元)",
+                "benchmark_lines": [{"value": 0, "label": "零轴", "color": "#888888", "style": "-"}]
             }
         }),
         "技术面": OrderedDict({
@@ -400,8 +403,8 @@ def _build_indicators_config() -> OrderedDict:
             "50ETF期权VIX": {
                 "file": PROXY_DIR / "P12_50ETF_QVIX信号_日度.csv",
                 "date_col": "date",
-                "value_cols": ["qvix_z5y"],
-                "value_labels": ["QVIX Z-score (5年)"],
+                "value_cols": ["qvix_z"],
+                "value_labels": ["QVIX Z-score (全历史)"],
                 "signal_col": "signal_score",
                 "title": "50ETF QVIX — 期权恐慌指数",
                 "ylabel": "Z-score",
@@ -541,11 +544,16 @@ def compute_dimension_weighted_scores(summary_csv_path: Path) -> OrderedDict:
     try:
         summary = pd.read_csv(summary_csv_path, encoding="utf-8-sig")
         for csv_dim, display_name in DIMENSION_MAP.items():
-            sub = summary[
+            mask = (
                 (summary["dimension"] == csv_dim)
                 & (summary["signal_score"].notna())
                 & (~summary["indicator"].isin(EXCLUDED_WEIGHTED_INDICATORS))
-            ]
+            )
+            # "代理"口径指标（用电量代理发电量、行业指数代理全市场等）不作为真实信号计分，
+            # 与报告第二章展示口径保持一致。
+            if "replication_level" in summary.columns:
+                mask = mask & (summary["replication_level"] != "代理")
+            sub = summary[mask]
             if len(sub) > 0:
                 scores[display_name] = float(sub["signal_score"].mean())
     except Exception as e:

@@ -141,7 +141,8 @@ async def node_synthesize(state: PipelineGraphState) -> PipelineGraphState:
     mf = state.get("market_features", {})
 
     synthesizer = SynthesizerAgent()
-    report = synthesizer.synthesize_report(sector_results, mf)
+    hours_back = state.get("hours_back") or settings.REPORT_HOURS_BACK
+    report = synthesizer.synthesize_report(sector_results, mf, hours_back=hours_back)
 
     state["synthesized_report"] = report
     log_data_pipeline("node_synthesize", "SynthesizerAgent", len(sector_results), "全局综合研报统稿完成")

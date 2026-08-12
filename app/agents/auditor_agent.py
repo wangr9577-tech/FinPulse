@@ -20,7 +20,7 @@ class AuditMetric(BaseModel):
     """
     单个金融指标审查记录
     """
-    metric_name: str = Field(..., description="指标名称 (如 两融交易占比, Shibor 7D利差, ERP)")
+    metric_name: str = Field(..., description="指标名称 (如 两融增量, Shibor 7D利差, ERP)")
     cited_value: str = Field(..., description="研报中引用的数值字符串")
     ground_truth_value: str = Field(..., description="真实六面图/算子数据库中的标准数值")
     is_matched: bool = Field(True, description="数值是否一致")
@@ -44,7 +44,7 @@ AUDITOR_SYSTEM_PROMPT = """你是一位资深的买方合规风控官与金融�
 你的任务是严格审查研报文本中的所有【量化金融数据】，并对照权威【真实择时六面图与特征算子数据库】，核验数据的真实性与准确性。
 
 【审查原则】：
-1. **零容忍金融幻觉**：研报第一章“总评”与第二章“择时六面图”中引用的金融数据（如两融交易占比、Shibor 7D利差、ERP、PMI、全A PE、炸板率等）必须 100% 源于真实数据库。
+1. **零容忍金融幻觉**：研报第一章“总评”与第二章“择时六面图”中引用的金融数据（如两融增量、Shibor 7D利差、ERP、PMI、全A PE、炸板率等）必须 100% 源于真实数据库。
 2. **偏差自动修正**：若发现研报引用的数值与真实数据不符，必须在 `corrected_report_markdown` 中自动替换为真实正确数值。
 
 【输出格式要求】：
@@ -54,7 +54,7 @@ AUDITOR_SYSTEM_PROMPT = """你是一位资深的买方合规风控官与金融�
   "audit_summary": "合规审查总结：研报中引用的 X 项金融数据均与择时六面图数据库完全对齐。",
   "discrepancies": [
     {
-      "metric_name": "两融交易占比",
+      "metric_name": "两融增量",
       "cited_value": "12.5%",
       "ground_truth_value": "11.86%",
       "is_matched": false,
@@ -96,6 +96,21 @@ class AuditorAgent:
         clean_text = re.sub(r',\s*\]', ']', clean_text)
         return clean_text
 
+    @staticmethod
+    def _summary_latest_value_str(indicator: str, default: str) -> str:
+        """从权威最新信号汇总 CSV 取指定指标的最新值字符串，兜底用默认值。"""
+        try:
+            from app.timing_hexagon.plotter import SUMMARY_CSV
+            import pandas as pd
+            frame = pd.read_csv(SUMMARY_CSV, encoding="utf-8-sig")
+            rows = frame[frame["indicator"] == indicator]
+            if len(rows) == 0:
+                return default
+            value = rows.iloc[-1]["latest_value"]
+            return f"{float(value):.2f}%" if pd.notna(value) else default
+        except Exception:
+            return default
+
     def extract_ground_truth_dict(self, market_features: Dict[str, Any]) -> Dict[str, str]:
         """
         从 market_features 中提取标准的金融数据基准值字典 (Ground Truth)
@@ -109,14 +124,24 @@ class AuditorAgent:
         macro = ops.get("macro_liquidity", {})
         val = ops.get("valuation_and_breadth", {})
 
-        gt_dict["两融交易占比"] = f"{round(lev.get('margin_trading_ratio', 0.0)*100, 2)}%"
-        gt_dict["净融资买入占比"] = f"{round(lev.get('net_margin_buy_ratio', 0.0)*100, 2)}%"
-        gt_dict["Shibor 7D 利差"] = f"{macro.get('liquidity_spread', 0.0)}%"
-        gt_dict["M2-M1 剪刀差"] = f"{macro.get('m2_m1_scissors_difference', 0.0)}%"
-        gt_dict["制造业 PMI"] = f"{macro.get('pmi_manufacturing', 50.0)}"
-        gt_dict["股权风险溢价 (ERP)"] = f"{val.get('equity_risk_premium_erp', 0.0)}%"
-        gt_dict["全 A PE-TTM"] = f"{val.get('market_pe', 0.0)}"
-        gt_dict["炸板率"] = f"{round(val.get('zhaban_rate', 0.0)*100, 2)}%"
+        # 只把有真实算子值（非 None/NaN）的指标写入基准库，绝不注入兜底默认值。
+        if lev.get("net_margin_buy_ratio") is not None:
+            gt_dict["净融资买入占比"] = f"{round(lev['net_margin_buy_ratio']*100, 2)}%"
+        if macro.get("liquidity_spread") is not None:
+            gt_dict["Shibor 7D 利差"] = f"{macro['liquidity_spread']}%"
+        if macro.get("m2_m1_scissors_difference") is not None:
+            gt_dict["M2-M1 剪刀差"] = f"{macro['m2_m1_scissors_difference']}%"
+        if macro.get("pmi_manufacturing") is not None:
+            gt_dict["制造业 PMI"] = f"{macro['pmi_manufacturing']}"
+        # 研报第二章展示席勒ERP（Shiller CAPE 口径），基准取权威汇总 CSV 的席勒值，
+        # 避免用旧公式算子值把正确研报数值误判为幻觉而纠偏；汇总缺失则不建基准项。
+        erp_gt = self._summary_latest_value_str("中证800股权风险溢价", "")
+        if erp_gt:
+            gt_dict["股权风险溢价 (ERP)"] = erp_gt
+        if val.get("market_pe") is not None:
+            gt_dict["全 A PE-TTM"] = f"{val['market_pe']}"
+        if val.get("zhaban_rate") is not None:
+            gt_dict["炸板率"] = f"{round(val['zhaban_rate']*100, 2)}%"
 
         return gt_dict
 
@@ -172,16 +197,37 @@ class AuditorAgent:
             if not final_corrected_md or "## 一、总评" not in final_corrected_md:
                 final_corrected_md = report_markdown
 
-            # 维度加权得分行是代码确定性产物（与雷达图同源），LLM 重写全文时
-            # 可能将其幻觉改错；此处强制用权威 CSV 重新计算并替换，保证图文一致。
+            # 第二章「择时六面图」是代码确定性产物（指标行 + 雷达图 + 加权得分行均与
+            # 权威 CSV/图表同源），由 Synthesizer 在本文审查前刚生成且正确。LLM 重写
+            # 全文时可能把指标行幻觉改丢（如丢掉两融增量、改错席勒ERP标题）。此处
+            # 强制用审查输入原文 report_markdown 中的权威第二章替换 LLM 重写版本，
+            # 保证研报第二章永远与代码计算结果一致。
             try:
-                from app.timing_hexagon.plotter import (
-                    SUMMARY_CSV,
-                    force_weighted_score_line_in_markdown,
-                )
-                final_corrected_md = force_weighted_score_line_in_markdown(final_corrected_md, SUMMARY_CSV)
-            except Exception as e_force:
-                app_logger.warning(f"[AuditorAgent] 强制修正维度加权得分行警示: {e_force}")
+                if "## 二、择时六面图" in report_markdown and "## 二、择时六面图" in final_corrected_md:
+                    authoritative_ch2 = "## 二、择时六面图" + report_markdown.split("## 二、择时六面图", 1)[1]
+                    # 去掉原文第二章之后的第三章及后续（只保留第二章主体）
+                    three_marker = "## 三、"
+                    if three_marker in authoritative_ch2:
+                        authoritative_ch2 = authoritative_ch2.split(three_marker, 1)[0].rstrip()
+                    # 在修正版中替换第二章，保留其后的第三章及后续章节
+                    parts = final_corrected_md.split("## 二、择时六面图", 1)
+                    tail = parts[1]
+                    if three_marker in tail:
+                        tail = tail[tail.index(three_marker):]
+                    else:
+                        tail = ""
+                    final_corrected_md = parts[0] + authoritative_ch2 + ("\n\n" + tail if tail else "")
+            except Exception as e_ch2:
+                app_logger.warning(f"[AuditorAgent] 权威第二章重建警示: {e_ch2}")
+                # 兜底：至少强制修正加权得分行
+                try:
+                    from app.timing_hexagon.plotter import (
+                        SUMMARY_CSV,
+                        force_weighted_score_line_in_markdown,
+                    )
+                    final_corrected_md = force_weighted_score_line_in_markdown(final_corrected_md, SUMMARY_CSV)
+                except Exception as e_force:
+                    app_logger.warning(f"[AuditorAgent] 强制修正维度加权得分行警示: {e_force}")
 
             is_passed = len(discrepancies) == 0 and data.get("is_passed", True)
 

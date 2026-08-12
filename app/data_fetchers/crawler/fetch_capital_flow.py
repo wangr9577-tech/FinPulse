@@ -73,6 +73,21 @@ try:
         # Parse columns: 日期, 融资余额(亿), 融资买入额(亿), 融券余量(亿), 融券余额(亿), 融券卖出量(亿), 融资融券余额(亿)
         margin_data["sh"] = df_sse_margin
         log_fetch("sse_margin", "OK", f"上交所两融(macro) {len(df_sse_margin)}条")
+
+        # 同步上交所两融明细到 source_data（01_数据清洗读上交所两融.csv，避免两融数据停留在旧时间点）
+        try:
+            sh_source = pd.DataFrame({
+                "日期": pd.to_datetime(df_sse_margin["日期"], errors="coerce"),
+                "融资融券余额": pd.to_numeric(df_sse_margin["融资融券余额"], errors="coerce"),
+                "融资余额": pd.to_numeric(df_sse_margin["融资余额"], errors="coerce"),
+                "融券余额": pd.to_numeric(df_sse_margin["融券余额"], errors="coerce"),
+                "融资买入额": pd.to_numeric(df_sse_margin["融资买入额"], errors="coerce"),
+            })
+            sh_source = sh_source.dropna(subset=["日期", "融资融券余额"]).sort_values("日期").reset_index(drop=True)
+            save_processed(sh_source, "上交所两融.csv", "flow")
+            print(f"  [OK] 上交所两融同步source_data: {len(sh_source)}条")
+        except Exception as e_sh_src:
+            print(f"  [WARN] 上交所两融同步source_data失败: {e_sh_src}")
 except Exception as e:
     print(f"  [WARN] 上交所两融(macro): {type(e).__name__}: {str(e)[:80]}")
     log_fetch("sse_margin", "FAIL", str(e))
@@ -91,6 +106,21 @@ try:
 
         margin_data["sz"] = df_szse_margin
         log_fetch("szse_margin", "OK", f"深交所两融(macro) {len(df_szse_margin)}条")
+
+        # 同步深交所两融明细到 source_data
+        try:
+            sz_source = pd.DataFrame({
+                "日期": pd.to_datetime(df_szse_margin["日期"], errors="coerce"),
+                "融资融券余额": pd.to_numeric(df_szse_margin["融资融券余额"], errors="coerce"),
+                "融资余额": pd.to_numeric(df_szse_margin["融资余额"], errors="coerce"),
+                "融券余额": pd.to_numeric(df_szse_margin["融券余额"], errors="coerce"),
+                "融资买入额": pd.to_numeric(df_szse_margin["融资买入额"], errors="coerce"),
+            })
+            sz_source = sz_source.dropna(subset=["日期", "融资融券余额"]).sort_values("日期").reset_index(drop=True)
+            save_processed(sz_source, "深交所两融.csv", "flow")
+            print(f"  [OK] 深交所两融同步source_data: {len(sz_source)}条")
+        except Exception as e_sz_src:
+            print(f"  [WARN] 深交所两融同步source_data失败: {e_sz_src}")
 except Exception as e:
     print(f"  [WARN] 深交所两融(macro): {type(e).__name__}: {str(e)[:80]}")
     log_fetch("szse_margin", "FAIL", str(e))

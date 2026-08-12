@@ -75,8 +75,8 @@ def _generate_dimension_summaries(dim_indicators_map: Dict[str, List[str]], llm_
         "{\n"
         '  "流动性维度": "看多；短端资金利率维持低位，货币与信用传导顺畅，流动性整体充裕。",\n'
         '  "宏观经济维度": "中性；制造业 PMI 在荣枯线附近震荡，通胀指标保持低位筑底。",\n'
-        '  "估值维度": "看多；股权风险溢价 (ERP) 处于历史极具性价比区间，绝对估值具备安全边际。",\n'
-        '  "资金面维度": "中性；两融杠杆资金交易占比平稳，新增开户数维持中性震荡。",\n'
+        '  "估值维度": "看多；席勒股权风险溢价 (Shiller ERP) 处于历史极具性价比区间，绝对估值具备安全边际。",\n'
+        '  "资金面维度": "中性；两融增量与新增开户数维持中性震荡。",\n'
         '  "技术面维度": "看多；均线系统维持多头排列，量价时钟归属于低风险象限。",\n'
         '  "情绪与期权面维度": "中性；全市场炸板率与期权 QVIX 波动率维持在安全边界内。"\n'
         "}"
@@ -98,8 +98,8 @@ def _generate_dimension_summaries(dim_indicators_map: Dict[str, List[str]], llm_
         return {
             "流动性维度": "看多；短端资金利率维持低位，货币与信用传导顺畅，整体流动性保持充裕。",
             "宏观经济维度": "中性；制造业 PMI 与通胀数据处于低位复苏筑底期，景气度表现中性。",
-            "估值维度": "看多；股权风险溢价 (ERP) 高于历史均值，整体估值具备较高安全边际。",
-            "资金面维度": "中性；两融杠杆资金交易占比与开户偏好维持中性盘整。",
+            "估值维度": "看多；席勒股权风险溢价 (Shiller ERP) 高于历史均值，整体估值具备较高安全边际。",
+            "资金面维度": "中性；两融增量与开户偏好维持中性盘整。",
             "技术面维度": "看多；主要指数均线排列与量价时钟运行于中低风险象限。",
             "情绪与期权面维度": "中性；全市场炸板率与 50ETF 期权波动率处于安全边界。"
         }
@@ -132,59 +132,23 @@ def build_timing_hexagon_markdown_chapter(
     indicators = timing.get("indicators", [])
 
     def _format_val(ind_name: str, raw_val: Any) -> str:
-        if raw_val is not None and not pd.isna(raw_val) and str(raw_val).strip() != "":
-            try:
-                v = float(raw_val)
-                if abs(v) >= 1e12:
-                    return f"{v / 1e12:.2f}万亿元"
-                elif abs(v) >= 1e8:
-                    return f"{v / 1e8:.2f}亿元"
-                elif any(k in ind_name for k in ["同比", "率", "利差", "剪刀差", "占比", "溢价", "RSI", "偏离度", "新高", "新低"]):
-                    return f"{v:.2f}%" if not str(raw_val).endswith("%") else f"{v:.2f}"
-                elif abs(v) < 100:
-                    return f"{v:.2f}"
-                else:
-                    return f"{v:,.2f}"
-            except Exception:
-                return str(raw_val)
-
-        # 从特色特征算子中查找兜底数据
-        if "SHIBOR" in ind_name or "DR007" in ind_name:
-            return f"{macro.get('shibor_7d', 1.80):.2f}%"
-        elif "M1" in ind_name and "PPI" in ind_name:
-            return f"{macro.get('m2_m1_scissors_difference', 4.0):.2f}%"
-        elif "M1" in ind_name:
-            return f"{macro.get('m1_growth', -3.0):.2f}%"
-        elif "M2" in ind_name:
-            return f"{macro.get('m2_growth', 8.5):.2f}%"
-        elif "PMI" in ind_name:
-            return f"{macro.get('pmi_manufacturing', 50.3):.2f}"
-        elif "CPI" in ind_name:
-            return f"{macro.get('cpi_yoy', 0.2):.2f}%"
-        elif "PPI" in ind_name:
-            return f"{macro.get('ppi_yoy', -0.8):.2f}%"
-        elif "ERP" in ind_name or "溢价" in ind_name:
-            return f"{val.get('equity_risk_premium_erp', 1.68):.2f}%"
-        elif "PE" in ind_name:
-            return f"{val.get('market_pe', 29.4):.2f}倍"
-        elif "PB" in ind_name:
-            return "1.58倍"
-        elif "两融" in ind_name or "融资融券" in ind_name:
-            m_ratio = lev.get("margin_trading_ratio", 0.117)
-            return f"{m_ratio * 100:.2f}%" if m_ratio < 1 else f"{m_ratio:.2f}%"
-        elif "北向" in ind_name:
-            return "净买入"
-        elif "均线" in ind_name or "布林带" in ind_name:
-            return "5239.57点"
-        elif "均线距离" in ind_name:
-            return "-3.78%"
-        elif "RSI" in ind_name:
-            return "45.63"
-        elif "热度" in ind_name or "成交" in ind_name:
-            return "3.65%"
-        elif "VIX" in ind_name or "QVIX" in ind_name:
-            return "18.50"
-        return "1.00"
+        """只格式化真实数据；raw_val 为空由调用方跳过，绝不输出硬编码兜底值。"""
+        if raw_val is None or pd.isna(raw_val) or str(raw_val).strip() == "":
+            return "数据缺失"
+        try:
+            v = float(raw_val)
+            if abs(v) >= 1e12:
+                return f"{v / 1e12:.2f}万亿元"
+            elif abs(v) >= 1e8:
+                return f"{v / 1e8:.2f}亿元"
+            elif any(k in ind_name for k in ["同比", "率", "利差", "剪刀差", "占比", "溢价", "偏离度", "新高", "新低", "通胀方向因子"]):
+                return f"{v:.2f}%"
+            elif abs(v) < 100:
+                return f"{v:.2f}"
+            else:
+                return f"{v:,.2f}"
+        except Exception:
+            return str(raw_val)
 
     # 按维度整理指标
     dim_raw = {
@@ -201,6 +165,13 @@ def build_timing_hexagon_markdown_chapter(
         ind = item.get("indicator", "")
         score = item.get("signal_score")
         raw_v = item.get("latest_value")
+
+        # 拿不到真实数据（latest_value 为空）的指标不展示，杜绝硬编码兜底值冒充真实数据。
+        if raw_v is None or pd.isna(raw_v) or str(raw_v).strip() == "":
+            continue
+        # "代理"口径指标（如用电量代理发电量、行业指数代理全市场）不作为真实信号展示。
+        if item.get("replication_level") == "代理":
+            continue
 
         if score == 1.0:
             signal_str = "看多"
@@ -236,82 +207,9 @@ def build_timing_hexagon_markdown_chapter(
         elif "情绪" in dim or "期权" in dim:
             dim_raw["情绪与期权面维度"].append(line)
 
-    # 补充特征算子补充指标，确保每个维度均包含 3-4 个指标
-    if len(dim_raw["流动性维度"]) < 3:
-        shibor_v = f"{macro.get('shibor_7d', 1.80):.2f}%"
-        line1 = f"- **SHIBOR 1W** | **指标值**：{shibor_v} | **结论**：看多 (低于历史10%分位，资金利率处于低位)"
-        if "SHIBOR 1W" in chart_paths_map:
-            line1 += f"\n  ![SHIBOR 1W 走势图]({chart_paths_map['SHIBOR 1W']})"
-        dim_raw["流动性维度"].append(line1)
-
-        m1_v = f"{macro.get('m2_m1_scissors_difference', 4.0):.2f}%"
-        line2 = f"- **M1同比-PPI同比** | **指标值**：{m1_v} | **结论**：看多 (剪刀差处于扩张通道，企业实际购买力改善)"
-        if "M1同比-PPI同比" in chart_paths_map:
-            line2 += f"\n  ![M1-PPI剪刀差]({chart_paths_map['M1同比-PPI同比']})"
-        dim_raw["流动性维度"].append(line2)
-
-    if len(dim_raw["宏观经济维度"]) < 3:
-        pmi_v = f"{macro.get('pmi_manufacturing', 50.0):.2f}"
-        line1 = f"- **制造业 PMI** | **指标值**：{pmi_v} | **结论**：中性 (当前 PMI 处于荣枯线附近)"
-        if "制造业PMI" in chart_paths_map:
-            line1 += f"\n  ![制造业PMI走势图]({chart_paths_map['制造业PMI']})"
-        dim_raw["宏观经济维度"].append(line1)
-
-        cpi_v = f"{macro.get('cpi_yoy', 0.2):.2f}%"
-        line2 = f"- **CPI 同比** | **指标值**：{cpi_v} | **结论**：中性 (当前 CPI 通胀处于安全区间)"
-        if "CPI同比" in chart_paths_map:
-            line2 += f"\n  ![CPI同比走势图]({chart_paths_map['CPI同比']})"
-        dim_raw["宏观经济维度"].append(line2)
-
-    if len(dim_raw["估值维度"]) < 3:
-        erp_v = f"{val.get('equity_risk_premium_erp', 1.68):.2f}%"
-        line1 = f"- **股权风险溢价 (ERP)** | **指标值**：{erp_v} | **结论**：看多 (性价比突出)"
-        if "股权风险溢价" in chart_paths_map:
-            line1 += f"\n  ![ERP 走势图]({chart_paths_map['股权风险溢价']})"
-        dim_raw["估值维度"].append(line1)
-
-        pe_v = f"{val.get('market_pe', 29.4):.2f}倍"
-        line2 = f"- **PE_TTM中位数** | **指标值**：{pe_v} | **结论**：中性 (位于合理区间)"
-        if "PE_TTM中位数" in chart_paths_map:
-            line2 += f"\n  ![PE中位数 走势图]({chart_paths_map['PE_TTM中位数']})"
-        dim_raw["估值维度"].append(line2)
-
-    if len(dim_raw["资金面维度"]) < 3:
-        margin_v = f"{round(lev.get('margin_trading_ratio', 0.117)*100, 2):.2f}%"
-        line1 = f"- **两融交易占比** | **指标值**：{margin_v} | **结论**：中性 (杠杆情绪温和)"
-        if "融资融券余额" in chart_paths_map:
-            line1 += f"\n  ![两融余额 走势图]({chart_paths_map['融资融券余额']})"
-        dim_raw["资金面维度"].append(line1)
-
-        line2 = f"- **北向资金** | **指标值**：净买入 | **结论**：看多 (外资维持偏向净买入)"
-        if "北向资金" in chart_paths_map:
-            line2 += f"\n  ![北向资金 走势图]({chart_paths_map['北向资金']})"
-        dim_raw["资金面维度"].append(line2)
-
-    if len(dim_raw["技术面维度"]) < 3:
-        line1 = "- **均线排列** | **指标值**：5239.57点 | **结论**：看多 (经典多头排列形态)"
-        if "均线排列" in chart_paths_map:
-            line1 += f"\n  ![均线排列 走势图]({chart_paths_map['均线排列']})"
-        dim_raw["技术面维度"].append(line1)
-
-        line2 = "- **均线距离** | **指标值**：-3.78% | **结论**：看多 (短长均线偏离处在上行通道)"
-        if "均线距离" in chart_paths_map:
-            line2 += f"\n  ![均线距离 走势图]({chart_paths_map['均线距离']})"
-        dim_raw["技术面维度"].append(line2)
-
-    if len(dim_raw["情绪与期权面维度"]) < 3:
-        line1 = f"- **成交热度** | **指标值**：3.65% | **结论**：中性 (交投情绪平稳)"
-        if "成交热度" in chart_paths_map:
-            line1 += f"\n  ![成交热度 走势图]({chart_paths_map['成交热度']})"
-        dim_raw["情绪与期权面维度"].append(line1)
-
-        line2 = "- **50ETF 期权 VIX** | **指标值**：18.50 | **结论**：中性 (波动率维持在安全边界范畴)"
-        if "50ETF期权VIX" in chart_paths_map:
-            line2 += f"\n  ![QVIX 恐慌指数]({chart_paths_map['50ETF期权VIX']})"
-        dim_raw["情绪与期权面维度"].append(line2)
-
-    # 截取各维度前 4 个指标
-    final_dim_map = {k: v[:4] for k, v in dim_raw.items()}
+    # 不再补充硬编码兜底指标：只有真实数据（latest_value 非空）且非"代理"口径的指标才会被展示。
+    # 各维度按真实有效指标数量完整呈现，拿不到真实数据或口径是代理就不放。
+    final_dim_map = {k: v[:6] for k, v in dim_raw.items()}
 
     # 调用 LLM 生成各维度的总结论
     llm_fac = llm_factory or LLMFactory()
@@ -466,7 +364,8 @@ class SynthesizerAgent:
     def synthesize_report(
         self,
         sector_results: List[SectorAnalysisResult],
-        market_features: Dict[str, Any]
+        market_features: Dict[str, Any],
+        hours_back: Optional[float] = None
     ) -> SynthesizedReportResult:
         """
         主编全局报告直拼合成主入口：
@@ -474,8 +373,12 @@ class SynthesizerAgent:
         2. 渲染【## 三、资讯分析】 (代码直拼各板块总结，100% 无损)
         3. 调用 LLM 生成【## 一、总评】 (专精策略总揽、风险警示与跨行业推演)
         4. 代码纯文本直拼全篇研报 Markdown
+
+        hours_back：本次运行实际使用的分析时间窗口（None 时取配置默认值），
+        保证报告正文所述窗口与本次抓取/分析窗口一致。
         """
-        hours_back = settings.REPORT_HOURS_BACK
+        if hours_back is None:
+            hours_back = settings.REPORT_HOURS_BACK
         log_agent_action("SynthesizerAgent", "Synthesizing Report (Direct Assembly)", f"Sector Count: {len(sector_results)}, Hours Back: {hours_back}")
 
         today_str = datetime.date.today().strftime("%Y年%m月%d日")
@@ -579,9 +482,25 @@ def format_market_features_prompt(market_features: Dict[str, Any]) -> str:
     macro = ops.get("macro_liquidity", {})
     val = ops.get("valuation_and_breadth", {})
 
+    parts = []
+    if lev.get("net_margin_buy_ratio") is not None:
+        parts.append(f"净融资买入占比 {round(lev['net_margin_buy_ratio']*100, 2)}%")
+    if macro.get("liquidity_spread") is not None:
+        parts.append(f"Shibor 7D 利差 {macro['liquidity_spread']}%")
+    if macro.get("m2_m1_scissors_difference") is not None:
+        parts.append(f"M2-M1 剪刀差 {macro['m2_m1_scissors_difference']}%")
+    if macro.get("pmi_manufacturing") is not None:
+        parts.append(f"PMI {macro['pmi_manufacturing']}")
+    if val.get("equity_risk_premium_erp") is not None:
+        parts.append(f"ERP {val['equity_risk_premium_erp']}%")
+    if val.get("market_pe") is not None:
+        parts.append(f"全 A PE {val['market_pe']}")
+    if val.get("zhaban_rate") is not None:
+        parts.append(f"炸板率 {round(val['zhaban_rate']*100, 2)}%")
+
+    body = " | ".join(parts) if parts else "暂无可用特征算子数据"
     return (
         f"【全市场金融资金与宏观环境 (供第一章总评与第二章择时六面图使用)】:\n"
-        f"- 两融资金情绪: 交易占比 {round(lev.get('margin_trading_ratio', 0.0)*100, 2)}% | 净融资买入占比 {round(lev.get('net_margin_buy_ratio', 0.0)*100, 2)}%\n"
-        f"- 宏观货币流动性: Shibor 7D 利差 {macro.get('liquidity_spread', 0.0)}% | M2-M1 剪刀差 {macro.get('m2_m1_scissors_difference', 0.0)}% | PMI {macro.get('pmi_manufacturing', 50.0)}\n"
-        f"- 估值与微观结构: ERP {val.get('equity_risk_premium_erp', 0.0)}% | 全 A PE {val.get('market_pe', 0.0)} | 炸板率 {round(val.get('zhaban_rate', 0.0)*100, 2)}%"
+        f"- 两融资金情绪: 净融资买入占比见择时六面图两融增量指标\n"
+        f"- 特征算子: {body}"
     )

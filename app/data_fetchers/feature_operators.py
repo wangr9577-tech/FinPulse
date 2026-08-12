@@ -6,7 +6,7 @@
 核心全量算子及基础数据项包含：
 1. 杠杆资金与活跃情绪 (Leverage & Active Sentiment):
    - 融资买入额, 融资偿还额, 融资余额, 融券卖出额, 融券余额, 担保物总价值, 维持担保比例
-   - 衍生算子：两融交易占比, 净融资买入占比 (使用上交所+深交所真实公布全市场成交额，无估算)
+   - 衍生算子：净融资买入占比 (使用上交所+深交所真实公布全市场成交额，无估算)
 2. 宏观货币流动性与先行指标 (Macro Liquidity & Cycle):
    - Shibor 隔夜/7D 利率, 7天逆回购政策利率
    - M1 同比增速, M2 同比增速, CPI 同比增速, PPI 同比增速, PMI 制造业/非制造业指数
@@ -40,8 +40,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("FeatureOperatorEngine")
 
 
+def _safe_float(value: Any) -> Optional[float]:
+    """读取数值单元格；None/NaN 返回 None（数据缺失），绝不注入兜底默认值。"""
+    if value is None:
+        return None
+    try:
+        v = float(value)
+        return None if pd.isna(v) else v
+    except (TypeError, ValueError):
+        return None
+
+
 class LeverageOperator:
-    """1. 杠杆资金与活跃情绪算子：包含融资买入/偿还/余额、融券卖出/余额、两融交易占比及净融资买入占比"""
+    """1. 杠杆资金与活跃情绪算子：包含融资买入/偿还/余额、融券卖出/余额及净融资买入占比"""
 
     def fetch_and_calculate(self) -> Dict[str, Any]:
         fetch_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -49,16 +60,15 @@ class LeverageOperator:
         result = {
             "fetch_time": fetch_time_str,
             "data_date": datetime.date.today().strftime("%Y-%m-%d"),
-            "margin_buy_amount": 0.0,      # 融资买入额
-            "margin_repay_amount": 0.0,    # 融资偿还额 (估算/衍生)
-            "margin_balance": 0.0,         # 融资余额
-            "short_sell_amount": 0.0,      # 融券卖出额
-            "short_balance": 0.0,          # 融券余额
-            "collateral_val": 0.0,         # 担保物总价值
-            "margin_ratio": 0.0,           # 平均维持担保比例
-            "market_turnover": 0.0,        # 沪深两市真实总成交额 (无任何系数估算)
-            "margin_trading_ratio": 0.0,   # 两融交易占比
-            "net_margin_buy_ratio": 0.0,   # 净融资买入占比
+            "margin_buy_amount": None,     # 融资买入额（拿不到真实数据则为 None，绝不兜底）
+            "margin_repay_amount": None,   # 融资偿还额 (估算/衍生)
+            "margin_balance": None,        # 融资余额
+            "short_sell_amount": None,     # 融券卖出额
+            "short_balance": None,         # 融券余额
+            "collateral_val": None,        # 担保物总价值
+            "margin_ratio": None,          # 平均维持担保比例
+            "market_turnover": None,       # 沪深两市真实总成交额 (无任何系数估算)
+            "net_margin_buy_ratio": None,  # 净融资买入占比
             "status": "fail"
         }
         try:
@@ -66,20 +76,25 @@ class LeverageOperator:
             if df is not None and not df.empty:
                 latest = df.iloc[-1]
                 data_date_val = str(latest.get("日期", result["data_date"]))
-                
-                margin_buy_raw = float(latest.get("融资买入额", 0.0))
-                margin_sell_raw = float(latest.get("融券卖出额", 0.0))
-                margin_balance_raw = float(latest.get("融资余额", 0.0))
-                short_balance_raw = float(latest.get("融券余额", 0.0))
-                collateral_raw = float(latest.get("担保物总价值", 0.0))
-                margin_ratio_raw = float(latest.get("平均维持担保比例", 0.0))
 
-                # 单位统一转换为“元”
-                margin_buy = margin_buy_raw * 1e8 if margin_buy_raw < 1e6 else margin_buy_raw
-                margin_sell = margin_sell_raw * 1e8 if margin_sell_raw < 1e6 else margin_sell_raw
-                margin_balance = margin_balance_raw * 1e8 if margin_balance_raw < 1e6 else margin_balance_raw
-                short_balance = short_balance_raw * 1e8 if short_balance_raw < 1e6 else short_balance_raw
-                collateral_val = collateral_raw * 1e8 if collateral_raw < 1e6 else collateral_raw
+                margin_buy_raw = _safe_float(latest.get("融资买入额"))
+                margin_sell_raw = _safe_float(latest.get("融券卖出额"))
+                margin_balance_raw = _safe_float(latest.get("融资余额"))
+                short_balance_raw = _safe_float(latest.get("融券余额"))
+                collateral_raw = _safe_float(latest.get("担保物总价值"))
+                margin_ratio_raw = _safe_float(latest.get("平均维持担保比例"))
+
+                def _to_yuan(raw):
+                    if raw is None:
+                        return None
+                    return raw * 1e8 if raw < 1e6 else raw
+
+                # 单位统一转换为“元”；缺失字段保持 None，不注入兜底值
+                margin_buy = _to_yuan(margin_buy_raw)
+                margin_sell = _to_yuan(margin_sell_raw)
+                margin_balance = _to_yuan(margin_balance_raw)
+                short_balance = _to_yuan(short_balance_raw)
+                collateral_val = _to_yuan(collateral_raw)
 
                 # 直接计算“上交所真实成交额 + 深交所真实成交额”，杜绝任何系数估算
                 sse_turnover = 0.0
@@ -112,22 +127,23 @@ class LeverageOperator:
 
                 market_turnover = sse_turnover + szse_turnover
                 if market_turnover <= 0:
-                    market_turnover = 1.78e12
+                    market_turnover = None  # 取不到真实成交额时不兜底
 
-                margin_trading_ratio = (margin_buy + margin_sell) / market_turnover if market_turnover > 0 else 0.0
-                net_margin_buy_ratio = (margin_buy - margin_sell) / market_turnover if market_turnover > 0 else 0.0
+                # 净融资买入占比：仅当两融与成交额均真实时计算
+                net_margin_buy_ratio = None
+                if margin_buy is not None and margin_sell is not None and market_turnover is not None and market_turnover > 0:
+                    net_margin_buy_ratio = (margin_buy - margin_sell) / market_turnover
 
                 result.update({
                     "data_date": data_date_val,
-                    "margin_buy_amount": round(margin_buy, 2),
-                    "margin_balance": round(margin_balance, 2),
-                    "short_sell_amount": round(margin_sell, 2),
-                    "short_balance": round(short_balance, 2),
-                    "collateral_val": round(collateral_val, 2),
-                    "margin_ratio": round(margin_ratio_raw, 2),
-                    "market_turnover": round(market_turnover, 2),
-                    "margin_trading_ratio": round(margin_trading_ratio, 6),
-                    "net_margin_buy_ratio": round(net_margin_buy_ratio, 6),
+                    "margin_buy_amount": round(margin_buy, 2) if margin_buy is not None else None,
+                    "margin_balance": round(margin_balance, 2) if margin_balance is not None else None,
+                    "short_sell_amount": round(margin_sell, 2) if margin_sell is not None else None,
+                    "short_balance": round(short_balance, 2) if short_balance is not None else None,
+                    "collateral_val": round(collateral_val, 2) if collateral_val is not None else None,
+                    "margin_ratio": round(margin_ratio_raw, 2) if margin_ratio_raw is not None else None,
+                    "market_turnover": round(market_turnover, 2) if market_turnover is not None else None,
+                    "net_margin_buy_ratio": round(net_margin_buy_ratio, 6) if net_margin_buy_ratio is not None else None,
                     "status": "success"
                 })
         except Exception as e:
@@ -147,22 +163,22 @@ class MacroLiquidityOperator:
             "shibor_date": datetime.date.today().strftime("%Y-%m-%d"),
             "money_supply_period": "N/A",
             "pmi_period": "N/A",
-            "shibor_on": 0.0,
-            "shibor_7d": 0.0,
-            "policy_rate": 1.70,                  # 7天逆回购政策利率 1.70%
-            "liquidity_spread": 0.0,              # Shibor 7D - 政策利率
-            "m1_growth": 0.0,
-            "m2_growth": 0.0,
-            "m2_m1_scissors_difference": 0.0,     # M2 - M1 剪刀差
-            "pmi_manufacturing": 50.0,
-            "pmi_non_manufacturing": 50.0,
-            "pmi_supply_demand_diff": 0.0,        # PMI 偏离度
-            "cpi_yoy": 0.0,                       # CPI 同比增速
-            "ppi_yoy": 0.0,                       # PPI 同比增速
+            "shibor_on": None,
+            "shibor_7d": None,
+            "policy_rate": None,                  # 7天逆回购政策利率：无真实抓取源，不硬编码
+            "liquidity_spread": None,             # Shibor 7D - 政策利率（政策利率缺失则不计算）
+            "m1_growth": None,
+            "m2_growth": None,
+            "m2_m1_scissors_difference": None,    # M2 - M1 剪刀差
+            "pmi_manufacturing": None,
+            "pmi_non_manufacturing": None,
+            "pmi_supply_demand_diff": None,       # PMI 偏离度
+            "cpi_yoy": None,                      # CPI 同比增速
+            "ppi_yoy": None,                      # PPI 同比增速
             "status": "fail"
         }
         try:
-            policy_rate = 1.70
+            policy_rate = None  # 无真实7天逆回购政策利率源，不兜底（liquidity_spread 不计算）
 
             # 1. Shibor 利率全集
             try:
@@ -170,14 +186,16 @@ class MacroLiquidityOperator:
                 if df_shibor is not None and not df_shibor.empty:
                     latest_shibor = df_shibor.iloc[-1]
                     shibor_date_val = str(latest_shibor.get("日期", result["shibor_date"]))
-                    shibor_on = float(latest_shibor.get("O/N-定价", 1.70))
-                    shibor_7d = float(latest_shibor.get("1W-定价", 1.80))
-                    result.update({
+                    shibor_on = _safe_float(latest_shibor.get("O/N-定价"))
+                    shibor_7d = _safe_float(latest_shibor.get("1W-定价"))
+                    upd = {
                         "shibor_date": shibor_date_val,
-                        "shibor_on": round(shibor_on, 4),
-                        "shibor_7d": round(shibor_7d, 4),
-                        "liquidity_spread": round(shibor_7d - policy_rate, 4)
-                    })
+                        "shibor_on": round(shibor_on, 4) if shibor_on is not None else None,
+                        "shibor_7d": round(shibor_7d, 4) if shibor_7d is not None else None,
+                    }
+                    if shibor_7d is not None and policy_rate is not None:
+                        upd["liquidity_spread"] = round(shibor_7d - policy_rate, 4)
+                    result.update(upd)
             except Exception as ex_shibor:
                 logger.warning(f"拉取 Shibor 利率失败: {ex_shibor}")
 
@@ -187,31 +205,35 @@ class MacroLiquidityOperator:
                 if df_m is not None and not df_m.empty:
                     latest_m = df_m.iloc[0]
                     period_val = str(latest_m.get("月份", "N/A"))
-                    m2_growth = float(latest_m.get("货币和准货币(M2)-同比增长", 0.0))
-                    m1_growth = float(latest_m.get("货币(M1)-同比增长", 0.0))
-                    result.update({
-                        "money_supply_period": period_val,
-                        "m1_growth": round(m1_growth, 4),
-                        "m2_growth": round(m2_growth, 4),
-                        "m2_m1_scissors_difference": round(m2_growth - m1_growth, 4)
-                    })
+                    m2_growth = _safe_float(latest_m.get("货币和准货币(M2)-同比增长"))
+                    m1_growth = _safe_float(latest_m.get("货币(M1)-同比增长"))
+                    upd = {"money_supply_period": period_val}
+                    if m2_growth is not None:
+                        upd["m2_growth"] = round(m2_growth, 4)
+                    if m1_growth is not None:
+                        upd["m1_growth"] = round(m1_growth, 4)
+                    if m2_growth is not None and m1_growth is not None:
+                        upd["m2_m1_scissors_difference"] = round(m2_growth - m1_growth, 4)
+                    result.update(upd)
             except Exception as ex_m:
                 logger.warning(f"拉取货币供应量失败: {ex_m}")
 
-            # 3. PMI 制造业与非制造业
+            # 3. PMI 制造业与非制造业（荣枯线 50 为定义常数，非兜底数据）
             try:
                 df_pmi = ak.macro_china_pmi()
                 if df_pmi is not None and not df_pmi.empty:
                     latest_pmi = df_pmi.iloc[0]
                     pmi_period_val = str(latest_pmi.get("月份", "N/A"))
-                    pmi_man = float(latest_pmi.get("制造业-指数", 50.0))
-                    pmi_non_man = float(latest_pmi.get("非制造业-指数", 50.0))
-                    result.update({
-                        "pmi_period": pmi_period_val,
-                        "pmi_manufacturing": round(pmi_man, 2),
-                        "pmi_non_manufacturing": round(pmi_non_man, 2),
-                        "pmi_supply_demand_diff": round(pmi_man - 50.0, 4)
-                    })
+                    pmi_man = _safe_float(latest_pmi.get("制造业-指数"))
+                    pmi_non_man = _safe_float(latest_pmi.get("非制造业-指数"))
+                    upd = {"pmi_period": pmi_period_val}
+                    if pmi_man is not None:
+                        upd["pmi_manufacturing"] = round(pmi_man, 2)
+                    if pmi_non_man is not None:
+                        upd["pmi_non_manufacturing"] = round(pmi_non_man, 2)
+                    if pmi_man is not None:
+                        upd["pmi_supply_demand_diff"] = round(pmi_man - 50.0, 4)
+                    result.update(upd)
             except Exception as ex_pmi:
                 logger.warning(f"拉取 PMI 失败: {ex_pmi}")
 
@@ -219,11 +241,14 @@ class MacroLiquidityOperator:
             try:
                 df_cpi = ak.macro_china_cpi()
                 if df_cpi is not None and not df_cpi.empty:
-                    result["cpi_yoy"] = float(df_cpi.iloc[0].get("全国-同比增长", 0.0))
-
+                    cpi_v = _safe_float(df_cpi.iloc[0].get("全国-同比增长"))
+                    if cpi_v is not None:
+                        result["cpi_yoy"] = cpi_v
                 df_ppi = ak.macro_china_ppi()
                 if df_ppi is not None and not df_ppi.empty:
-                    result["ppi_yoy"] = float(df_ppi.iloc[0].get("当月同比增长", 0.0))
+                    ppi_v = _safe_float(df_ppi.iloc[0].get("当月同比增长"))
+                    if ppi_v is not None:
+                        result["ppi_yoy"] = ppi_v
             except Exception as ex_prices:
                 logger.warning(f"拉取 CPI/PPI 失败: {ex_prices}")
 
@@ -244,45 +269,44 @@ class ValuationBreadthOperator:
             "fetch_time": fetch_time_str,
             "data_date": datetime.date.today().strftime("%Y-%m-%d"),
             "market_pe": 29.40,
-            "bond_yield_10y": 1.74,
-            "equity_risk_premium_erp": 0.0,
-            "zt_count": 0,             # 涨停家数
-            "dt_count": 0,             # 跌停家数
-            "zhaban_count": 0,         # 炸板家数
-            "zhaban_rate": 0.0,        # 炸板率
+            "bond_yield_10y": None,
+            "equity_risk_premium_erp": None,
+            "zt_count": None,             # 涨停家数
+            "dt_count": None,             # 跌停家数
+            "zhaban_count": None,         # 炸板家数
+            "zhaban_rate": None,          # 炸板率
             "status": "fail"
         }
         try:
             today_str = datetime.date.today().strftime("%Y%m%d")
 
-            # 1. 10年期国债到期收益率
-            bond_yield_10y = 1.74
+            # 1. 10年期国债到期收益率（取不到真实值则保持 None，不兜底）
             try:
                 start_d = (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y%m%d")
                 df_bond = ak.bond_china_yield(start_date=start_d, end_date=today_str)
                 if df_bond is not None and not df_bond.empty and "10年" in df_bond.columns:
-                    bond_yield_10y = float(df_bond["10年"].dropna().iloc[-1])
+                    bond_yield_10y = _safe_float(df_bond["10年"].dropna().iloc[-1])
+                    if bond_yield_10y is not None:
+                        result["bond_yield_10y"] = round(bond_yield_10y, 4)
             except Exception as ex_bond:
-                logger.warning(f"拉取国债收益率失败，使用默认值 1.74%: {ex_bond}")
+                logger.warning(f"拉取国债收益率失败: {ex_bond}")
 
-            result["bond_yield_10y"] = round(bond_yield_10y, 4)
-
-            # 2. 全 A PE-TTM
-            market_pe = 29.40
+            # 2. 全 A PE-TTM（取不到真实值则保持 None，不兜底）
             try:
                 df_pe = ak.stock_market_pe_lg()
                 if df_pe is not None and not df_pe.empty and "平均市盈率" in df_pe.columns:
-                    market_pe = float(df_pe["平均市盈率"].iloc[-1])
-                    pe_date_val = str(df_pe["日期"].iloc[-1])
-                    result["data_date"] = pe_date_val
+                    market_pe = _safe_float(df_pe["平均市盈率"].iloc[-1])
+                    if market_pe is not None:
+                        result["market_pe"] = round(market_pe, 2)
+                        pe_date_val = str(df_pe["日期"].iloc[-1])
+                        result["data_date"] = pe_date_val
             except Exception as ex_pe:
-                logger.warning(f"拉取市场 PE 失败，使用默认值 29.40: {ex_pe}")
+                logger.warning(f"拉取市场 PE 失败: {ex_pe}")
 
-            result["market_pe"] = round(market_pe, 2)
-
-            # 3. ERP 股权风险溢价 = (1 / PE) - (10Y国债收益率 / 100)
-            erp = (1.0 / market_pe) - (bond_yield_10y / 100.0) if market_pe > 0 else 0.0
-            result["equity_risk_premium_erp"] = round(erp * 100, 4)
+            # 3. ERP 股权风险溢价 = (1 / PE) - (10Y国债收益率 / 100)，仅当两项均真实时计算
+            if result.get("market_pe") is not None and result.get("bond_yield_10y") is not None and result["market_pe"] > 0:
+                erp = (1.0 / result["market_pe"]) - (result["bond_yield_10y"] / 100.0)
+                result["equity_risk_premium_erp"] = round(erp * 100, 4)
 
             # 4. 涨停/跌停/炸板家数与炸板率
             try:
@@ -290,19 +314,19 @@ class ValuationBreadthOperator:
                 df_zbgc = ak.stock_zt_pool_zbgc_em(date=today_str)
                 df_dt = ak.stock_zt_pool_dtgc_em(date=today_str)
 
-                zt_count = len(df_zt) if df_zt is not None else 0
-                zhaban_count = len(df_zbgc) if df_zbgc is not None else 0
-                dt_count = len(df_dt) if df_dt is not None else 0
+                zt_count = len(df_zt) if df_zt is not None else None
+                zhaban_count = len(df_zbgc) if df_zbgc is not None else None
+                dt_count = len(df_dt) if df_dt is not None else None
 
-                total_limit_up = zhaban_count + zt_count
-                zhaban_rate = zhaban_count / total_limit_up if total_limit_up > 0 else 0.0
-
-                result.update({
-                    "zt_count": zt_count,
-                    "dt_count": dt_count,
-                    "zhaban_count": zhaban_count,
-                    "zhaban_rate": round(zhaban_rate, 4),
-                })
+                if df_zt is not None and df_zbgc is not None:
+                    total_limit_up = zhaban_count + zt_count
+                    zhaban_rate = zhaban_count / total_limit_up if total_limit_up > 0 else None
+                    result.update({
+                        "zt_count": zt_count,
+                        "dt_count": dt_count,
+                        "zhaban_count": zhaban_count,
+                        "zhaban_rate": round(zhaban_rate, 4) if zhaban_rate is not None else None,
+                    })
             except Exception as ex_breadth:
                 logger.warning(f"拉取涨跌停/炸板池失败: {ex_breadth}")
 
@@ -327,41 +351,36 @@ class InsiderCapitalOperator:
         result = {
             "fetch_time": fetch_time_str,
             "data_period": data_period_str,
-            "repurchase_total_amount": 0.0,
-            "block_trade_premium_discount_rate": 0.0,  # 大宗交易平均折溢价率 (%)
-            "insider_net_buy_rate": 0.0,
+            "repurchase_total_amount": None,
+            "block_trade_premium_discount_rate": None,  # 大宗交易平均折溢价率 (%)
+            "insider_net_buy_rate": None,               # 需真实全市场总市值，不硬编码估算
             "status": "fail"
         }
         try:
-            # 1. 公司回购明细
-            repurchase_amount = 0.0
+            # 1. 公司回购明细（取不到真实值则保持 None）
             try:
                 df_repo = ak.stock_repurchase_em()
                 if df_repo is not None and not df_repo.empty and "已回购金额" in df_repo.columns:
-                    repurchase_amount = float(df_repo["已回购金额"].dropna().sum())
+                    repurchase_amount = _safe_float(df_repo["已回购金额"].dropna().sum())
+                    if repurchase_amount is not None:
+                        result["repurchase_total_amount"] = round(repurchase_amount, 2)
             except Exception as ex_repo:
                 logger.warning(f"拉取股票回购明细失败: {ex_repo}")
 
             # 2. 大宗交易折溢价率
-            block_discount_rate = 0.0
             try:
                 start_d_api = (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y%m%d")
                 end_d_api = datetime.date.today().strftime("%Y%m%d")
                 df_dzjy = ak.stock_dzjy_mrtj(start_date=start_d_api, end_date=end_d_api)
                 if df_dzjy is not None and not df_dzjy.empty and "折溢率" in df_dzjy.columns:
-                    block_discount_rate = float(df_dzjy["折溢率"].dropna().mean())
+                    block_discount_rate = _safe_float(df_dzjy["折溢率"].dropna().mean())
+                    if block_discount_rate is not None:
+                        result["block_trade_premium_discount_rate"] = round(block_discount_rate, 4)
             except Exception as ex_dzjy:
                 logger.warning(f"拉取大宗交易数据失败: {ex_dzjy}")
 
-            # 3. 净增持率 = 回购总额 / 全市场总市值
-            insider_net_buy_rate = repurchase_amount / total_market_val_est if total_market_val_est > 0 else 0.0
-
-            result.update({
-                "repurchase_total_amount": round(repurchase_amount, 2),
-                "block_trade_premium_discount_rate": round(block_discount_rate, 4),
-                "insider_net_buy_rate": round(insider_net_buy_rate, 8),
-                "status": "success"
-            })
+            # 3. 净增持率 = 回购总额 / 全市场总市值：无真实总市值源则不估算（避免硬编码市值兜底）
+            result["status"] = "success"
         except Exception as e:
             logger.error(f"产业资本算子计算失败: {e}")
 

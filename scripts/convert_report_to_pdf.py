@@ -300,8 +300,8 @@ def convert_markdown_to_html(md_text: str) -> str:
     <div class="header-banner">
         <span class="badge">机密 · 买方投研专用</span>
         <div class="header-meta">
-            <span>生成时间：{Path(__file__).stat().st_mtime}</span>
-            <span>文档编号：REP-20260727-01</span>
+            <span>生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</span>
+            <span>文档编号：REP-{datetime.now().strftime('%Y%m%d')}-01</span>
         </div>
     </div>
     {html_body}
@@ -383,7 +383,7 @@ if __name__ == "__main__":
     sample_md = """# 2026年07月27日 智能投研全市场宏观与行业综合研报
 
 ## 一、首席策略总揽
-今日全市场运行核心逻辑为“内外流动性分化下的结构性行情”。两融交易占比 **11.70%**，Shibor 7D 利差为 **-0.3%**，全 A ERP 溢价为 **1.6824%**。
+今日全市场运行核心逻辑为“内外流动性分化下的结构性行情”。两融增量 **提速**，Shibor 7D 利差为 **-0.3%**，全 A ERP 溢价为 **1.6824%**。
 
 ## 二、核心宏观与市场风险警示
 - [风险警示] 外部利率上行风险：10年期美债收益率攀升，压制全市场高估值板块。

@@ -137,7 +137,8 @@ FILE_MAPPING_TO_SOURCE_DATA = {
     "PPI同比_月度.csv": "PPI.csv",
     "发电量同比_月度.csv": "全社会用电量_发电量代理.csv",
     "新增开户数_月度.csv": "新增投资者.csv",
-    "QVIX_日度.csv": "50ETF_QVIX.csv"
+    # QVIX 由 fetch_options.py 直接同步 date/close 到 50ETF_QVIX.csv（01 清洗读 close 列），
+    # 不再经 QVIX_日度.csv（vix_proxy 列名）映射，避免列名不匹配导致 close 缺失。
 }
 
 
@@ -170,12 +171,18 @@ def merge_incremental_dataframe(existing_df: pd.DataFrame, new_df: pd.DataFrame,
     try:
         # 合并新旧 DataFrame
         combined = pd.concat([existing_df, new_df], ignore_index=True)
+        main_key = key_cols[0]
+
+        # 主键类型统一：source_data 旧行为字符串日期、新抓取为 datetime，混合后按原样无法去重。
+        # 若主键多数可解析为日期则统一转成 datetime 再去重排序；
+        # 若为中文月份("2026年07月份")/季度("2026年第1季度")等不可解析文本，保持字符串去重排序，
+        # 避免把整表清空。
+        converted = pd.to_datetime(combined[main_key], errors="coerce")
+        if converted.notna().mean() >= 0.5:
+            combined[main_key] = converted
+
         # 按主键去重，保留最新抓取的记录 keep='last'
         combined = combined.drop_duplicates(subset=key_cols, keep="last")
-
-        # 尝试按第一个主键列排序
-        main_key = key_cols[0]
-        combined[main_key] = pd.to_datetime(combined[main_key], errors="coerce")
         combined = combined.dropna(subset=[main_key]).sort_values(main_key).reset_index(drop=True)
         return combined
     except Exception as e:

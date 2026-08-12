@@ -46,6 +46,13 @@ try:
         save_path.mkdir(parents=True, exist_ok=True)
         df_money.to_csv(save_path / f"money_supply_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
+        # 同步货币供应量原始表到 source_data（01_数据清洗读货币供应量.csv，避免M1/M2停留在旧时间点）
+        try:
+            save_processed(df_money, "货币供应量.csv", "liquidity")
+            print(f"  [OK] 货币供应量同步source_data: {len(df_money)}条")
+        except Exception as e_money_src:
+            print(f"  [WARN] 货币供应量同步source_data失败: {e_money_src}")
+
         date_col = [c for c in cols if "月" in c][0]
         m1_col = [c for c in cols if "M1" in c.upper() and "同比" in c][0]
         m2_col = [c for c in cols if "M2" in c.upper() and "同比" in c][0]
@@ -190,6 +197,13 @@ try:
         save_path = RAW / "pbc" / "social_financing"
         save_path.mkdir(parents=True, exist_ok=True)
         df_sf.to_csv(save_path / f"soc_fin_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
+
+        # 同步社融增量原始表到 source_data（01_数据清洗读社会融资规模增量.csv）
+        try:
+            save_processed(df_sf, "社会融资规模增量.csv", "liquidity")
+            print(f"  [OK] 社会融资规模增量同步source_data: {len(df_sf)}条")
+        except Exception as e_sf_src:
+            print(f"  [WARN] 社会融资规模增量同步source_data失败: {e_sf_src}")
 
         # Parse the social financing data
         cols_sf = list(df_sf.columns)

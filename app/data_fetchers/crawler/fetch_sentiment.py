@@ -37,7 +37,7 @@ try:
         try:
             df_hs300 = ak.stock_zh_index_daily(symbol="sh000300")
         except Exception as e2:
-            print(f"  Sina源也失败: {type(e).__name__}")
+            print(f"  Sina源也失败: {type(e2).__name__}")
 
     if df_hs300 is not None and not df_hs300.empty:
         print(f"  沪深300行情形状: {df_hs300.shape}")
@@ -170,6 +170,17 @@ try:
         save_processed(df_div, "行业分歧度_日度.csv", "sentiment")
         print(f"  [OK] 行业分歧度: {len(df_div)}条, {success_count}个行业, 最新 divergence={df_div['divergence'].iloc[-1]:.3f}")
         log_fetch("market", "OK", f"行业分歧度 {success_count}行业")
+
+        # 同步行业分歧度到 source_data（01_数据清洗读行业分歧度_代理.csv）
+        try:
+            save_processed(
+                df_div[["date", "industry_count", "divergence"]],
+                "行业分歧度_代理.csv",
+                "sentiment",
+            )
+            print(f"  [OK] 行业分歧度同步source_data: {len(df_div)}条")
+        except Exception as e_div_src:
+            print(f"  [WARN] 行业分歧度同步source_data失败: {e_div_src}")
     else:
         print(f"  [WARN] 行业指数不足8个({len(industry_returns)}), 跳过行业分歧度")
         log_fetch("market", "WARN", f"行业分歧度: 仅{len(industry_returns)}行业")
@@ -193,6 +204,13 @@ try:
         save_path = RAW / "market" / "fund_position"
         save_path.mkdir(parents=True, exist_ok=True)
         df_position.to_csv(save_path / f"fund_position_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
+
+        # 同步基金资产配置原始表到 source_data（01_数据清洗读基金资产配置_代理.csv，保持仓位数据最新）
+        try:
+            save_processed(df_position, "基金资产配置_代理.csv", "sentiment")
+            print(f"  [OK] 基金资产配置同步source_data: {len(df_position)}条")
+        except Exception as e_fund_src:
+            print(f"  [WARN] 基金资产配置同步source_data失败: {e_fund_src}")
 
         # 列名映射 (中文列名)
         date_col = cols[0]       # 报告期

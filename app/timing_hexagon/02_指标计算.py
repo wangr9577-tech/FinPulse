@@ -101,7 +101,15 @@ market_calendar_base = read_clean("中证800日行情_清洗后.csv")
 MARKET_DATES = pd.DatetimeIndex(
     market_calendar_base["date"].dropna().drop_duplicates().sort_values()
 )
-AS_OF_DATE = MARKET_DATES.max()
+# 统一截面：默认取最新交易日；可用环境变量 TIMING_AS_OF=YYYY-MM-DD 生成历史时点报告
+# （如 TIMING_AS_OF=2026-08-07），各指标仅采用该截面前已生效的数据，避免前视偏差。
+import os as _os
+_as_of_override = _os.environ.get("TIMING_AS_OF", "").strip()
+if _as_of_override:
+    AS_OF_DATE = pd.Timestamp(_as_of_override)
+else:
+    AS_OF_DATE = MARKET_DATES.max()
+print(f"[02] 统一截面 AS_OF_DATE = {AS_OF_DATE.strftime('%Y-%m-%d')}")
 
 
 def next_trading_day(date_series):
@@ -147,6 +155,10 @@ def add_latest(
             valid["effective_date"].notna()
             & (valid["effective_date"] <= AS_OF_DATE)
         ]
+    elif "date" in valid.columns:
+        # 无 effective_date 的指标（如通胀强度因子，date 即信号日）：
+        # 同样只取截面日及以前的记录，保证历史时点快照无未来数据。
+        valid = valid[pd.to_datetime(valid["date"], errors="coerce") <= AS_OF_DATE]
     if len(valid) == 0:
         latest_rows.append({
             "dimension": dimension,
@@ -434,37 +446,113 @@ add_latest(
 
 
 # ------------------------------------------------------------
-# 9. CPI同比：低于历史10%分位看多，高于90%分位看空
+# 9. 通胀方向因子（替代原 CPI同比 / PPI同比）
+# 通胀方向因子 = 0.5×CPI同比平滑值(MA3) + 0.5×PPI同比原始值
+# 若因子较3个月前降低 → 通胀下行环境 → 看多(+1)；否则看空(-1)
 # ------------------------------------------------------------
-cpi_signal = prices[["date", "cpi_available_date", "cpi_yoy_pct"]].dropna().copy()
-cpi_signal["historical_q10"] = expanding_quantile_before_today(cpi_signal["cpi_yoy_pct"], 0.10, 36)
-cpi_signal["historical_q90"] = expanding_quantile_before_today(cpi_signal["cpi_yoy_pct"], 0.90, 36)
-cpi_signal["signal_score"] = 0
-cpi_signal.loc[cpi_signal["cpi_yoy_pct"] < cpi_signal["historical_q10"], "signal_score"] = 1
-cpi_signal.loc[cpi_signal["cpi_yoy_pct"] > cpi_signal["historical_q90"], "signal_score"] = -1
-cpi_signal["signal_text"] = "中性"
-cpi_signal.loc[cpi_signal["signal_score"] == 1, "signal_text"] = "看多：CPI处于历史低位"
-cpi_signal.loc[cpi_signal["signal_score"] == -1, "signal_text"] = "看空：CPI处于历史高位"
-cpi_signal = add_effective_date(cpi_signal, "cpi_available_date")
-save_exact(cpi_signal, "06_CPI历史分位信号_月度.csv")
-add_latest("经济面", "CPI同比", cpi_signal, "cpi_yoy_pct", "signal_score", "signal_text", "可按公开规则复现")
+cpi_ppi = pd.merge(
+    prices[["date", "cpi_available_date", "cpi_yoy_pct"]].dropna(subset=["cpi_yoy_pct"]),
+    prices[["date", "ppi_available_date", "ppi_yoy_pct"]].dropna(subset=["ppi_yoy_pct"]),
+    on="date", how="outer",
+).sort_values("date").reset_index(drop=True)
+cpi_ppi["signal_available_date"] = cpi_ppi[["cpi_available_date", "ppi_available_date"]].max(axis=1)
+cpi_ppi["cpi_smooth"] = cpi_ppi["cpi_yoy_pct"].rolling(3, min_periods=3).mean()  # CPI同比平滑值 MA3
+cpi_ppi["inflation_direction"] = 0.5 * cpi_ppi["cpi_smooth"] + 0.5 * cpi_ppi["ppi_yoy_pct"]
+
+inflation_dir = cpi_ppi[["date", "signal_available_date", "cpi_yoy_pct", "cpi_smooth", "ppi_yoy_pct", "inflation_direction"]].copy()
+inflation_dir["direction_3m_ago"] = inflation_dir["inflation_direction"].shift(3)
+inflation_dir = inflation_dir.dropna(subset=["inflation_direction", "direction_3m_ago"])
+inflation_dir["signal_score"] = np.where(inflation_dir["inflation_direction"] < inflation_dir["direction_3m_ago"], 1, -1)
+inflation_dir["signal_text"] = np.where(
+    inflation_dir["signal_score"] == 1,
+    "看多：通胀方向因子较3个月前下行（通胀回落，货币宽松空间打开）",
+    "看空：通胀方向因子未较3个月前下行（通胀未回落）",
+)
+inflation_dir = inflation_dir.drop(columns=["direction_3m_ago"])
+inflation_dir = add_effective_date(inflation_dir, "signal_available_date")
+save_exact(inflation_dir, "06_通胀方向因子_月度.csv")
+add_latest(
+    "经济面", "通胀方向因子", inflation_dir, "inflation_direction",
+    "signal_score", "signal_text", "可按公开规则复现",
+    "通胀方向因子=0.5×CPI同比MA3+0.5×PPI同比；较3个月前下行看多(+1)，否则看空(-1)。",
+)
 
 
 # ------------------------------------------------------------
-# 10. PPI同比：低于历史10%分位看多，高于90%分位看空
+# 10. 通胀强度因子（替代原 CPI同比 / PPI同比）
+# 预期差 = (披露值 - 预期) / σ；预期=近6个月滚动均值（模型代理，无券商共识），
+# σ=历史预测误差(披露值-预期)的滚动12个月标准差。
+# 通胀强度因子 = mean(CPI预期差, PPI预期差)。
+# 因子 < -1.5σ → 未来60个交易日通胀显著不及预期 → 看多(+1)；
+# 因子 > +1.5σ → 未来60个交易日通胀显著超预期 → 看空(-1)；否则中性(0)。
 # ------------------------------------------------------------
-ppi_signal = prices[["date", "ppi_available_date", "ppi_yoy_pct"]].dropna().copy()
-ppi_signal["historical_q10"] = expanding_quantile_before_today(ppi_signal["ppi_yoy_pct"], 0.10, 36)
-ppi_signal["historical_q90"] = expanding_quantile_before_today(ppi_signal["ppi_yoy_pct"], 0.90, 36)
-ppi_signal["signal_score"] = 0
-ppi_signal.loc[ppi_signal["ppi_yoy_pct"] < ppi_signal["historical_q10"], "signal_score"] = 1
-ppi_signal.loc[ppi_signal["ppi_yoy_pct"] > ppi_signal["historical_q90"], "signal_score"] = -1
-ppi_signal["signal_text"] = "中性"
-ppi_signal.loc[ppi_signal["signal_score"] == 1, "signal_text"] = "看多：PPI处于历史低位"
-ppi_signal.loc[ppi_signal["signal_score"] == -1, "signal_text"] = "看空：PPI处于历史高位"
-ppi_signal = add_effective_date(ppi_signal, "ppi_available_date")
-save_exact(ppi_signal, "07_PPI历史分位信号_月度.csv")
-add_latest("经济面", "PPI同比", ppi_signal, "ppi_yoy_pct", "signal_score", "signal_text", "可按公开规则复现")
+EXPECTATION_WINDOW = 6       # 预期中位数代理：近6个月均值（大众常用窗口）
+SURPRISE_STD_WINDOW = 12     # 预期标准差代理：预测误差滚动12个月σ（大众常用窗口）
+TRIGGER_SIGMA = 1.5          # ±1.5σ 触发阈值
+FORWARD_TRADING_DAYS = 60    # 触发后覆盖未来60个交易日
+
+intensity = cpi_ppi[["date", "signal_available_date", "cpi_yoy_pct", "ppi_yoy_pct"]].copy()
+intensity["cpi_exp"] = intensity["cpi_yoy_pct"].rolling(EXPECTATION_WINDOW, min_periods=EXPECTATION_WINDOW).mean()
+intensity["ppi_exp"] = intensity["ppi_yoy_pct"].rolling(EXPECTATION_WINDOW, min_periods=EXPECTATION_WINDOW).mean()
+intensity["cpi_err"] = intensity["cpi_yoy_pct"] - intensity["cpi_exp"]
+intensity["ppi_err"] = intensity["ppi_yoy_pct"] - intensity["ppi_exp"]
+intensity["cpi_surprise"] = intensity["cpi_err"] / intensity["cpi_err"].rolling(SURPRISE_STD_WINDOW, min_periods=SURPRISE_STD_WINDOW).std(ddof=1)
+intensity["ppi_surprise"] = intensity["ppi_err"] / intensity["ppi_err"].rolling(SURPRISE_STD_WINDOW, min_periods=SURPRISE_STD_WINDOW).std(ddof=1)
+intensity["intensity_factor"] = intensity[["cpi_surprise", "ppi_surprise"]].mean(axis=1)
+intensity["trigger"] = np.where(
+    intensity["intensity_factor"] < -TRIGGER_SIGMA, 1,
+    np.where(intensity["intensity_factor"] > TRIGGER_SIGMA, -1, 0),
+)
+
+monthly_factor = intensity[["signal_available_date", "intensity_factor"]].dropna(subset=["intensity_factor"]).copy()
+monthly_factor["effective_date"] = next_trading_day(monthly_factor["signal_available_date"])
+monthly_factor = monthly_factor.dropna(subset=["effective_date"]).sort_values("effective_date")
+
+triggers = intensity[intensity["trigger"] != 0][["signal_available_date", "trigger"]].copy()
+triggers["effective_date"] = next_trading_day(triggers["signal_available_date"])
+triggers = triggers.dropna(subset=["effective_date"]).sort_values("effective_date")
+
+# 对齐交易日历：因子值取最近一期月度值；信号取最近一次触发，触发后60个交易日内维持方向
+intensity_daily = pd.DataFrame({"date": MARKET_DATES})
+if len(monthly_factor) == 0:
+    # 历史样本不足以计算因子：值缺失、信号全中性（merge_asof 对空表会报 dtype 错误，故单独兜底）
+    intensity_daily["intensity_factor"] = np.nan
+    intensity_daily["signal_score"] = 0
+    intensity_daily["signal_text"] = "中性：历史样本不足，通胀强度因子不可计算"
+else:
+    intensity_daily["cal_pos"] = np.arange(len(MARKET_DATES))
+    intensity_daily = pd.merge_asof(
+        intensity_daily, monthly_factor[["effective_date", "intensity_factor"]],
+        left_on="date", right_on="effective_date", direction="backward",
+    ).rename(columns={"effective_date": "factor_eff_date"})
+    if len(triggers) == 0:
+        intensity_daily["signal_score"] = 0
+        intensity_daily["signal_text"] = "中性：通胀强度在±1.5σ内（无触发）"
+        intensity_daily = intensity_daily.drop(columns=["cal_pos", "factor_eff_date"])
+    else:
+        intensity_daily = pd.merge_asof(
+            intensity_daily, triggers[["effective_date", "trigger"]],
+            left_on="date", right_on="effective_date", direction="backward",
+        ).rename(columns={"effective_date": "trigger_eff_date"})
+        trigger_pos = pd.Series(np.arange(len(MARKET_DATES)), index=MARKET_DATES)
+        intensity_daily["trigger_pos"] = intensity_daily["trigger_eff_date"].map(trigger_pos)
+        intensity_daily["days_since"] = intensity_daily["cal_pos"] - intensity_daily["trigger_pos"]
+        intensity_daily["signal_score"] = np.where(
+            intensity_daily["trigger_pos"].isna() | (intensity_daily["days_since"] >= FORWARD_TRADING_DAYS), 0,
+            intensity_daily["trigger"],
+        ).astype(int)
+        intensity_daily["signal_text"] = "中性：通胀强度在±1.5σ内或触发已过期"
+        intensity_daily.loc[intensity_daily["signal_score"] == 1, "signal_text"] = "看多：通胀显著不及预期（强度因子<-1.5σ），未来60个交易日有效"
+        intensity_daily.loc[intensity_daily["signal_score"] == -1, "signal_text"] = "看空：通胀显著超预期（强度因子>+1.5σ），未来60个交易日有效"
+        intensity_daily = intensity_daily.drop(columns=["cal_pos", "factor_eff_date", "trigger_eff_date", "trigger_pos", "days_since", "trigger"])
+# 日度帧的 date 本身即信号生效日（按每个交易日取最近触发），不设 effective_date 列
+save_exact(intensity_daily, "07_通胀强度因子_日度.csv")
+add_latest(
+    "经济面", "通胀强度因子", intensity_daily, "intensity_factor",
+    "signal_score", "signal_text", "可按公开规则复现",
+    "通胀强度因子=CPI/PPI预期差均值（预期=近6月滚动均值代理，σ=预测误差滚动12月σ）；"
+    "<-1.5σ看多、>+1.5σ看空，覆盖未来60个交易日。",
+)
 
 
 # 库存周期、A股景气度指数无法按原报告严谨复现。
@@ -545,29 +633,65 @@ add_latest(
 
 
 # ------------------------------------------------------------
-# 14. 股权风险溢价：[(1/PE_TTM)/10Y国债收益率]的5年滚动Z-score
+# 14. 席勒股权风险溢价 (Shiller CAPE 口径)
+# 盈利 E_t = P_t / PE_t（用中证800收盘价与整体PE_TTM反推）
+# 通胀调整：用 CPI 链式定基指数把过去6年盈利调整到当前购买力：
+#   席勒PE_t = P_t / mean_{i∈[t-1500,t]} (E_i × CPI_now_t / CPI_i)
+#            = P_t / ( cpi_known[t] × rolling_mean(E_i / cpi_known[i], 1500) )
+# 席勒ERP_t = 1/席勒PE_t - 10Y国债到期收益率
+# 6年(1500交易日)滚动 Z-score，±1.5σ → +1/0/-1
 # ------------------------------------------------------------
 bond = read_clean("10年期国债收益率_清洗后.csv")
-erp = valuation[["date", "pe_ttm_index"]].dropna().sort_values("date").copy()
-erp = pd.merge_asof(
-    erp,
+valuation_pe = valuation[["date", "pe_ttm_index"]].dropna().sort_values("date").copy()
+cpi_chain = read_clean("CPI定基指数_清洗后.csv")
+
+shiller = market_calendar_base[["date", "close"]].dropna().sort_values("date").copy()
+# PE：以交易日历为左表，backward 对齐（PE 至08-07，多出的日期不参与）
+shiller = pd.merge_asof(shiller, valuation_pe, on="date", direction="backward")
+# 债券：backward 对齐
+shiller = pd.merge_asof(
+    shiller,
     bond[["date", "bond_yield_10y_pct"]].sort_values("date"),
     on="date",
     direction="backward",
 )
-erp["earnings_yield_decimal"] = 1 / erp["pe_ttm_index"]
-erp["bond_yield_10y_decimal"] = erp["bond_yield_10y_pct"] / 100
-erp["erp_ratio"] = erp["earnings_yield_decimal"] / erp["bond_yield_10y_decimal"]
-erp["erp_z5y"], erp["erp_ratio_mean5y"], erp["erp_ratio_std5y"] = rolling_zscore(erp["erp_ratio"], 1250, 1000)
-erp["signal_score"] = 0
-erp.loc[erp["erp_z5y"] > 1.5, "signal_score"] = 1
-erp.loc[erp["erp_z5y"] < -1.5, "signal_score"] = -1
-erp["signal_text"] = "中性"
-erp.loc[erp["signal_score"] == 1, "signal_text"] = "看多：股权风险溢价高于1.5个标准差"
-erp.loc[erp["signal_score"] == -1, "signal_text"] = "看空：股权风险溢价低于-1.5个标准差"
-erp = add_effective_date(erp)
-save_exact(erp, "10_股权风险溢价_日度.csv")
-add_latest("估值面", "中证800股权风险溢价", erp, "erp_z5y", "signal_score", "signal_text", "可按公开规则复现")
+# CPI：以"已知日"(cpi_available_date)为准，避免把未公布月份提前使用
+cpi_release = cpi_chain[["cpi_available_date", "cpi_chain_index"]].dropna()
+cpi_release = cpi_release.rename(columns={"cpi_available_date": "known_date"}).sort_values("known_date")
+shiller = pd.merge_asof(
+    shiller, cpi_release,
+    left_on="date", right_on="known_date", direction="backward",
+)
+shiller["cpi_known"] = shiller["cpi_chain_index"]
+shiller = shiller.dropna(subset=["close", "pe_ttm_index", "bond_yield_10y_pct", "cpi_known"])
+
+shiller["earnings"] = shiller["close"] / shiller["pe_ttm_index"]            # E_t
+shiller["deflated_earnings"] = shiller["earnings"] / shiller["cpi_known"]    # E_i / CPI_i
+shiller["real_earnings_mean6y"] = (
+    shiller["deflated_earnings"].rolling(1500, min_periods=1000).mean()
+) * shiller["cpi_known"]                                                     # 通胀调整后平均盈利
+
+shiller["shiller_pe"] = shiller["close"] / shiller["real_earnings_mean6y"]
+shiller["bond_yield_10y_decimal"] = shiller["bond_yield_10y_pct"] / 100
+shiller["shiller_erp"] = 1 / shiller["shiller_pe"] - shiller["bond_yield_10y_decimal"]
+shiller["shiller_erp_pct"] = shiller["shiller_erp"] * 100
+
+shiller["erp_z6y"], shiller["erp_mean6y"], shiller["erp_std6y"] = rolling_zscore(
+    shiller["shiller_erp"], 1500, 1000
+)
+shiller["signal_score"] = 0
+shiller.loc[shiller["erp_z6y"] > 1.5, "signal_score"] = 1
+shiller.loc[shiller["erp_z6y"] < -1.5, "signal_score"] = -1
+shiller["signal_text"] = "中性"
+shiller.loc[shiller["signal_score"] == 1, "signal_text"] = "看多：席勒股权风险溢价高于1.5个标准差"
+shiller.loc[shiller["signal_score"] == -1, "signal_text"] = "看空：席勒股权风险溢价低于-1.5个标准差"
+shiller = add_effective_date(shiller)
+save_exact(shiller, "10_股权风险溢价_日度.csv")
+add_latest(
+    "估值面", "中证800股权风险溢价", shiller, "shiller_erp_pct",
+    "signal_score", "signal_text", "可按公开规则复现",
+    "席勒CAPE口径：盈利按CPI链式指数做6年通胀调整，ERP=1/CAPE-10Y国债，6年zscore±1.5σ。",
+)
 
 
 # DCF和AIAE不能用压缩包现有数据精确复现。
@@ -606,23 +730,33 @@ north = None
 
 
 # ------------------------------------------------------------
-# 17. 融资融券余额趋势
-# 原报告没有披露趋势算法；采用透明的MA60/MA120规则。
+# 17. 两融增量：净两融额(融资余额-融券余额)的日增量趋势
+# 两融为市场杠杆资金来源，两融上行时市场情绪较好、权益表现较强。
+# 日增量 = 当日净额 - 前日净额
+# 120日均增量 > 240日均增量 → 杠杆资金上行看多 +1；否则看空 -1。
 # ------------------------------------------------------------
 margin = read_clean("融资融券余额_清洗后.csv")
-margin["ma60"] = margin["margin_total"].rolling(60, min_periods=60).mean()
-margin["ma120"] = margin["margin_total"].rolling(120, min_periods=120).mean()
+margin["net_delta"] = margin["margin_net"].diff()
+margin["net_delta_ma120"] = margin["net_delta"].rolling(120, min_periods=120).mean()
+margin["net_delta_ma240"] = margin["net_delta"].rolling(240, min_periods=240).mean()
 margin["signal_score"] = np.nan
-margin.loc[margin["ma60"] > margin["ma120"], "signal_score"] = 1
-margin.loc[margin["ma60"] < margin["ma120"], "signal_score"] = -1
+margin.loc[
+    margin["net_delta_ma120"].notna() & margin["net_delta_ma240"].notna() & (margin["net_delta_ma120"] > margin["net_delta_ma240"]),
+    "signal_score",
+] = 1
+margin.loc[
+    margin["net_delta_ma120"].notna() & margin["net_delta_ma240"].notna() & (margin["net_delta_ma120"] <= margin["net_delta_ma240"]),
+    "signal_score",
+] = -1
 margin["signal_text"] = "样本不足"
-margin.loc[margin["signal_score"] == 1, "signal_text"] = "代理看多：两融余额上行"
-margin.loc[margin["signal_score"] == -1, "signal_text"] = "代理看空：两融余额下行"
+margin.loc[margin["signal_score"] == 1, "signal_text"] = "看多：两融增量提速（120日均增量高于240日均增量）"
+margin.loc[margin["signal_score"] == -1, "signal_text"] = "看空：两融增量放缓（120日均增量不高于240日均增量）"
 margin = add_effective_date(margin)
-save_proxy(margin, "P05_融资融券余额趋势_MA60_MA120_日度.csv")
+save_proxy(margin, "P05_两融增量_MA120_MA240_日度.csv")
 add_latest(
-    "资金面", "融资融券余额", margin, "margin_total", "signal_score", "signal_text", "透明代理",
-    "原报告未披露趋势识别窗口，本实现采用MA60与MA120。",
+    "资金面", "两融增量", margin, "net_delta_ma120",
+    "signal_score", "signal_text", "可按公开规则复现",
+    "净两融额=融资余额-融券余额；120日均增量>240日均增量看多，否则看空（120/240窗口为透明设定）。",
 )
 
 
@@ -926,19 +1060,20 @@ latest_rows.append({
 
 
 # ------------------------------------------------------------
-# 27. 50ETF QVIX：高于5年均值+1σ时视为恐慌过度，反向看多
-# 原报告未披露标准差窗口，本实现采用5年滚动窗口。
+# 27. 50ETF QVIX：高于历史均值+1σ时视为恐慌过度，反向看多
+# 压缩包QVIX样本稀疏（41点、非日频），无法按5年滚动窗口(需750点)计算；
+# 改用"可用全历史"滚动zscore（透明窗口假设），最新值 vs 全历史均值。
 # ------------------------------------------------------------
 qvix = read_clean("50ETF_QVIX_清洗后.csv")
-qvix["qvix_z5y"], qvix["qvix_mean5y"], qvix["qvix_std5y"] = rolling_zscore(qvix["qvix"], 1250, 750)
+qvix["qvix_z"], qvix["qvix_mean"], qvix["qvix_std"] = rolling_zscore(qvix["qvix"], 1250, 12)
 qvix["signal_score"] = 0
-qvix.loc[qvix["qvix_z5y"] > 1, "signal_score"] = 1
+qvix.loc[qvix["qvix_z"] > 1, "signal_score"] = 1
 qvix["signal_text"] = np.where(qvix["signal_score"] == 1, "看多：期权恐慌处于高位", "中性")
 qvix = add_effective_date(qvix)
 save_proxy(qvix, "P12_50ETF_QVIX信号_日度.csv")
 add_latest(
-    "情绪面", "50ETF期权VIX", qvix, "qvix_z5y", "signal_score", "signal_text", "窗口假设",
-    "QVIX数据可用，但研报未披露±1σ的计算窗口；采用5年滚动窗口。",
+    "情绪面", "50ETF期权VIX", qvix, "qvix_z", "signal_score", "signal_text", "窗口假设",
+    "QVIX样本稀疏（41点、非日频），采用可用全历史滚动zscore（透明假设）；研报±1σ窗口未披露。",
 )
 
 
@@ -999,10 +1134,10 @@ except Exception as e_mongo:
     print(f"  [WARN] MongoDB 择时信号落盘提示: {e_mongo}")
 
 replication_summary = pd.DataFrame([
-    ["可按公开规则复现", "SHIBOR 1W、M1、M1-PPI、M2-名义GDP、PMI、CPI、PPI、ERP、均线排列"],
+    ["可按公开规则复现", "SHIBOR 1W、M1、M1-PPI、M2-名义GDP、PMI、通胀方向因子、席勒ERP、均线排列、两融增量"],
     ["事件可复现但方向未披露", "新增开户数"],
-    ["阈值/算法假设", "PE中位数、PB、布林带、RSI"],
-    ["透明代理/参数假设", "DR007水平、信贷脉冲、发电量、两融趋势、均线距离、量价时钟、成交热度、行业分歧度、基金仓位、QVIX、新高新低占比"],
+    ["阈值/算法假设", "PE中位数、PB、布林带、RSI、通胀强度因子"],
+    ["透明代理/参数假设", "DR007水平、信贷脉冲、发电量、均线距离、量价时钟、成交热度、行业分歧度、基金仓位、QVIX、新高新低占比"],
     ["不能严谨复现", "库存周期、A股景气度、DCF、AIAE、NLP、CPR、期权SKEW；股息率仅有最近20日"],
 ], columns=["category", "indicators"])
 replication_summary.to_csv(RESULT_DIR / "复刻边界汇总.csv", index=False, encoding="utf-8-sig")
@@ -1105,15 +1240,23 @@ add_review(
 add_review("信贷脉冲", "季调环比未超过5%", "中性", pick_row(sf, report_cutoff), "sa_mom_pct", "递归STL仅使用截至当期历史，仍属于季调代理")
 add_review("制造业PMI", "尚未明显上行", "看空", pick_row(pmi, report_cutoff), "manufacturing_pmi", "按下一交易日生效口径取研报日前可执行信号")
 add_review("发电量同比", "短均线拐头但未确认", "看空", pick_row(electricity, report_cutoff), "electricity_consumption_yoy_pct", "数据为全社会用电量代理，不是规模以上工业发电量")
-add_review("CPI同比", "中间水平", "中性", pick_row(cpi_signal, report_cutoff), "cpi_yoy_pct")
-add_review("PPI同比", "中间水平", "中性", pick_row(ppi_signal, report_cutoff), "ppi_yoy_pct")
+add_review(
+    "通胀方向因子", "通胀方向因子较3个月前下行则看多", "看多",
+    pick_row(inflation_dir, report_cutoff), "inflation_direction",
+    "新因子（非原研报指标）：0.5×CPI同比MA3+0.5×PPI同比，较3个月前下行看多。", compare=False,
+)
+add_review(
+    "通胀强度因子", "显著不及预期(<-1.5σ)则看多", "看多",
+    pick_row(intensity_daily, report_cutoff), "intensity_factor",
+    "新因子（非原研报指标）：预期中位数/标准差为滚动窗口模型代理，非券商共识。", compare=False,
+)
 add_review("库存周期", "被动补库存", "看空", None, "", "缺少库存景气指数及原模型定义")
 add_review("A股景气度指数", "景气主跌浪", "看空", None, "", "Nowcasting解释变量、参数和训练方法未披露")
 
 add_review("PE_TTM中位数", "20.43倍", "看多", pick_row(pe_median, report_cutoff), "pe_ttm_median", "压缩包序列与研报Wind口径存在差异；接近20倍的缓冲区未披露")
 add_review("中证800股息率", "2.44%", "看多", None, "", "压缩包只有2026年最近20个交易日")
 add_review("中证800 PB", "1.5倍，接近底部", "看多", pick_row(pb, report_cutoff), "pb_index", "机械规则仅在PB不高于1.4时看多；研报对接近底部作主观偏多判断")
-add_review("股权风险溢价", "1.35倍标准差", "看多", pick_row(erp, report_cutoff), "erp_z5y", "方向可核验，数值受估值和无风险利率口径影响")
+add_review("股权风险溢价", "1.35倍标准差", "看多", pick_row(shiller, report_cutoff), "erp_z6y", "席勒CAPE口径：方向可核验，数值受通胀调整与无风险利率口径影响")
 add_review("DCF估值", "PE 13.2，略低于合理值", "中性", None, "", "模型参数未披露")
 add_review("AIAE", "17%，接近底部", "看多", None, "", "压缩包只有总市值/GDP，不是AIAE")
 
@@ -1124,7 +1267,7 @@ if accounts_review is not None:
     accounts_review["signal_text"] = "反转预警" if bool(accounts_review["reversal_event"]) else "未触发"
 add_review("新增开户数", "正常", "中性", accounts_review, "new_investors_10k", "使用研报日前已公布的6月统计值")
 # 北向资金已移除，不再生成 add_review 条目
-add_review("融资融券余额", "上行趋势", "看多", pick_row(margin, report_cutoff), "margin_total", "研报未披露趋势算法；MA60/MA120为透明代理")
+add_review("两融增量", "上行趋势", "看多", pick_row(margin, report_cutoff), "net_delta_ma120", "两融增量口径：净两融额日增量120/240日均值比较")
 
 add_review("均线排列", "10日下穿30日，不发信号", "中性", pick_row(ma_align, report_cutoff), "close")
 add_review("均线距离", "阈值内", "中性", pick_row(ma_distance, report_cutoff), "distance_pct", "研报未披露均线长度")

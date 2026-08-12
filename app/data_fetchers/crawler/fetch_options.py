@@ -61,6 +61,17 @@ try:
         save_processed(df_vix, "QVIX_日度.csv", "options")
         print(f"  [OK] QVIX: {len(df_vix)}条, 最新={df_vix['vix_proxy'].iloc[-1]:.2f}")
         log_fetch("sse", "OK", f"QVIX {len(df_vix)}条")
+
+        # 同步 QVIX 原始序列到 source_data（01_数据清洗读 50ETF_QVIX.csv 的 date/close 列）
+        try:
+            save_processed(
+                df_vix[["date", "vix_proxy"]].rename(columns={"vix_proxy": "close"}),
+                "50ETF_QVIX.csv",
+                "options",
+            )
+            print(f"  [OK] QVIX同步source_data: {len(df_vix)}条")
+        except Exception as e_qvix_src:
+            print(f"  [WARN] QVIX同步source_data失败: {e_qvix_src}")
     else:
         log_fetch("sse", "WARN", "QVIX数据为空")
 except Exception as e:

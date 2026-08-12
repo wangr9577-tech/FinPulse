@@ -1,0 +1,801 @@
+﻿日期,指数代码,指数名称,指数英文名称,成分券代码,成分券名称,成分券英文名称,交易所,交易所英文名称
+2026-08-10,000906,中证800,CSI 800,000001,平安银行,"Ping An Bank Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000002,万科A,China Vanke Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000009,中国宝安,"China Baoan Group Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000021,深科技,"Shenzhen Kaifa Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000027,深圳能源,Shenzhen Energy Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000032,深桑达A,Shenzhen SED Industry Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000034,神州数码,"Digital China Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000039,中集集团,China International Marine Containers (Group) Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000050,深天马A,Tianma Microelectronics Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000060,中金岭南,Shenzhen Zhongjin Lingnan Nonfemet Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000062,深圳华强,Shenzhen Huaqiang Industry Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000063,中兴通讯,ZTE Corporation,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000088,盐田港,Shenzhen Yan Tian Port Holdings Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000100,TCL科技,TCL Technology Group Corporation,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000155,川能动力,SICHUAN NEW ENERGY POWER COMPANY LIMITED,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000157,中联重科,Zoomlion Heavy Industry Science & Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000166,申万宏源,"Shenwan Hongyuan Group CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000301,东方盛虹,"Jiangsu Eastern Shenghong Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000333,美的集团,"Midea Group CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000338,潍柴动力,Wei Chai Power Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000400,许继电气,XJ Electric Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000408,藏格矿业,ZANGGE MINING COMPANY LIMITED,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000415,渤海租赁,"Bohai Leasing Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000423,东阿阿胶,Shandong Dong-Ee Jiao Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000425,徐工机械,XCMG Construction Machinery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000429,粤高速A,Guangdong Provincial Expressway Development Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000513,丽珠集团,Livzon Pharmaceutical Group Inc,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000519,中兵红箭,"NORTH INDUSTRIES GROUP RED ARROW CO.,LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000528,柳工,Guangxi Liugong Machinery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000537,绿发电力,"Green Development Electricity Group of Tianjin Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000538,云南白药,"Yunnan Baiyao Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000539,粤电力A,Guangdong Electric Power Development Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000559,万向钱潮,Wanxiang Qianchao Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000568,泸州老窖,Luzhou Lao Jiao Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000582,北部湾港,"Beibuwan Port Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000591,太阳能,"CECEP Solar Energy Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000596,古井贡酒,Anhui Gujing Distillery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000598,兴蓉环境,"Chengdu Xingrong Environment Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000617,中油资本,CNPC Capital Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000623,吉林敖东,"Jilin Aodong Pharmaceutical Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000625,长安汽车,Chongqing Changan Automobile Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000629,钒钛股份,"Pangang Group Vanadium Titanium & Resources Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000630,铜陵有色,Tongling Nonferrous Metals Group Co. Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000651,格力电器,"Gree Electric Appliances,Inc. of Zhuhai",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000657,中钨高新,China Tungsten and Hightech Materials Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000661,长春高新,Chang Chun High and New Technology Industry (Group) Inc.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000683,博源化工,Inner Mongolia Berun Chemical Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000703,恒逸石化,Hengyi Petrochemical Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000708,中信特钢,"CITIC Pacific Special Steel Group Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000709,河钢股份,HESTEEL COMPANY LIMITED,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000723,美锦能源,"Shanxi Meijin Energy Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000725,京东方A,BOE Technology Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000728,国元证券,Guoyuan Securities Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000729,燕京啤酒,Beijing Yanjing Brewery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000733,振华科技,China Zhenhua (Group) Science & Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000737,北方铜业,"NORTH COPPER (SHANXI) CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000738,航发控制,"AECC AERO-ENGINE CONTROL CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000739,普洛药业,"Apeloa Pharmaceutical Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000750,国海证券,"Sealand Securities Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000768,中航西飞,AVIC XI'AN AIRCRAFT INDUSTRY GROUP COMPANY LTD.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000776,广发证券,"GF Securities Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000783,长江证券,Changjiang Securities Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000785,居然智家,"EASYHOME NEW RETAIL GROUP CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000786,北新建材,Beijing New Building Materials Public Ltd Co,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000792,盐湖股份,Qinghai Salt Lake Industry Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000800,一汽解放,"FAW Jiefang Group Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000807,云铝股份,Yunnan Aluminium Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000825,太钢不锈,Shanxi Taigang Stainless Steel Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000830,鲁西化工,"Luxi Chemical Group Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000831,中国稀土,"CHINA RARE EARTH RESOURCES AND TECHNOLOGY CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000858,五 粮 液,Wuliangye Yibin Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000878,云南铜业,Yunnan Copper Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000883,湖北能源,Hubei Energy Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000887,中鼎股份,"Anhui Zhongding Sealing Parts Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000893,亚钾国际,"Asia-Potash International Investment (Guangzhou) Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000895,双汇发展,Henan Shuanghui Investment & Development Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000898,鞍钢股份,Angang Steel Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000921,海信家电,"HISENSE HOME APPLIANCES GROUP CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000932,华菱钢铁,Hunan Valin Steel Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000937,冀中能源,Jizhong Energy Resources Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000938,紫光股份,"Unisplendour Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000951,中国重汽,CNHTC Jinan Truck Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000959,首钢股份,Beijing Shougang Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000960,锡业股份,Yunnan Tin Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000963,华东医药,Huadong Medicine Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000967,盈峰环境,Infore Environment Technology Group Co. Ltd.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000975,山金国际,"Shanjin International Gold Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000977,浪潮信息,"Inspur Electronic Information Industry Co.,Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000983,山西焦煤,"Shanxi Coking Coal Energy Group Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000987,越秀资本,"GUANGZHOU YUEXIU CAPITAL HOLDINGS GROUP CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000988,华工科技,Huagong Tech Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000997,新 大 陆,"Newland Digital Technology Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,000999,华润三九,China Resources Sanjiu Medical & Pharmaceutical Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001203,大中矿业,"Dazhong Mining Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001221,悍高集团,"Higold Group Co.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001280,中国铀业,"China National Uranium Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001286,陕西能源,"SHAANXI ENERGY INVESTMENT CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001309,德明利,"Shenzhen Techwinsemi Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001386,马可波罗,"MarcoPolo Holdings Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001389,广合科技,Delton Technology (Guangzhou) Inc.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001391,国货航,"Air China Cargo Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001696,宗申动力,Chongqing Zongshen Power Machinery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001965,招商公路,"China Merchants Expressway Network Technology Holdings Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,001979,招商蛇口,"CHINA MERCHANTS SHEKOU INDUSTRIAL ZONE HOLDINGS CO.,LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002001,新和成,Zhejiang NHU Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002007,华兰生物,Hualan Biological Engineering INC,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002008,大族激光,"Han's Laser Technology Industry Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002025,航天电器,Guizhou Space Appliance Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002027,分众传媒,"Focus Media Information Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002028,思源电气,"Siyuan Electric Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002032,苏泊尔,"Zhejiang Supor Co.,Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002044,美年健康,"Meinian Onehealth Healthcare Holdings Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002049,紫光国微,"Unigroup Guoxin Microelectronics Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002050,三花智控,"ZHEJIANG SANHUA INTELLIGENT CONTROLS CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002056,横店东磁,Hengdian Group DMEGC Magnetics Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002064,华峰化学,"Huafon Chemical Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002065,东华软件,"DHC Software Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002074,国轩高科,"GUOXUAN HIGH-TECH CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002078,太阳纸业,Shan Dong Sun Paper Industry Joint Stock Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002085,万丰奥威,"Zhejiang Wanfeng Auto Wheel Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002120,韵达股份,"YUNDA Holding Group CO., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002126,银轮股份,Zhejiang Yinlun Machinery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002130,沃尔核材,Shenzhen Woer Heat-Shrinkable Material Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002131,利欧股份,"LEO GROUP CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002138,顺络电子,Shenzhen Sunlord Electronics Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002142,宁波银行,Bank of Ningbo Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002152,广电运通,GRG Banking Equipment Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002153,石基信息,Beijing Shiji Information Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002155,湖南黄金,Hunan Gold Corporation Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002157,正邦科技,Jiangxi Zhengbang Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002179,中航光电,"Jonhon Optronic Technology Co.,Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002185,华天科技,Tianshui Huatian Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002195,岩山科技,"Shanghai Stonehill Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002202,金风科技,"GOLDWIND SCIENCE & TECHNOLOGY CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002203,海亮股份,Zhejiang Hailiang Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002223,鱼跃医疗,Jiangsu Yuyue Medical Equipment & Supply Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002230,科大讯飞,"Iflytek Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002236,大华股份,Zhejiang Dahua Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002241,歌尔股份,GoerTek Inc,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002244,滨江集团,Hangzhou Binjiang Real Estate Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002252,上海莱士,Shanghai RAAS Blood Products Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002261,拓维信息,"Talkweb Information System Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002262,恩华药业,Jiangsu Nhwa Pharmaceutical Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002265,建设工业,"Jianshe Industry Group (Yunnan) Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002266,浙富控股,"ZHEFU HOLDING GROUP CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002271,东方雨虹,Beijing Oriental Yuhong Waterproof Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002273,水晶光电,"Zhejiang Crystal-Optech Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002281,光迅科技,Accelink Technologies Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002299,圣农发展,Fujian Sunner Development Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002304,洋河股份,Jiangsu Yanghe Brewery Joint-Stock Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002311,海大集团,Guangdong Haid Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002312,川发龙蟒,"Sichuan Development Lomon Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002318,久立特材,Zhejiang Jiuli Hi-tech Metals Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002335,科华数据,"KEHUA DATA CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002340,格林美,Shenzhen Green Eco-manufacture Hi-tech Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002352,顺丰控股,"S.F. Holding Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002353,杰瑞股份,Yantai Jereh Oilfield Services Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002371,北方华创,"NAURA Technology Group Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002384,东山精密,Suzhou Dongshan Precision Manufacturing Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002402,和而泰,Shenzhen H&T Intelligent Control Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002407,多氟多,Do-Fluoride Chemicals Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002409,雅克科技,Jiangsu Yoke Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002410,广联达,Glodon Software Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002414,高德红外,Wuhan Guide Infrared Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002415,海康威视,Hangzhou Hikvision Digital Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002422,科伦药业,Sichuan Kelun Pharmaceutical Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002423,中粮资本,"COFCO CAPITAL HOLDINGS CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002429,兆驰股份,Shenzhen MTC Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002430,杭氧股份,"HANGZHOU OXYGEN PLANT GROUP CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002432,九安医疗,Andon Health Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002436,兴森科技,Shenzhen Fastprint Circuit Tech Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002444,巨星科技,Hangzhou Great Star Industrial Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002460,赣锋锂业,Ganfeng Lithium Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002461,珠江啤酒,Guangzhou Zhujiang Brewery Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002463,沪电股份,Wus Printed Circuit (Kunshan) Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002465,海格通信,Guangzhou Haige Communications Group Incorporated Company,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002466,天齐锂业,"Tianqi Lithium Industries, Inc.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002472,双环传动,Zhejiang Shuanghuan Driveline Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002475,立讯精密,"Luxshare Precision Industry Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002487,大金重工,Dajin Heavy Industry Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002493,荣盛石化,Rongsheng Petro Chemical Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002500,山西证券,Shanxi Securities Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002508,老板电器,Hangzhou Robam Appliances Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002517,恺英网络,Taiya Shoes Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002532,天山铝业,"TIANSHAN ALUMINUM GROUP CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002558,巨人网络,"Giant Network Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002568,百润股份,"SHANGHAI BAIRUN INVESTMENT HOLDING GROUP CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002583,海能达,Hytera Communications Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002594,比亚迪,BYD Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002600,领益智造,LINGYI iTECH (GUANGDONG) COMPANY,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002601,龙佰集团,"LB Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002602,世纪华通,"ZHEJIANG CENTURY HUATONG GROUP CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002603,以岭药业,Shijiazhuang Yiling Pharmaceutical Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002608,江苏国信,Sainty Marine Corporation Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002624,完美世界,"Perfect World Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002625,光启技术,"Kuang-Chi Technologies Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002648,卫星化学,"SATELLITE CHEMICAL CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002670,国盛证券,GUOSHENG SECURITIES Inc.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002673,西部证券,"WESTERN SECURITIES CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002683,广东宏大,"Guangdong Hongda Holdings Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002709,天赐材料,"Guangzhou Tinci Materials Technology Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002714,牧原股份,"MUYUAN FOODS GROUP CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002736,国信证券,"GUOSEN SECURITIES CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002738,中矿资源,"Sinomine Resource Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002739,儒意电影,Ruyi Film Entertainment Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002756,永兴材料,"Yongxing Special Materials Technology Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002773,康弘药业,"Chengdu Kanghong Pharmaceutical Group Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002797,第一创业,"First Capital Securities Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002812,恩捷股份,"Yunnan Energy New Material (Group) Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002821,凯莱英,"Asymchem Laboratories (Tianjin) Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002831,裕同科技,"ShenZhen YUTO Packaging Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002837,英维克,"SHENZHEN ENVICOOL TECHNOLOGY CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002841,视源股份,Guangzhou Shiyuan Electronic Technology Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002850,科达利,"Shenzhen Kedali Industry Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002851,麦格米特,"Shenzhen Megmeet Electrical Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002916,深南电路,"Shennan Circuits Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002920,德赛西威,"Huizhou Desay SV Automotive Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002926,华西证券,"Huaxi Securities Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002938,鹏鼎控股,"Avary Holding (Shenzhen) Co., Limited",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002939,长城证券,"CHINA GREAT WALL SECURITIES CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002945,华林证券,"ChinaLin Securities Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002966,苏州银行,"BANK OF SUZHOU CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,002984,森麒麟,"QINGDAO SENTURY TIRE CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,003021,兆威机电,"SHENZHEN ZHAOWEI MACHINERY&ELECTRONIC CO.,LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,003022,联泓新科,Levima Advanced Materials Corporation,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,003031,中瓷电子,"HEBEI SINOPACK ELECTRONIC TECHNOLOGY CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,003035,南网能源,"China Southern Power Grid Energy Efficiency&Clean Energy Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,003816,中国广核,"CGN Power Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300001,特锐德,Qingdao TGOOD Electric Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300002,神州泰岳,Beijing Ultrapower Software Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300003,乐普医疗,Lepu Medical Technology (Beijing) Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300012,华测检测,"CENTRE TESTING INTERNATIONAL GROUP CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300014,亿纬锂能,Eve Energy Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300015,爱尔眼科,Aier Eye Hospital Group Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300017,网宿科技,"Wangsu Science and Technology Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300024,机器人,Siasun Robot & Automation Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300033,同花顺,"Hithink Royalflush Information Network Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300037,新宙邦,Shenzhen Capchem Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300054,鼎龙股份,"Hubei Dinglong CO.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300058,蓝色光标,"Bluefocus Data Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300059,东方财富,East Money Information Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300073,当升科技,Beijing Easpring Material Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300100,双林股份,"Shuanglin Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300115,长盈精密,Shenzhen Evenwin Precision Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300122,智飞生物,Chongqing Zhifei Biological Products Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300124,汇川技术,Shenzhen Inovance Technology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300136,信维通信,Shenzhen Sunway Communication Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300140,节能环境,"CECEP ENVIRONMENTAL PROTECTION CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300142,沃森生物,Walvax Biotechnology Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300144,宋城演艺,"SONGCHENG PERFORMANCE DEVELOPMENT CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300146,汤臣倍健,"BY-HEALTH CO., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300207,欣旺达,Sunwoda Electronic Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300223,北京君正,Ingenic Semiconductor Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300251,光线传媒,Beijing Enlight Media Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300274,阳光电源,Sungrow Power Supply Co Ltd,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300285,国瓷材料,"Shandong Sinocera Functional Material Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300308,中际旭创,"ZHONGJI INNOLIGHT CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300316,晶盛机电,"Zhejiang Jingsheng Mechanical & Electrical Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300339,润和软件,"Jiangsu Hoperun Software Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300346,南大光电,"Jiangsu Nata Opto-electronic Material Co.,Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300373,扬杰科技,"Yangzhou Yangjie Electronic Technology Co.,Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300383,光环新网,"Beijing Sinnet Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300390,天华新能,"Canmax Technologies Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300394,天孚通信,"Suzhou TFC Optical Communication Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300395,菲利华,HUBEI FEILIHUA QUARTZ GLASS CO.LTD,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300408,三环集团,"CHAOZHOU THREE-CIRCLE(GROUP)CO.,LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300413,芒果超媒,"Mango Excellent Media Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300418,昆仑万维,"Beijing Kunlun Tech Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300432,富临精工,"Mianyang Fulin Precision Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300433,蓝思科技,"Lens Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300442,润泽科技,Range Intelligent Computing Technology Group Company Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300450,先导智能,"WUXI LEAD INTELLIGENT EQUIPMENT CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300454,深信服,Sangfor Technologies Inc.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300458,全志科技,"All Winner Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300474,景嘉微,"Changsha Jingjia Microelectronics Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300475,香农芯创,"Shannon Semiconductor Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300476,胜宏科技,"Victory Giant Technology (HuiZhou)Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300487,蓝晓科技,"SUNRESIN NEW MATERIALS CO.,LTD, XI' AN",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300496,中科创达,"Thunder Software Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300498,温氏股份,"GUANGDONGWENSFOODSTUFFGROUPCO.,LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300502,新易盛,"Eoptolink Technology Inc., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300548,长芯博创,"EverProX Technologies Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300558,贝达药业,"Betta Pharmaceuticals Co.,Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300567,精测电子,"Wuhan Jingce Electronic Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300570,太辰光,"T&S Communications Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300604,长川科技,"Hangzhou Chang Chuan Technology Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300620,光库科技,"ADVANCED FIBER RESOURCES (ZHUHAI)., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300623,捷捷微电,"Jiangsu Jiejie Microelectronics Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300627,华测导航,SHANGHAI HUACE NAVIGATION TECHNOLOGY LTD,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300628,亿联网络,YEALINK NETWORK TECHNOLOGY CORPORATION LIMITED,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300661,圣邦股份,SG Micro Corp.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300666,江丰电子,"Konfoong Materials International Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300676,华大基因,"BGI Genomics Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300677,英科医疗,"Intco Medical Technology Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300679,电连技术,"Electric Connector Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300699,光威复材,"Weihai Guangwei Composites Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300718,长盛轴承,"Zhejiang Changsheng Sliding Bearings Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300724,捷佳伟创,Shenzhen S.C New Energy Technology Corporation,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300735,光弘科技,"DBG Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300748,金力永磁,"JL MAG RARE-EARTH CO., LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300750,宁德时代,"Contemporary Amperex Technology Co., Limited.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300751,迈为股份,"Suzhou Maxwell Technologies Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300757,罗博特科,"RoboTechnik Intelligent Technology Co., LTD",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300759,康龙化成,"Pharmaron Beijing Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300760,迈瑞医疗,"Shenzhen Mindray Bio-Medical Electronics Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300763,锦浪科技,"Ginlong Technologies Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300803,指南针,"Beijing Compass Technology Development Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300832,新产业,"Shenzhen New Industries Biomedical Engineering Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300857,协创数据,"SHARETRONIC DATA TECHNOLOGY CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300866,安克创新,"Anker Innovations Technology Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300888,稳健医疗,"Winner Medical Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300896,爱美客,"IMEIK TECHNOLOGY DEVELOPMENT CO.,LTD.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300919,中伟新材,"CNGR Advanced Material Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300953,震裕科技,"Ningbo Zhenyu Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300957,贝泰妮,"Yunnan Botanee Bio-Technology Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300972,万辰集团,"Fujian Wanchen Food Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,300999,金龙鱼,"Yihai Kerry Arawana Holdings Co., Ltd",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301165,锐捷网络,"Ruijie Networks Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301200,大族数控,"Shenzhen Han's CNC Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301236,软通动力,"iSoftStone Information Technology (Group) Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301269,华大九天,"Empyrean Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301301,川宁生物,"Yili Chuanning Biotechnology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301308,江波龙,"Shenzhen Longsys Electronics Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301358,湖南裕能,"Hunan Yuneng New Energy Battery Material Co.,Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301377,鼎泰高科,"Guangdong Dtech Technology Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301498,乖宝宠物,"Gambol Pet Group Co., Ltd.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301526,国际复材,Chongqing Polycomp International Corporation,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301536,星宸科技,SigmaStar Technology Ltd.,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301606,绿联科技,Ugreen Group Limited,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,301611,珂玛科技,"Suzhou Kematek, Inc.",深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,302132,中航成飞,AVIC CHENGDU AIRCRAFT COMPANY LIMITED,深圳证券交易所,Shenzhen Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600000,浦发银行,Shanghai Pudong Development Bank Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600004,白云机场,Guangzhou Baiyun International Airport Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600008,首创环保,"Beijing Capital Eco-Environment Protection GroupCo.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600009,上海机场,Shanghai International Airport Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600010,包钢股份,Inner Mongolia Baotou Steel Union Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600011,华能国际,Huaneng Power International Inc,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600015,华夏银行,Hua Xia Bank Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600016,民生银行,China Minsheng Banking Corp Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600018,上港集团,Shanghai International Port (Group) Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600019,宝钢股份,Baoshan Iron &Steel Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600021,上海电力,Shanghai Electric Power Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600023,浙能电力,"Zhejiang Zheneng Electric Power Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600025,华能水电,HuanengLancang River Hydropower Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600026,中远海能,"COSCO SHIPPING Energy Transportation Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600027,华电国际,Huadian Power International Corporation Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600028,中国石化,China Petroleum & Chemical Corporation,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600029,南方航空,China Southern Airlines Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600030,中信证券,CITIC Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600031,三一重工,Sany Heavy Industry Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600032,浙江新能,"Zhejiang Provincial New Energy Investment Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600036,招商银行,China Merchants Bank Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600038,中直股份,"AVIC Helicopter Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600039,四川路桥,Sichuan Road&Bridge Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600048,保利发展,"Poly Developments and Holdings Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600050,中国联通,China United Network Communications Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600060,海信视像,"Hisense Visual Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600061,国投资本,"SDIC Capital Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600062,华润双鹤,"CHINA RESOURCES DOUBLE-CRANE PHARMACEUTICAL CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600066,宇通客车,Zhengzhou Yutong Bus Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600085,同仁堂,Beijing Tongrentang Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600089,特变电工,TBEA Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600095,湘财股份,"XIANGCAI CO.,LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600098,广州发展,Guangzhou Development Group Incorporated,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600100,同方股份,Tsinghua Tongfang Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600104,上汽集团,SAIC Motor Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600105,永鼎股份,"Jiangsu Etern Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600109,国金证券,Sinolink Securities Co. Ltd.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600111,北方稀土,"China Northern Rare Earth (Group) High-Tech Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600115,中国东航,"China Eastern Airlines Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600118,中国卫星,China Spacesat Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600126,杭钢股份,Hang Zhou Iron & Steel Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600131,国网信通,"State Grid Information&Communication Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600132,重庆啤酒,Chongqing Brewery Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600141,兴发集团,Hubei Xingfa Chemicals Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600143,金发科技,Kingfa Sci&Tech Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600150,中国船舶,China CSSC Holdings Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600153,建发股份,Xiamen C&D Inc,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600157,永泰能源,"WINTIME ENERGY GROUP CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600160,巨化股份,Zhejiang Ju Hua Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600161,天坛生物,Beijing Tiantan Biological Products Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600166,福田汽车,Beiqi Foton Motor Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600170,上海建工,Shanghai Construction Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600171,上海贝岭,Shanghai Belling Corp Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600176,中国巨石,"CHINA JUSHI CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600177,雅戈尔,Youngor Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600183,生益科技,"Shengyi Technology Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600188,兖矿能源,Yankuang Energy Group Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600196,复星医药,Shanghai Fosun Pharmaceutical (Group) Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600208,衢州发展,"Quzhou Xin'an Development Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600219,南山铝业,"Shandong Nanshan Aluminium Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600221,海航控股,"Hainan Airlines Holding Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600233,圆通速递,"YTO Express Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600256,广汇能源,"GUANGHUI ENERGY CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600276,恒瑞医药,Jiangsu Hengrui Medicine Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600282,南钢股份,Nanjing Iron & Steel Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600292,电投水电,"SPIC Hydropower Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600295,鄂尔多斯,"Inner Mongolia Eerduosi Resources Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600298,安琪酵母,Angel Yeast Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600299,安迪苏,Bluestar Adisseo Company,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600309,万华化学,"Wanhua Chemical Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600312,平高电气,Henan Pinggao Electric Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600316,洪都航空,Jiangxi Hongdu Aviation Industry Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600329,达仁堂,Tianjin Pharmaceutical Da Ren Tang Group Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600332,白云山,GUANGZHOU BAIYUNSHAN PHARMACEUTICAL HOLDINGS COMPANY LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600339,中油工程,China Petroleum Engineering Corporation,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600346,恒力石化,"Hengli Petrochemical Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600348,华阳股份,"Shan Xi Hua Yang Group New Energy Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600350,山东高速,Shandong Hi-speed Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600352,浙江龙盛,Zhejiang Longsheng Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600362,江西铜业,Jiangxi Copper Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600363,联创光电,Jiangxi Lianchuang Optoelectronic Science and Technology Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600369,西南证券,Southwest Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600372,中航机载,"AVIC Airborne Systems Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600377,宁沪高速,Jiangsu Expressway Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600378,昊华科技,"Haohua Chemical Science & Technology Corp., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600380,健康元,Joincare Pharmaceutical Group Industry Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600390,五矿资本,Minmetals Capital Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600392,盛和资源,"Shenghe Resources Holding Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600398,海澜之家,"Heilan Home Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600406,国电南瑞,"NARI Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600415,小商品城,Zhejiang China Commodities City Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600426,华鲁恒升,Shandong Hualu-Hengsheng Chemical Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600435,北方导航,"North Navigation Control Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600436,片仔癀,Zhangzhou Pientzehuang Pharmaceutical Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600438,通威股份,Tongwei Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600460,士兰微,Hangzhou Silan Microelectronics Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600482,中国动力,"China Shipbuilding Industry Group Power Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600483,福能股份,"FUJIAN FUNENG CO., LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600486,扬农化工,Jiangsu Yangnong Chemical Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600489,中金黄金,Zhongjin Gold Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600497,驰宏锌锗,Yunnan Chihong Zinc&Germanium Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600498,烽火通信,Fiberhome Telecommunication Technologies Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600499,科达制造,"Keda Industrial Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600511,国药股份,China National Medicines Corp Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600515,海南机场,"Hainan Airport Infrastructure Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600516,方大炭素,"Fangda Carbon New Material Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600517,国网英大,"STATE GRID YINGDA CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600519,贵州茅台,Kweichow Moutai Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600521,华海药业,Zhejiang Huahai Pharmaceutical Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600522,中天科技,Jiangsu Zhongtian Technologies Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600535,天士力,"TASLY PHARMACEUTICAL GROUP CO.,LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600536,中国软件,China National Software & Service Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600546,山煤国际,"Shanxi Coal International Energy Group Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600547,山东黄金,Shandong Gold-Mining Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600549,厦门钨业,Xiamen Tungsten Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600562,国睿科技,"Glarun Technology Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600563,法拉电子,"Xiamen Faratronic Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600566,济川药业,"HUBEI JUMPCAN PHARMACEUTICAL CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600570,恒生电子,Hundsun Technologies Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600578,京能电力,"BEIJING JINGNENG POWER CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600582,天地科技,Tiandi Science & Technology Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600583,海油工程,Offshore Oil Engineering Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600584,长电科技,"JCET Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600585,海螺水泥,Anhui Conch Cement Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600588,用友网络,"Yonyou Network Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600595,中孚实业,Henan Zhongfu Industry Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600598,北大荒,Heilongjiang Agriculture Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600600,青岛啤酒,Tsingtao Brewery Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600601,方正科技,Founder Technology Group Corp.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600602,云赛智联,INESA Intelligent Tech Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600606,绿地控股,Greenland Holdings Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600637,东方明珠,"Shanghai Oriental Pearl Media Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600642,申能股份,Shenergy Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600655,豫园股份,"SHANGHAI YUYUAN TOURIST MART (GROUP) CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600660,福耀玻璃,"Fuyao Glass Industry Group Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600663,陆家嘴,Shanghai Lujiazui Finance and Trade Zone Development Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600674,川投能源,Sichuan Chuantou Energy Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600685,中船防务,CSSC OFFSHORE & MARINE ENGINEERING (GROUP) COMPANY LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600688,上海石化,Sinopec Shanghai Petrochemical Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600690,海尔智家,"Haier Smart Home Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600699,均胜电子,Ningbo Joyson Electronic Corp.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600704,物产中大,Zhejiang Material Industrial Zhongda Yuantong Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600707,彩虹股份,Irico Display Devices Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600711,盛屯矿业,"Chengtun Mining Group Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600737,中粮糖业,"COFCO SUGAR HOLDING CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600741,华域汽车,HUAYU Automotive Systems Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600754,锦江酒店,"Shanghai Jin Jiang International Hotels Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600760,中航沈飞,AVIC SHENYANG AIRCRAFT COMPANY LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600763,通策医疗,TOPCHOICE MEDICAL CORPORATION,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600764,中国海防,China Shipbuilding Industry Group and Marine Defense Information Against Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600765,中航重机,Avic Heavy Machinery Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600795,国电电力,GD Power Development Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600801,华新建材,"HUAXIN BUILDING MATERIALS GROUP CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600803,新奥股份,"ENN Ecological Holdings Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600808,马钢股份,Maanshan Iron and Steel Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600809,山西汾酒,Shanxi Xinghuacun Fen Wine Factory Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600816,建元信托,"J-Yuan Trust Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600820,隧道股份,Shanghai Tunnel Engineering Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600845,宝信软件,Shanghai Baosight Software Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600848,上海临港,Shanghai Lingang Holdings Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600862,中航高科,"Avic Aviation High-Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600863,华能蒙电,Inner Mongolia Mengdian Huaneng Thermal Power Corp Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600871,石化油服,Sinopec Oilfield Service Corporation,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600873,梅花生物,"Meihua Holdings Group Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600875,东方电气,Dongfang Electric Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600879,航天电子,"China Aerospace Times Electronics Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600884,杉杉股份,Ningbo Shanshan Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600885,宏发股份,"Hongfa Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600886,国投电力,"SDIC Power Holdings Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600887,伊利股份,Inner Mongolia Yili Industrial Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600893,航发动力,AVIC AVIATION ENGINE CORPORATION PLC.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600900,长江电力,China Yangtze Power Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600901,江苏金租,"Jiangsu Financial Leasing Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600905,三峡能源,"China Three Gorges Renewables (Group) Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600906,财达证券,"CAIDA SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600909,华安证券,"HUAAN SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600918,中泰证券,"ZHONGTAI SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600919,江苏银行,"Bank of Jiangsu Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600926,杭州银行,"BANK OF HANGZHOU CO., LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600927,永安期货,"Yongan Futures Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600930,华电新能,Huadian New Energy Group Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600938,中国海油,CNOOC Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600941,中国移动,China Mobile Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600958,东方证券,ORIENT SECURITIES COMPANY LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600967,内蒙一机,"Inner Mongolia First Machinery Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600968,海油发展,CNOOC Energy Technology & Services Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600970,中材国际,Sinoma International Engineering Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600977,中国电影,"CHINA FILM CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600985,淮北矿业,"Huaibei Mining Holdings Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600988,赤峰黄金,Chifeng Jilong Gold Mining Group Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600989,宝丰能源,"Ningxia Baofeng Energy Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600995,南网储能,"China Southern Power Grid Energy Storage Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600998,九州通,Jointown Pharmaceutical Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,600999,招商证券,China Merchants Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601000,唐山港,Tangshan Port Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601001,晋控煤业,"Jinneng Holding Shanxi Coal Industry Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601006,大秦铁路,Daqin Railway Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601009,南京银行,Bank of Nanjing Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601012,隆基绿能,"Longi Green Energy Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601016,节能风电,CECEP Wind-Power Corporation,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601018,宁波港,Ningbo Port Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601019,山东出版,"Shandong Publishing&Media Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601021,春秋航空,"Spring Airlines Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601058,赛轮轮胎,"Sailun Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601059,信达证券,"CINDA SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601066,中信建投,"China Securities Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601077,渝农商行,"Chongqing Rural Commercial Bank Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601088,中国神华,China Shenhua Energy Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601098,中南传媒,China South Publishing & Media Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601099,太平洋,The Pacific Securities Co.Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601100,恒立液压,"Jiangsu Hengli Hydraulic CO., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601106,中国一重,China First Heavy Industries Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601108,财通证券,"CAITONG SECURITIES CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601111,中国国航,Air China Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601112,振石股份,"Zhejiang Zhenshi New Materials Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601117,中国化学,China National Chemical Engineering Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601118,海南橡胶,China Hainan Rubber Industry Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601127,赛力斯,"Seres Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601128,常熟银行,"Jiangsu Changshu Rural Commercial Bank Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601136,首创证券,Capital Securities Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601138,工业富联,"Foxconn Industrial Internet Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601139,深圳燃气,Shenzhen Gas Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601155,新城控股,"Future Land Holdings Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601156,东航物流,"Eastern Air Logistics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601162,天风证券,"TIANFENG SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601166,兴业银行,Industrial Bank,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601169,北京银行,Bank of Beijing Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601179,中国西电,China XD Electric Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601186,中国铁建,China Railway Construction Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601198,东兴证券,"DONGXING SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601211,国泰海通,"GUOTAI HAITONG SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601212,白银有色,"Baiyin Nonferrous Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601216,君正集团,"Inner Mongolia Junzheng Energy & Chemical Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601225,陕西煤业,Shaanxi Coal Industry Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601228,广州港,GUANGZHOU PORT COMPANY LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601229,上海银行,"Bank of Shanghai Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601233,桐昆股份,Tongkun Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601236,红塔证券,"HONGTA SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601238,广汽集团,"Guangzhou Automobile Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601288,农业银行,Agricultural Bank of China Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601298,青岛港,"Qingdao Port International Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601318,中国平安,Ping An Insurance (Group) Company of China Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601319,中国人保,The People's Insurance Company (Group) of China Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601328,交通银行,Bank of Communications Co LTD,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601336,新华保险,New China Life Insurance Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601360,三六零,360 Security Technology Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601377,兴业证券,Industrial Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601390,中国中铁,China Railway Group Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601398,工商银行,Industrial and Commercial Bank of China Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601399,国机重装,"Sinomach Heavy Equipment Group Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601456,国联民生,Guolian Minsheng Securities Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601555,东吴证券,Soochow Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601567,三星电气,"Ningbo Sanxing Medical Electric Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601577,长沙银行,"BANK OF CHANGSHA CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601598,中国外运,Sinotrans Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601600,中国铝业,Aluminum Corporation of China Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601601,中国太保,China Pacific Insurance (Group) Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601607,上海医药,"Shanghai Pharmaceuticals Holding Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601608,中信重工,"CITIC HEAVY INDUSTRIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601611,中国核建,China Nuclear Engineering Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601615,明阳智能,MingYangSmartEnergyGroupLimited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601618,中国中冶,Metallurgical Corporation of China Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601628,中国人寿,China Life Insurance Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601633,长城汽车,Great Wall Motor Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601658,邮储银行,"POSTAL SAVINGS BANK OF CHINA CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601665,齐鲁银行,"QILU BANK CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601666,平煤股份,Pingdingshan Tianan Coal Mining Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601668,中国建筑,China State Construction Engineering Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601669,中国电建,"Power Construction Corporation of China,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601688,华泰证券,Huatai Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601689,拓普集团,"Ningbo Tuopu Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601696,中银证券,"BOC International (China) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601698,中国卫通,"China Satellite Communications Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601699,潞安环能,Shanxi Lu'an Environmental Energy Development Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601717,中创智领,ZMJ Group Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601727,上海电气,Shanghai Electric Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601728,中国电信,China Telecom Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601766,中国中车,CRRC Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601788,光大证券,Everbright Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601799,星宇股份,Changzhou Xingyu Automotive Lighting Systems Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601800,中国交建,China Communications Construction Company Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601808,中海油服,China Oilfield Services Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601816,京沪高铁,"Beijing-Shanghai High Speed Railway Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601818,光大银行,China Everbright Bank Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601825,沪农商行,"Shanghai Rural Commercial Bank Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601838,成都银行,"BANK OF CHENGDU CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601857,中国石油,PetroChina Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601865,福莱特,"Flat Glass Group CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601866,中远海发,"COSCO SHIPPING Development Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601868,中国能建,China Energy Engineering Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601869,长飞光纤,Yangtze Optical Fibre and Cable Joint Stock Limited Company,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601872,招商轮船,"China Merchants Energy Shipping Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601877,正泰电器,Zhejiang Chint Electrics Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601878,浙商证券,"ZHESHANG SECURITIES CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601880,辽港股份,"Liaoning Port Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601881,中国银河,"China Galaxy Securities Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601888,中国中免,China Tourism Group Duty Free Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601898,中煤能源,China Coal Energy Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601899,紫金矿业,Zijin Mining Group Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601901,方正证券,Founder Securities Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601916,浙商银行,"CHINA ZHESHANG BANK CO.,LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601919,中远海控,"COSCO SHIPPING Holdings Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601928,凤凰传媒,Jiangsu Phoenix Publishing & Media Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601939,建设银行,China Construction Bank,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601958,金钼股份,Jinduicheng Molybdenum Co Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601966,玲珑轮胎,"Shandong Linglong Tyre Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601985,中国核电,"China National Nuclear Power Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601988,中国银行,Bank of China Ltd,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601990,南京证券,"Nanjing Securities Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601991,大唐发电,"Datang International Power Generation Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601995,中金公司,China International Capital Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601997,贵阳银行,"Bank of Guiyang Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,601998,中信银行,China Citic Bank Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603000,人民网,"People.cn CO.,LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603019,中科曙光,"Dawning Information Industry Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603049,中策橡胶,"Zhongce Rubber Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603077,和邦生物,"Sichuan Hebang Biotechnology Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603087,甘李药业,Gan & Lee Pharmaceuticals,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603092,德力佳,"Delijia Transmission Technology (Jiangsu) Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603119,浙江荣泰,"Zhejiang Rongtai Electric Material Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603129,春风动力,"ZHEJIANGCFMOTOPOWERCO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603156,养元饮品,"Hebei Yangyuan ZhiHui Beverage Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603160,汇顶科技,"Shenzhen Huiding Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603175,超颖电子,"Dynamic Electronics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603179,新泉股份,"Jiangsu Xinquan Automotive Trim Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603225,新凤鸣,"Xinfengming Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603233,大参林,"DaShenLin Pharmaceutical Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603256,宏和科技,"GRACE FABRIC TECHNOLOGY CO.,LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603259,药明康德,"WuXi AppTec Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603260,合盛硅业,"HOSHINE SILICON INDUSTRY CO.,LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603288,海天味业,Foshan Haitian Flavouring and Food Company Ltd.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603290,斯达半导,StarPower Semiconductor Ltd.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603296,华勤技术,"Huaqin Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603298,杭叉集团,"Hangcha Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603308,应流股份,"ANHUI YINGLIU ELECTROMECHANICAL CO., LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603338,浙江鼎力,"Zhejiang Dingli Machinery Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603341,龙旗科技,"Shanghai Longcheer Technology Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603345,安井食品,"FU JIAN ANJOY FOODS CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603369,今世缘,"Jiangsu King's Luck Brewery Joint-Stock Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603379,三美股份,"Zhejiang Sanmei Chemical Industry Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603392,万泰生物,"BEIJING WANTAI BIOLOGICAL PHARMACY ENTERPRISE CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603444,吉比特,"G-bits Network Technology(Xiamen)Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603486,科沃斯,"Ecovacs Robotics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603501,豪威集团,"Omni Vision Integrated Circuits Group, Inc.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603529,爱玛科技,"AIMA TECHNOLOGY GROUP CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603565,中谷物流,"Shanghai Zhonggu Logistics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603568,伟明环保,"ZHEJIANG WEIMING ENVIRONMENT PROTECTION CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603589,口子窖,"Anhui Kouzi Distillery Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603596,伯特利,"Bethel Automotive Safety Systems Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603605,珀莱雅,"Proya Cosmetics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603606,东方电缆,"Ningbo Orient Wires & Cables Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603650,彤程新材,"Red Avenue New Materials Group Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603658,安图生物,"Autobio Diagnostics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603659,璞泰来,"Shanghai Putailai New Energy Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603688,石英股份,"JIANGSU PACIFIC QUARTZ CO., LTD",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603699,纽威股份,"Neway Valve (Suzhou) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603728,鸣志电器,"Shanghai Moons' Electric Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603737,三棵树,"SKSHU Paint Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603766,隆鑫通用,"Loncin Motor Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603786,科博达,"KEBODA TECHNOLOGY Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603799,华友钴业,"ZHEJIANG HUAYOU COBALT CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603806,福斯特,"HANGZHOU FIRST PV MATERIAL Co., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603816,顾家家居,"Jason Furniture (Hangzhou) Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603833,欧派家居,Oppein Home Group Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603858,步长制药,"SHANDONG BUCHANG PHARMACEUTICALS CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603885,吉祥航空,"JUNEYAO AIRLINES Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603893,瑞芯微,"Fuzhou Rockchip Electronics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603899,晨光股份,SHANGHAI M&G STATIONERY INC.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603920,世运电路,"Olympic Circuit Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603939,益丰药房,"Yifeng Pharmacy Chain Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603979,金诚信,"JCHX MINING MANAGEMENT CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603986,兆易创新,GigaDevice Semiconductor (Beijing) Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,603993,洛阳钼业,"China Molybdenum Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,605117,德业股份,"Ningbo Deye Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,605358,立昂微,"Hangzhou Lion Electronics Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,605499,东鹏饮料,"Eastroc Beverage (Group) Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,605589,圣泉集团,"Jinan Shengquan Group Share Holding Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688002,睿创微纳,"Raytron Technology Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688008,澜起科技,"Montage Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688009,中国通号,China Railway Signal & Communication Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688012,中微公司,Advanced Micro-Fabrication Equipment Inc. China,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688017,绿的谐波,"Leader Harmonious Drive Systems Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688018,乐鑫科技,"Espressif Systems (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688019,安集科技,"Anji Microelectronics Technology (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688027,国盾量子,"QuantumCTek Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688036,传音控股,"SHENZHEN TRANSSION HOLDINGS CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688037,芯源微,"KINGSEMI Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688041,海光信息,"Hygon Information Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688047,龙芯中科,Loongson Technology Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688052,纳芯微,"Suzhou Novosense Microelectronics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688065,凯赛生物,Cathay Biotech Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688072,拓荆科技,Piotech Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688082,盛美上海,"ACM Research (Shanghai) ,Inc.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688099,晶晨股份,"Amlogic (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688111,金山办公,"Beijing Kingsoft Office Software, Inc.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688114,华大智造,"MGI Tech Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688120,华海清科,"Hwatsing Technology Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688122,西部超导,"Western Superconducting Technologies Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688126,沪硅产业,"National Silicon Industry Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688166,博瑞医药,"BrightGene Bio-Medical Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688169,石头科技,"Beijing Roborock Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688172,燕东微,"Beijing YanDong MicroElectronic Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688180,君实生物,"Shanghai Junshi Biosciences Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688183,生益电子,"SHENGYI ELECTRONICS CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688187,时代电气,"Zhuzhou CRRC Times Electric Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688188,柏楚电子,SHANGHAI FRIENDESS ELECTRONICS TECHNOLOGY CORPORATION LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688192,迪哲医药,"Dizal (Jiangsu) Pharmaceutical Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688200,华峰测控,"Beijing Huafeng Test & Control Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688213,思特威,"Smartsens Technology (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688220,翱捷科技,"ASR Microelectronics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688223,晶科能源,"Jinko Solar Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688234,天岳先进,"SICC CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688235,百济神州,"BeiGene, Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688248,南网科技,"ChinaSouthernPowerGridTechnologyCo.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688256,寒武纪,Cambricon Technologies Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688266,泽璟制药,"Suzhou Zelgen Biopharmaceuticals Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688271,联影医疗,"Shanghai United Imaging Healthcare Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688278,特宝生物,"Xiamen Amoytop Biotech Co., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688281,华秦科技,"Shaanxi Huaqin Technology Industry Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688295,中复神鹰,"Zhongfu Shenying Carbon Fiber Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688297,中无人机,"AVIC (CHENGDU) UAS CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688301,奕瑞科技,iRay Group,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688303,大全能源,"XinJiang Daqo New Energy Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688313,仕佳光子,"Henan Shijia Photons Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688318,财富趋势,"Shenzhen Fortune Trend Technology Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688322,奥比中光,Orbbec Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688331,荣昌生物,"RemeGen Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688336,三生国健,"Sunshine Guojian Pharmaceutical (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688343,云天励飞,"Shenzhen Intellifusion Technologies Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688347,华虹宏力,Hua Hong Grace Semiconductor Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688349,三一重能,"Sany Heavy Energy Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688361,中科飞测,"Skyverse Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688363,华熙生物,Bloomage Biotechnology Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688375,国博电子,"Guobo Electronics Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688385,复旦微电,"Shanghai Fudan Microelectronics Group CO.,LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688387,信科移动,"CICT Mobile Communication Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688396,华润微,China Resources Microelectronics Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688411,海博思创,"Beijing HyperStrong Technology Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688425,铁建重工,China Railway Construction Heavy Industry Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688469,芯联集成,"United Nova Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688472,阿特斯,"CSI Solar Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688475,萤石网络,"Hangzhou EZVIZ Network Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688498,源杰科技,"Yuanjie Semiconductor Technology Co., Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688506,百利天恒,"Sichuan Biokin Pharmaceutical Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688520,神州细胞,Sinocelltech Group Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688521,芯原股份,"VeriSilicon Microelectronics (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688538,和辉光电,"Everdisplay Optronics (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688561,奇安信,Qi An Xin Technology Group Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688563,航材股份,"Baimtec Material Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688568,中科星图,"Geovis Technology Co.,Ltd",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688578,艾力斯,"Shanghai Allist Pharmaceuticals Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688582,芯动联科,Anhui XDLK Microsystem Corporation Limited,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688599,天合光能,"Trina Solar Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688608,恒玄科技,"Bestechnic (Shanghai) Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688615,合合信息,"Intsig Information Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688617,惠泰医疗,APT Medical Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688629,华丰科技,"Sichuan Huafeng Technology Co., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688676,金盘科技,"HAINAN JINPAN SMART TECHNOLOGY CO., LTD.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688692,达梦数据,WUHAN DAMENG DATABASE COMPANY LIMITED,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688702,盛科通信,"Suzhou Centec Communications Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688708,佳驰科技,"Chengdu Jiachi Electronic Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688709,成都华微,"Chengdu Sino-Microelectronics Tech. Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688728,格科微,GalaxyCore Inc.,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688772,珠海冠宇,"Zhuhai CosMX Battery Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688777,中控技术,"SUPCON Technology Co., Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688778,厦钨新能,"XTC New Energy Materials (Xiamen) Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688819,天能股份,"Tianneng Battery Group Co.,Ltd.",上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,688981,中芯国际,Semiconductor Manufacturing International Corporation,上海证券交易所,Shanghai Stock Exchange
+2026-08-10,000906,中证800,CSI 800,689009,九号公司,Ninebot Limited,上海证券交易所,Shanghai Stock Exchange

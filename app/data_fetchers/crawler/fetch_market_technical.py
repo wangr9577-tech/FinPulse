@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from app.data_fetchers.crawler.utils import (
-    RAW, save_processed, log_fetch, TZ_BEIJING,
+    RAW, SOURCE_DATA, save_processed, log_fetch, TZ_BEIJING,
 )
 
 
@@ -38,7 +38,7 @@ try:
         try:
             df_index = ak.stock_zh_index_daily(symbol=f"sh{INDEX_CODE}")
         except Exception as e2:
-            print(f"  Sina源也失败: {type(e).__name__}")
+            print(f"  Sina源也失败: {type(e2).__name__}")
 
     if df_index is not None and not df_index.empty:
         print(f"  中证800行情形状: {df_index.shape}")
@@ -54,6 +54,40 @@ try:
         df_index["close"] = pd.to_numeric(df_index["close"], errors="coerce")
         df_index = df_index.dropna(subset=["date", "close"]).sort_values("date").reset_index(drop=True)
         log_fetch("csindex", "OK", f"中证800行情: {len(df_index)}条")
+
+        # 兼容数据源不返回成交额(amount)：用中证官网成交金额补齐（真实、权威、覆盖全历史）。
+        # EM 新版指数日线接口已不含 amount、新浪源也无；中证指数官网 stock_zh_index_hist_csindex
+        # 返回成交金额(亿元，×1e8 转元)，与既有 amount 历史序列在 4700+ 个重叠日完全一致。
+        if "amount" not in df_index.columns or df_index["amount"].isna().any():
+            try:
+                today_str = datetime.now(TZ_BEIJING).strftime("%Y%m%d")
+                cs = ak.stock_zh_index_hist_csindex(
+                    symbol=INDEX_CODE, start_date="20050101", end_date=today_str
+                )
+                cs_dates = pd.to_datetime(cs["日期"], errors="coerce")
+                cs_amt = pd.to_numeric(cs["成交金额"], errors="coerce") * 1e8  # 亿元 -> 元
+                df_index["amount"] = df_index["date"].map(pd.Series(cs_amt.values, index=cs_dates))
+                print(f"  [OK] amount 用中证官网成交金额补齐 {int(df_index['amount'].notna().sum())} 行")
+            except Exception as e_cs:
+                print(f"  [WARN] csindex成交金额补齐失败: {e_cs}")
+                # 兜底：从既有 source_data 回填历史 amount，避免用缺失值覆盖掉真实成交额
+                try:
+                    src_path = SOURCE_DATA / "中证800日行情.csv"
+                    if src_path.exists():
+                        old = pd.read_csv(src_path, encoding="utf-8-sig")
+                        if "amount" in old.columns:
+                            old_dates = pd.to_datetime(old["date"], errors="coerce")
+                            old_amount = pd.to_numeric(old["amount"], errors="coerce")
+                            df_index["amount"] = df_index["date"].map(pd.Series(old_amount.values, index=old_dates))
+                            print(f"  [OK] amount 从既有 source_data 回填 {int(df_index['amount'].notna().sum())} 行")
+                except Exception as e_back:
+                    print(f"  [WARN] amount回填失败: {e_back}")
+
+        # 同步中证800日行情到 source_data（01_数据清洗的输入），否则报告 as_of 停留旧时间点
+        try:
+            save_processed(df_index, "中证800日行情.csv", "market")
+        except Exception as e_sync:
+            print(f"  [WARN] 中证800日行情同步source_data失败: {e_sync}")
     else:
         log_fetch("csindex", "WARN", "中证800行情为空")
 except Exception as e:
@@ -306,6 +340,16 @@ if df_index is not None and not df_index.empty:
             print(f"    最新 NH_ratio={df_hl['nh_ratio'].iloc[-1]:.2%}, NL_ratio={df_hl['nl_ratio'].iloc[-1]:.2%}")
             print(f"    日期范围: {df_hl['date'].min().date()} ~ {df_hl['date'].max().date()}")
             log_fetch("technical", "OK", f"新高新低(行业广度:{success_sectors}行业) {len(df_hl)}条")
+
+            # 同步行业新高新低到 source_data（01_数据清洗的输入），保持 01/02 使用最新市场广度
+            try:
+                save_processed(
+                    df_hl[["date", "sector_count", "nh_ratio", "nl_ratio"]],
+                    "行业新高新低_代理.csv",
+                    "technical",
+                )
+            except Exception as e_sync_hl:
+                print(f"  [WARN] 行业新高新低同步source_data失败: {e_sync_hl}")
         else:
             print(f"  [WARN] 行业数据不足({success_sectors}个), 回退到指数代理")
             # 回退：使用指数级别新高新低作为最简代理
