@@ -1,0 +1,25 @@
+:root {
+  --brand-primary: #1e3a8a;
+  --brand-bg: #f5f7fb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei',
+    'PingFang SC', 'Hiragino Sans GB', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--brand-bg);
+  color: #1e293b;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

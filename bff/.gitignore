@@ -1,0 +1,5 @@
+# BFF 服务忽略项
+node_modules/
+*.log
+.env
+.DS_Store

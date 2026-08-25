@@ -1,0 +1,23 @@
+{
+  "name": "research-engine-bff",
+  "version": "1.0.0",
+  "description": "Node.js BFF (Backend For Frontend) Proxy & Routing Service for Intelligent Equity Research Engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "bff",
+    "node",
+    "equity-research",
+    "fastapi"
+  ],
+  "author": "Data Agent",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

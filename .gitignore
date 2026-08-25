@@ -1,56 +1,60 @@
 # =================================================================
-# Git Ignore Configuration for FinPulse Backend
+# FinPulse Monorepo 根级 Git Ignore
+# 说明：backend/.gitignore 与 frontend/.gitignore、bff/.gitignore 已各自
+#      处理子目录内的忽略；本文件负责根级与公共目录的排除。
 # =================================================================
 
-# Environment Variables & Sensitive Credentials (DO NOT COMMIT)
+# ---- 敏感配置（绝不提交） ----
 .env
 .env.*
 !.env.example
 
-# Python Bytecode & Cache
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-*.egg
-
-# Virtual Environments
+# ---- Python ----
 venv/
 .venv/
 env/
 ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.coverage
 
-# Logs & Temporary Log Files
-logs/
+# ---- 前端 / Node ----
+node_modules/
+.npm-cache/
+dist/
+*.local
+
+# ---- 日志与运行残留 ----
 *.log
-data/logs/
+logs/
 
-# Generated Output & Reports (PDFs, HTML previews, etc.)
-output/*
-!output/.gitkeep
-
-# Databases & Local Data Stores
-*.db
-*.sqlite
-*.sqlite3
-
-# IDE & Editor Configurations
+# ---- IDE / Claude / OS ----
+.claude/
 .vscode/
 .idea/
-.claude/
 *.swp
 *.swo
-*.sublime-project
-*.sublime-workspace
-
-# Operating System Files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Testing & Coverage Reports
-.coverage
-htmlcov/
-.pytest_cache/
-.mypy_cache/
+# ---- 测试与临时残留文件 ----
+_bashtest.txt
+result.txt
+stdout_test.txt
+_tag_result*.txt
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- 项目无关 / 个人目录（不入库） ----
+backend.zip
+日报/
+入职材料/
+语音文件/
+*.pdf
