@@ -11,7 +11,14 @@ SYSTEM_PROMPT = (
 
 
 def _client() -> OpenAI:
-    return OpenAI(api_key=settings.DEEPSEEK_API_KEY, base_url=settings.DEEPSEEK_BASE_URL)
+    # 显式超时 + 收紧重试：与 analyzer._client 保持一致，避免单条挂起把整批拖死
+    # （SDK 默认 600s 超时 + 2 次重试会让并发线程集体阻塞 30 分钟以上）。
+    return OpenAI(
+        api_key=settings.DEEPSEEK_API_KEY,
+        base_url=settings.DEEPSEEK_BASE_URL,
+        timeout=30.0,
+        max_retries=1,
+    )
 
 
 def comment_sector(board: SectorAnalysis) -> str:
