@@ -62,3 +62,17 @@ backend.zip
 # ---- 外部公告抓取源码（含真实密钥 / PII，绝不入库） ----
 gonggao_code_*/
 gonggao_code_*.zip
+
+# ---- 市场与研报数据产物（可再生成，不入库） ----
+backend/data/raw/
+backend/data/processed/
+backend/data/cleaned_data/
+backend/data/results/
+backend/data/source_data/
+backend/data/logs/
+backend/data/mongodb/
+backend/data/**/*.csv
+
+# ---- stock_daily 运行产物（缓存与分析结果，保留 bundled_trade_days.csv 依赖） ----
+backend/app/stock_daily/data/analysis/
+backend/app/stock_daily/data/trade_calendar_*.csv
