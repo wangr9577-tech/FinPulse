@@ -56,7 +56,14 @@ def _build_title_user_prompt(ann: Announcement) -> str:
 
 
 def _client() -> OpenAI:
-    return OpenAI(api_key=settings.DEEPSEEK_API_KEY, base_url=settings.DEEPSEEK_BASE_URL)
+    # 显式超时 + 收紧重试：单次挂起请求在 ~30s 内降级为中性/低，不再让 8 个并发
+    # 线程被无响应请求硬阻塞（SDK 默认 600s 超时 + 2 次重试会把整段拖死 30 分钟以上）。
+    return OpenAI(
+        api_key=settings.DEEPSEEK_API_KEY,
+        base_url=settings.DEEPSEEK_BASE_URL,
+        timeout=30.0,
+        max_retries=1,
+    )
 
 
 def analyze_one(ann: Announcement) -> AnalysisResult:
