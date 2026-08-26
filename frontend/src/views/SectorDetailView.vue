@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { isToday } from '../utils/time'
 import {
   Card,
   List,
@@ -131,13 +132,11 @@ const chainNodes = computed(() => {
   ]
 })
 
-// 情绪与今日统计
+// 情绪与今日统计 (今日 = 过去 24h，非自然日历日)
 const isItemToday = (item) => {
   if (item.is_today === true) return true
   const t = item.publish_time || item.processed_at || item.crawled_at
-  if (!t) return false
-  const d = dayjs(t)
-  return d.isSame(dayjs(), 'day')
+  return isToday(t)
 }
 
 const todayCount = computed(() => items.value.filter(isItemToday).length)
@@ -179,8 +178,8 @@ function fmtTime(t) {
 function timeLabel(t) {
   if (!t) return '最新'
   const d = dayjs(t)
-  if (d.isAfter(dayjs().startOf('day'))) return '今日'
-  if (d.isAfter(dayjs().startOf('day').subtract(1, 'day'))) return '昨日'
+  if (isToday(t)) return '今日'
+  if (Date.now() - new Date(t).getTime() < 48 * 3600 * 1000) return '昨日'
   return d.format('MM-DD')
 }
 

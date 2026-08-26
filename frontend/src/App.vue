@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { Layout, Menu } from 'ant-design-vue'
-import { DashboardOutlined, RadarChartOutlined, ReadOutlined } from '@ant-design/icons-vue'
+import { DashboardOutlined, RadarChartOutlined, ReadOutlined, FileDoneOutlined, FundProjectionScreenOutlined } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -15,6 +15,10 @@ watch(
       selectedKeys.value = ['/hexagon']
     } else if (path.startsWith('/sectors')) {
       selectedKeys.value = ['/sectors']
+    } else if (path.startsWith('/report')) {
+      selectedKeys.value = ['/report']
+    } else if (path.startsWith('/stock-daily')) {
+      selectedKeys.value = ['/stock-daily']
     } else {
       selectedKeys.value = ['/']
     }
@@ -51,6 +55,14 @@ function onMenuClick({ key }) {
         <Menu.Item key="/sectors">
           <template #icon><ReadOutlined /></template>
           板块资讯
+        </Menu.Item>
+        <Menu.Item key="/report">
+          <template #icon><FileDoneOutlined /></template>
+          研报中心
+        </Menu.Item>
+        <Menu.Item key="/stock-daily">
+          <template #icon><FundProjectionScreenOutlined /></template>
+          每日投资日报
         </Menu.Item>
       </Menu>
     </Layout.Sider>

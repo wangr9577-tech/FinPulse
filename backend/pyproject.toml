@@ -57,8 +57,13 @@ dependencies = [
     "reportlab>=4.0.0",
     "python-docx>=1.0.0",
 
+    # 8.1 stock_daily 投资日报接入：公告 PDF 解析 + 证券简称拼音
+    "pypdf>=6.14",
+    "pypinyin>=0.51",
+
     # 9. 时间与通用辅助工具
     "python-dateutil>=2.8.0",
+    "apscheduler>=3.10.0",
 ]
 
 [tool.setuptools.packages.find]

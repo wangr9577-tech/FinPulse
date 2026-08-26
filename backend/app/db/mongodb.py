@@ -15,6 +15,28 @@ from app.core.config import settings
 from app.core.logger import app_logger, log_data_pipeline
 
 
+# 前端「今日」口径：过去 24 小时 (从当前时间回溯)，而非自然日历日。供 is_today / today_card_count 统一使用。
+TODAY_WINDOW_HOURS = 24
+
+
+def _is_within_past_hours(ts: Any, hours: float = TODAY_WINDOW_HOURS) -> bool:
+    """判断时间戳是否落在过去 hours 小时内 (今日 = 过去24h)。支持 datetime / ISO 字符串 / None。"""
+    if ts is None:
+        return False
+    try:
+        if isinstance(ts, datetime):
+            t = ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)
+        else:
+            clean = str(ts).replace("Z", "+00:00")
+            t = datetime.fromisoformat(clean)
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+    except Exception:
+        return False
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    return t >= cutoff
+
+
 class MongoDBClient:
     _instance: Optional["MongoDBClient"] = None
 
@@ -79,6 +101,10 @@ class MongoDBClient:
             report_coll = self.db["market_insight_reports"]
             await report_coll.create_index([("generation_time", -1)])
 
+            # 4. daily_stock_reports 索引 (date 降序索引，用于投资日报历史检索)
+            stock_coll = self.db["daily_stock_reports"]
+            await stock_coll.create_index([("date", -1)])
+
             app_logger.info("[MongoDB] 核心集合索引与 365 天 (1年) TTL 自动过期索引初始化完成！")
         except Exception as e:
             app_logger.error(f"[MongoDB 索引创建失败]: {e}")
@@ -129,13 +155,9 @@ class MongoDBClient:
             hours = settings.REPORT_HOURS_BACK
             if hours and hours > 0:
                 cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
-                cutoff_iso = cutoff_time.isoformat()
-                query = {
-                    "$or": [
-                        {"publish_time": {"$gte": cutoff_iso}},
-                        {"publish_time": {"$gte": cutoff_time}}
-                    ]
-                }
+                # 统一使用 datetime 比较：publish_time 在落库时已被规范为 BSON datetime。
+                # 若与 ISO 字符串比较会产生 BSON 类型括号 (datetime 排序总是高于 string)，导致 24h 过滤被绕过。
+                query = {"publish_time": {"$gte": cutoff_time}}
             cursor = self.db["raw_news_collection"].find(query, {"_id": 0})
             # limit=None 表示查询 24h 时间窗内全量原始新闻（供给研报流水线，不做截断）；
             # limit>0 仅用于展示类接口，保留 3 倍预取后二次截断。
@@ -215,13 +237,13 @@ class MongoDBClient:
             hours = settings.REPORT_HOURS_BACK
             if hours and hours > 0:
                 cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
-                cutoff_iso = cutoff_time.isoformat()
+                # 统一使用 datetime 比较：publish_time/processed_at 落库时已被规范为 BSON datetime。
+                # 混用 ISO 字符串会产生 BSON 类型括号 (datetime 排序总是高于 string)，导致 24h 过滤失效。
                 query = {
                     "$or": [
                         {"processed_at": {"$gte": cutoff_time}},
-                        {"processed_at": {"$gte": cutoff_iso}},
-                        {"publish_time": {"$gte": cutoff_iso}},
-                        {"pub_time": {"$gte": cutoff_iso}}
+                        {"publish_time": {"$gte": cutoff_time}},
+                        {"pub_time": {"$gte": cutoff_time}}
                     ]
                 }
 
@@ -238,8 +260,7 @@ class MongoDBClient:
             raise RuntimeError("MongoDB 未连接，无法执行板块聚合查询")
         
         coll = self.db["structured_news_collection"]
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        
+
         all_cards = await coll.find({}, {"_id": 0, "sector": 1, "sub_category": 1, "publish_time": 1, "processed_at": 1}).to_list(None)
         
         sec_map: Dict[str, Dict[str, Any]] = {}
@@ -258,18 +279,8 @@ class MongoDBClient:
             sec_map[sec]["card_count"] += 1
             
             pt = card.get("publish_time") or card.get("processed_at")
-            is_today = False
-            if isinstance(pt, datetime):
-                if pt.tzinfo is not None:
-                    pt_naive = pt.astimezone(timezone.utc).replace(tzinfo=None)
-                else:
-                    pt_naive = pt
-                if pt_naive.strftime("%Y-%m-%d") == today_str or pt_naive.date() == datetime.now().date():
-                    is_today = True
-            elif isinstance(pt, str) and today_str in pt:
-                is_today = True
-            
-            if is_today:
+            # 今日 = 过去 24h (非自然日历日)：最近 24h 内更新过的卡片计为今日新增
+            if _is_within_past_hours(pt):
                 sec_map[sec]["today_card_count"] += 1
                 
             pt_str = pt.isoformat() if isinstance(pt, datetime) else str(pt or "")
@@ -345,15 +356,14 @@ class MongoDBClient:
         # 分页/展示条数由前端分页器控制，数据层返回时间窗内的完整集合。
         items.sort(key=_parse_ts, reverse=True)
 
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        today_utc_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         for it in items:
             for k in ["publish_time", "processed_at", "crawled_at"]:
                 if isinstance(it.get(k), datetime):
                     it[k] = it[k].isoformat()
-            # 标注是否为今日资讯
-            pt_raw = str(it.get("publish_time") or it.get("processed_at") or it.get("crawled_at") or "")
-            it["is_today"] = (today_str in pt_raw or today_utc_str in pt_raw)
+            # 标注是否为今日资讯 (今日 = 过去 24h，非自然日历日)
+            it["is_today"] = _is_within_past_hours(
+                it.get("publish_time") or it.get("processed_at") or it.get("crawled_at")
+            )
 
         return items
 
@@ -451,18 +461,65 @@ class MongoDBClient:
                 return report
         return None
 
+    async def save_daily_stock_report(self, report: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """按日期 upsert 一份投资日报 (date 唯一)。report 内含 data(date + DailyReportData JSON)。"""
+        if not (self.is_connected and self.db is not None):
+            return None
+        date_str = report.get("date")
+        if not date_str:
+            return None
+        report["generated_at"] = datetime.now(timezone.utc).isoformat()
+        await self.db["daily_stock_reports"].update_one(
+            {"date": date_str},
+            {"$set": report},
+            upsert=True,
+        )
+        return report
+
+    async def get_daily_stock_report_latest(self) -> Optional[Dict[str, Any]]:
+        """获取最新一份投资日报；无数据返回 None (前端按 available:false 空态)。"""
+        if self.is_connected and self.db is not None:
+            doc = await self.db["daily_stock_reports"].find_one({}, {"_id": 0}, sort=[("date", -1)])
+            if doc:
+                return doc
+        return None
+
+    async def get_daily_stock_report_history(self, limit: int = 30) -> List[Dict[str, Any]]:
+        """获取投资日报历史 (按日期倒序，仅返回摘要字段，data 体积大不随列表返回)。"""
+        if not (self.is_connected and self.db is not None):
+            return []
+        cursor = self.db["daily_stock_reports"].find(
+            {}, {"_id": 0, "date": 1, "run_meta": 1, "generated_at": 1}
+        ).sort("date", -1).limit(int(limit))
+        return [doc async for doc in cursor]
+
+    async def get_daily_stock_report_by_date(self, date_str: str) -> Optional[Dict[str, Any]]:
+        """按日期精确取一份投资日报；无数据返回 None。"""
+        if self.is_connected and self.db is not None:
+            doc = await self.db["daily_stock_reports"].find_one({"date": date_str}, {"_id": 0})
+            if doc:
+                return doc
+        return None
+
     async def get_system_config(self) -> Dict[str, Any]:
         """获取当前系统订阅偏好配置"""
         default_cfg = {
             "industries": ["半导体", "人工智能"],
             "macro_keywords": ["美联储", "央行", "PMI", "关税"],
             "regions": ["国内", "美", "日", "韩"],
+            # 研报默认包含板块 (勾选配置)：研报仅分析/渲染这些板块
+            "report_sectors": ["国内宏观", "国外宏观", "半导体", "互联网服务", "银行"],
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
         if self.is_connected and self.db is not None:
             cfg = await self.db["system_config_collection"].find_one({"config_key": "user_subscriptions"}, {"_id": 0})
             if cfg and "payload" in cfg:
-                return cfg["payload"]
+                stored = cfg["payload"]
+                # 用默认值补齐旧 schema 缺失的字段 (如新加的 report_sectors)，
+                # 避免历史存储的配置把新默认字段丢弃。
+                merged = dict(default_cfg)
+                merged.update(stored or {})
+                return merged
         return default_cfg
 
     async def update_system_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -475,6 +532,32 @@ class MongoDBClient:
                 upsert=True
             )
         return config_data
+
+    async def get_config_payload(self, config_key: str, default_payload: Dict[str, Any]) -> Dict[str, Any]:
+        """读取任意配置项 (system_config_collection[{config_key}] 的 payload)。
+
+        用 default_payload 补齐缺失字段 (仿 get_system_config 的 merge 行为)，保证历史存储缺字段时
+        仍能返回完整结构；Mongo 未连接/无记录时直接返回默认值。
+        """
+        default_payload = dict(default_payload or {})
+        if self.is_connected and self.db is not None:
+            cfg = await self.db["system_config_collection"].find_one({"config_key": config_key}, {"_id": 0})
+            if cfg and isinstance(cfg.get("payload"), dict):
+                merged = dict(default_payload)
+                merged.update(cfg["payload"])
+                return merged
+        return default_payload
+
+    async def set_config_payload(self, config_key: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """更新任意配置项 payload，upsert 并带 updated_at 时间戳。"""
+        payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+        if self.is_connected and self.db is not None:
+            await self.db["system_config_collection"].update_one(
+                {"config_key": config_key},
+                {"$set": {"config_key": config_key, "payload": payload}},
+                upsert=True
+            )
+        return payload
 
     async def benchmark_async_read_write(self, sample_size: int = 10) -> Dict[str, Any]:
         """7.28 专用：Motor / PyMongo 异步读写基准并发吞吐测试"""

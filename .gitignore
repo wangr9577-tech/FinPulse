@@ -58,3 +58,7 @@ backend.zip
 入职材料/
 语音文件/
 *.pdf
+
+# ---- 外部公告抓取源码（含真实密钥 / PII，绝不入库） ----
+gonggao_code_*/
+gonggao_code_*.zip

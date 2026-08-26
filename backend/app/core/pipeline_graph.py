@@ -19,6 +19,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app.core.logger import app_logger, log_agent_action, log_data_pipeline
 from app.core.config import settings
+from app.core.sector_utils import expand_sector_selection
 from app.db.mongodb import MongoDBClient
 from app.db.aggregator import SectorGrouper
 
@@ -46,7 +47,8 @@ class PipelineGraphState(TypedDict, total=False):
     audit_result: Optional[AuditResult]               # 7. Auditor Agent 真实性与防幻觉审查结果
     validated_markdown: str                           # 8. ReportValidator 校验修补后研报
     pdf_output_path: str                              # 9. 编译导出的 PDF 磁盘路径
-    status_logs: List[str]                            # 10. 节点流转日志轨迹
+    report_sectors: List[str]                         # 10. 资讯研报包含的板块 (来自订阅配置勾选)
+    status_logs: List[str]                            # 11. 节点流转日志轨迹
 
 
 # =========================================================================
@@ -156,28 +158,50 @@ async def node_aggregate(state: PipelineGraphState) -> PipelineGraphState:
 
 
 async def node_analyze(state: PipelineGraphState) -> PipelineGraphState:
-    """节点 3: Analyst Agent 分板块纯资讯分析 (全覆盖所有活跃板块)"""
-    log_agent_action("LangGraph-Node3", "Executing", "node_analyze (Analyst Agent 纯板块资讯分析)")
+    """节点 3: Analyst Agent 分板块纯资讯分析 (板块并发 + 勾选板块过滤)"""
+    log_agent_action("LangGraph-Node3", "Executing", "node_analyze (Analyst Agent 板块并发纯资讯分析)")
     clusters = state.get("aggregated_clusters", {})
     hours_back = state.get("hours_back") or settings.REPORT_HOURS_BACK
 
-    analyst = AnalystAgent()
-    sector_results = []
+    # 若前端勾选配置了 report_sectors，则只分析这些板块 (省时)；勾选为空时回退为全部分析。
+    selected_sectors = expand_sector_selection(state.get("report_sectors", []))
+    if selected_sectors:
+        target_clusters = {
+            name: data for name, data in clusters.items()
+            if name in selected_sectors
+        }
+        app_logger.info(f"[node_analyze] 按勾选板块过滤：{len(clusters)} -> {len(target_clusters)} 个板块 {list(target_clusters.keys())}")
+    else:
+        target_clusters = clusters
 
-    for sector_name, cluster_data in clusters.items():
+    # 板块并发：85 个板块不再一个接一个串行调 LLM。用信号量限流 + 线程池并发，
+    # 保持每个板块 try/except (单板块失败不中断整条流水线)，并按原始顺序稳定返回。
+    concurrency = getattr(settings, "ANALYZE_CONCURRENCY", 4)
+    sem = asyncio.Semaphore(concurrency)
+    analyst = AnalystAgent()
+
+    def _analyze_one(entry: tuple) -> Optional[SectorAnalysisResult]:
+        sector_name, cluster_data = entry
         cards = cluster_data.get("cards", [])
-        if cards:
-            # 单板块解析失败 (如 LLM 连续空回包或 JSON 格式异常) 不应中断整条研报流水线，
-            # 记录告警并跳过该板块，其余板块照常合成。
-            try:
-                res = analyst.analyze_sector(sector_name, cards)
-                sector_results.append(res)
-            except Exception as e_sector:
-                app_logger.warning(f"[node_analyze] 板块 {sector_name} 分析失败，跳过该板块: {e_sector}")
-                continue
+        if not cards:
+            return None
+        try:
+            return analyst.analyze_sector(sector_name, cards)
+        except Exception as e_sector:
+            app_logger.warning(f"[node_analyze] 板块 {sector_name} 分析失败，跳过该板块: {e_sector}")
+            return None
+
+    async def _run_one(entry: tuple, idx: int):
+        async with sem:
+            return idx, await asyncio.to_thread(_analyze_one, entry)
+
+    entries = list(target_clusters.items())
+    results = await asyncio.gather(*(_run_one(e, i) for i, e in enumerate(entries)))
+    results.sort(key=lambda x: x[0])
+    sector_results = [r[1] for r in results if r[1] is not None]
 
     state["sector_analysis_results"] = sector_results
-    log_data_pipeline("node_analyze", "AnalystAgent", len(sector_results), f"全量行业资讯分析完成 (共{len(sector_results)}个板块)")
+    log_data_pipeline("node_analyze", "AnalystAgent", len(sector_results), f"全量行业资讯分析完成 (并发{concurrency}, 共{len(sector_results)}个板块)")
     return state
 
 
@@ -202,13 +226,19 @@ async def node_audit(state: PipelineGraphState) -> PipelineGraphState:
     report = state.get("synthesized_report")
     mf = state.get("market_features", {})
 
-    if report and report.full_report_markdown:
+    if report and report.hexagon_report_markdown:
         auditor = AuditorAgent()
-        audit_res = auditor.audit_report(report.full_report_markdown, mf)
+        # 审计对象为「择时研报」：其中含总评 + 六面图，是金融量化数据 (两融/Shibor/ERP 等) 的载体，
+        # 恰为 Auditor 设计时针对的审查内容；资讯研报为板块定性总结，不在此重审。
+        audit_res = auditor.audit_report(report.hexagon_report_markdown, mf)
         state["audit_result"] = audit_res
 
-        # 若审查发现并更正了数据偏差，同步更新研报的 full_report_markdown
-        report.full_report_markdown = audit_res.corrected_report_markdown
+        # 若审查发现并更正了数据偏差，同步更新择时研报，并保持组合篇 (backward compatible) 对齐
+        report.hexagon_report_markdown = audit_res.corrected_report_markdown
+        report.full_report_markdown = (
+            f"{report.hexagon_report_markdown}\n\n"
+            f"{report.news_report_markdown}"
+        )
         log_data_pipeline(
             "node_audit",
             "AuditorAgent",
@@ -219,46 +249,64 @@ async def node_audit(state: PipelineGraphState) -> PipelineGraphState:
 
 
 async def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphState:
-    """节点 5: ReportValidator 美化排版与 PDF 编译导出"""
+    """节点 5: ReportValidator 美化排版与 PDF 编译导出 (拆分后的择时研报 + 资讯研报)"""
     log_agent_action("LangGraph-Node5", "Executing", "node_validate_and_export (美化排版与 PDF 编译)")
     report = state.get("synthesized_report")
-    
-    if not report or not report.full_report_markdown:
+
+    if not report or not report.news_report_markdown:
         app_logger.error("[node_validate_and_export] 未获取到合成研报，无法导出 PDF")
         raise RuntimeError("[node_validate_and_export 失败] Synthesizer Agent 未产出研报，拒绝导出")
-    raw_md = report.full_report_markdown
 
-    # 1. 执行排版修补与校验
-    validator = ReportValidator()
-    val_res = validator.validate(raw_md)
-    clean_md = val_res.repaired_markdown
-    state["validated_markdown"] = clean_md
-
-    # 2. 异步编译导出 PDF
     backend_root = Path(__file__).resolve().parent.parent.parent
-    pdf_path = str(backend_root / "output" / "market_insight_report.pdf")
-    
-    await compile_report_to_pdf(clean_md, pdf_path)
-    state["pdf_output_path"] = pdf_path
+    validator = ReportValidator()
 
-    # 3. 将成品研报元数据保存至 MongoDB 'market_insight_reports' 集合
+    # 1. 资讯研报 (主推，预览/落库)
+    news_val = validator.validate(report.news_report_markdown, report_type="news")
+    clean_news_md = news_val.repaired_markdown
+    news_pdf_path = str(backend_root / "output" / "market_insight_report.pdf")
+    await compile_report_to_pdf(
+        clean_news_md,
+        news_pdf_path,
+        base_name="market_insight_report",
+        display_label="智能投研综合研报",
+        report_type="news",
+    )
+    state["validated_markdown"] = clean_news_md
+    state["pdf_output_path"] = news_pdf_path
+
+    # 2. 择时研报 (仅编译文件，不与资讯研报争抢主研报位)
+    if report.hexagon_report_markdown:
+        timing_val = validator.validate(report.hexagon_report_markdown, report_type="timing")
+        clean_timing_md = timing_val.repaired_markdown
+        timing_pdf_path = str(backend_root / "output" / "timing_report.pdf")
+        await compile_report_to_pdf(
+            clean_timing_md,
+            timing_pdf_path,
+            base_name="timing_report",
+            display_label="智能投研择时六面图研报",
+            report_type="timing",
+        )
+
+    # 3. 将资讯研报元数据保存至 MongoDB 'market_insight_reports' 集合 (含实际包含板块清单)
     try:
         ts_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         report_title = report.report_title if report else f"智能投研综合研报_{ts_str}"
-        timestamped_pdf_name = f"智能投研综合研报_择时六面图_{ts_str}.pdf"
-        timestamped_html_name = f"智能投研综合研报_择时六面图_{ts_str}.html"
+        timestamped_pdf_name = f"智能投研综合研报_{ts_str}.pdf"
+        timestamped_html_name = f"智能投研综合研报_{ts_str}.html"
         timestamped_pdf_path = str(backend_root / "output" / timestamped_pdf_name)
 
         report_doc = {
             "report_id": f"rep_{ts_str}",
+            "report_type": "news",
             "title": report_title,
             "generation_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "file_name": timestamped_pdf_name,
             "pdf_path": timestamped_pdf_path,
-            "html_url": f"/static/{timestamped_html_name}",
-            "pdf_url": f"/static/{timestamped_pdf_name}",
-            "markdown_content": clean_md,
-            "sector_count": report.sector_count if report else 0
+            "html_url": f"/static/market_insight_report.html",
+            "pdf_url": f"/static/market_insight_report.pdf",
+            "markdown_content": clean_news_md,
+            "sector_count": report.sector_count if report else 0,
+            "sectors": report.included_sectors if report else [],
         }
         db_client = MongoDBClient.get_instance()
         await db_client.connect()
@@ -266,7 +314,7 @@ async def node_validate_and_export(state: PipelineGraphState) -> PipelineGraphSt
     except Exception as e_db:
         app_logger.warning(f"[MongoDB] 研报文档落盘提示: {e_db}")
 
-    log_data_pipeline("node_validate_and_export", "ReportValidator/PDFEngine/MongoDB", 1, f"PDF 文件导出成功: {pdf_path}")
+    log_data_pipeline("node_validate_and_export", "ReportValidator/PDFEngine/MongoDB", 1, f"PDF 文件导出成功: {news_pdf_path}")
     return state
 
 
@@ -312,6 +360,14 @@ async def run_research_pipeline_async(hours_back: Optional[float] = None, raw_ne
     db_client = MongoDBClient.get_instance()
     await db_client.connect()
 
+    # 读取订阅配置中的研报板块勾选 (前端研报界面可改)：仅分析/渲染这些板块
+    try:
+        cfg = await db_client.get_system_config()
+        report_sectors = cfg.get("report_sectors", [])
+    except Exception as e_cfg:
+        app_logger.warning(f"[run_research_pipeline] 读取研报板块配置失败，使用默认勾选: {e_cfg}")
+        report_sectors = []
+
     try:
         graph = build_research_pipeline_graph()
         initial_state: PipelineGraphState = {
@@ -323,7 +379,8 @@ async def run_research_pipeline_async(hours_back: Optional[float] = None, raw_ne
             "sector_analysis_results": [],
             "synthesized_report": None,
             "validated_markdown": "",
-            "pdf_output_path": ""
+            "pdf_output_path": "",
+            "report_sectors": report_sectors,
         }
         final_state = await graph.ainvoke(initial_state)
         return final_state

@@ -1,4 +1,4 @@
-# 📊 FinPulse Frontend (Vue3 可视化大屏)
+# FinPulse Frontend (Vue3 可视化大屏)
 
 > **FinPulse Frontend** 是智能投研引擎的前端可视化大屏，基于 **Vue3 + Vite + ant-design-vue + ECharts + Pinia** 构建，用于展示机构级投研大屏：资讯总览、择时六面图、板块聚合与板块详情。
 
@@ -7,7 +7,7 @@
 
 ---
 
-## 📁 目录结构
+## 目录结构
 
 ```text
 frontend/
@@ -35,7 +35,7 @@ frontend/
 
 ---
 
-## 🧰 技术栈
+## 技术栈
 
 | 依赖 | 用途 |
 |---|---|
@@ -53,7 +53,7 @@ frontend/
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
@@ -77,7 +77,7 @@ npm run preview    # 本地预览构建产物
 
 ---
 
-## ⚙️ 代理配置 (`vite.config.js`)
+## 代理配置 (`vite.config.js`)
 
 开发期前端不直接跨域访问后端，而是通过 Vite 代理：
 
@@ -97,7 +97,7 @@ server: {
 
 ---
 
-## 🔗 对接后端接口
+## 对接后端接口
 
 | 前端页面 | 后端接口 | 说明 |
 |---|---|---|

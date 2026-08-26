@@ -5,6 +5,8 @@ const routes = [
   { path: '/hexagon', name: 'hexagon', component: () => import('../views/HexagonView.vue') },
   { path: '/sectors', name: 'sectors', component: () => import('../views/SectorsView.vue') },
   { path: '/sectors/:name', name: 'sector-detail', component: () => import('../views/SectorDetailView.vue') },
+  { path: '/report', name: 'report', component: () => import('../views/ReportView.vue') },
+  { path: '/stock-daily', name: 'stock-daily', component: () => import('../views/StockDailyView.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

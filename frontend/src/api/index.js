@@ -31,3 +31,19 @@ export const fetchSectorNews = (sector, limit = 0) =>
 export const fetchSubscriptions = () => http.get('/api/v1/config/subscriptions')
 export const updateSubscriptions = (payload) =>
   http.post('/api/v1/config/subscriptions', payload)
+
+// 上市公司每日投资日报
+export const fetchStockDailyLatest = () => http.get('/api/v1/stock-daily/latest')
+export const fetchStockDailyHistory = (limit = 30) =>
+  http.get('/api/v1/stock-daily/history', { params: { limit } })
+export const fetchStockDailyDate = (date) =>
+  http.get(`/api/v1/stock-daily/${date}`)
+export const runStockDaily = (date) =>
+  http.post('/api/v1/stock-daily/run', null, { params: date ? { ann_date: date } : {} })
+
+// 自动化设置：每日定时运行 + 邮件接收
+export const fetchAutoRunConfig = () => http.get('/api/v1/automation/schedule')
+export const updateAutoRunConfig = (payload) => http.post('/api/v1/automation/schedule', payload)
+export const fetchEmailConfig = () => http.get('/api/v1/automation/email')
+export const updateEmailConfig = (payload) => http.post('/api/v1/automation/email', payload)
+export const triggerAutoRunNow = () => http.post('/api/v1/automation/run-now')

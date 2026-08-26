@@ -314,16 +314,26 @@ def convert_markdown_to_html(md_text: str) -> str:
     return full_html
 
 
-async def compile_report_to_pdf(md_text: str, output_pdf_path: str) -> bool:
+async def compile_report_to_pdf(
+    md_text: str,
+    output_pdf_path: str,
+    base_name: str = "market_insight_report",
+    display_label: str = "智能投研综合研报",
+    report_type: Optional[str] = None,
+) -> bool:
     """
     将 Markdown 投研报告美化并编译导出为标准 PDF 文件
     优先采用 Playwright / Patchright 无头浏览器渲染高保真 PDF，若未安装则自动回退至 Html2Pdf/ReportLab
+
+    base_name:    静态链接文件名底座 (如 market_insight_report / timing_report)，用于 .html/.pdf 通用名
+    display_label:时间戳文件的人类可读名称 (如 智能投研综合研报 / 智能投研择时六面图研报)
+    report_type:  可选，透传给 ReportValidator 以按报告类型校验必备章节 (timing / news)
     """
-    app_logger.info("📄 [PDF Engine] 启动投研报告 HTML/CSS 样式渲染...")
-    
-    # 格式美化校验
+    app_logger.info(f"📄 [PDF Engine] 启动投研报告 HTML/CSS 样式渲染 ({display_label})...")
+
+    # 格式美化校验 (按报告类型校验其必备章节)
     validator = ReportValidator()
-    val_res = validator.validate(md_text)
+    val_res = validator.validate(md_text, report_type=report_type)
     clean_md = val_res.repaired_markdown
 
     html_content = convert_markdown_to_html(clean_md)
@@ -332,14 +342,14 @@ async def compile_report_to_pdf(md_text: str, output_pdf_path: str) -> bool:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    timestamped_pdf_name = f"智能投研综合研报_择时六面图_{ts_str}.pdf"
-    timestamped_html_name = f"智能投研综合研报_择时六面图_{ts_str}.html"
+    timestamped_pdf_name = f"{display_label}_{ts_str}.pdf"
+    timestamped_html_name = f"{display_label}_{ts_str}.html"
 
     timestamped_pdf_path = str(output_dir / timestamped_pdf_name)
     timestamped_html_path = str(output_dir / timestamped_html_name)
 
     # 存 HTML 视图 (包含通用名与规范时间戳文件名)
-    html_path = output_dir / "market_insight_report.html"
+    html_path = output_dir / f"{base_name}.html"
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
     with open(timestamped_html_path, "w", encoding="utf-8") as f:

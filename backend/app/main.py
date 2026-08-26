@@ -10,7 +10,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.db.mongodb import MongoDBClient
-from app.api.v1 import health, insights, config, news, hexagon, reports
+from app.api.v1 import health, insights, config, news, hexagon, reports, stock_daily, automation
+from app.api.v1.automation import configure_scheduler, set_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("FastAPIMain")
@@ -18,13 +19,24 @@ logger = logging.getLogger("FastAPIMain")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期事件：启动时连接 MongoDB，关闭时断开"""
+    """应用生命周期事件：启动时连接 MongoDB、启动每日自动运行调度器；关闭时断开并停止调度器"""
     logger.info("🚀 [FastAPI Core] 正在启动智能投研信息引擎后端服务...")
     db_client = MongoDBClient.get_instance()
     await db_client.connect()
-    yield
-    logger.info("🛑 [FastAPI Core] 正在关闭后端服务并断开数据库连接...")
-    await db_client.close()
+    logger.info("🔁 [FastAPI Core] 正在启动每日自动运行调度器...")
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
+    # 读取配置里的 run_time，注册 cron job；默认 07:00
+    cfg = await db_client.get_config_payload("daily_auto_run", {"enabled": False, "run_time": "07:00"})
+    configure_scheduler(scheduler, cfg.get("run_time", "07:00"))
+    set_scheduler(scheduler)
+    scheduler.start()
+    try:
+        yield
+    finally:
+        logger.info("🛑 [FastAPI Core] 正在停止调度器并断开数据库连接...")
+        scheduler.shutdown(wait=False)
+        await db_client.close()
 
 
 app = FastAPI(
@@ -52,6 +64,8 @@ app.include_router(config.router, prefix="/api/v1")
 app.include_router(news.router, prefix="/api/v1")
 app.include_router(hexagon.router, prefix="/api/v1")
 app.include_router(reports.router, prefix="/api/v1")
+app.include_router(stock_daily.router, prefix="/api/v1")
+app.include_router(automation.router, prefix="/api/v1")
 
 
 @app.get("/api/root-probe", summary="根服务入口探针", include_in_schema=True)

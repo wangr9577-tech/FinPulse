@@ -1,4 +1,4 @@
-# 🔀 FinPulse BFF (Node.js 聚合转发服务)
+# FinPulse BFF (Node.js 聚合转发服务)
 
 > **FinPulse BFF**（Backend For Frontend）是介于 Vue3 前端与 FastAPI 后端之间的聚合网关，基于 **Node.js 原生 `http` 模块**实现（**零第三方依赖**，`node server.js` 即可启动），为前端提供统一 API 路由聚合、跨域 CORS 支持与探针转发。
 
@@ -7,7 +7,7 @@
 
 ---
 
-## 📁 结构
+## 结构
 
 ```text
 bff/
@@ -19,7 +19,7 @@ bff/
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ```bash
 cd bff
@@ -30,7 +30,7 @@ node server.js            # 或 npm run start / npm run dev (node --watch)
 
 ---
 
-## ⚙️ 配置 (`.env`)
+## 配置 (`.env`)
 
 ```ini
 PORT=3000
@@ -41,7 +41,7 @@ NODE_ENV=development
 
 ---
 
-## 🔌 代理端点
+## 代理端点
 
 | 方法 | 路径 | 转发到后端 | 说明 |
 |---|---|---|---|
@@ -54,6 +54,6 @@ NODE_ENV=development
 
 ---
 
-## ⚠️ 容灾
+## 容灾
 
 若后端 FastAPI 不可达，BFF 会返回 `503` 并附带 `fallback_mode: true` 的「服务暂时不可用」提示，不直接抛异常中断。

@@ -27,11 +27,18 @@ class ReportValidator:
     """
     投研报告排版美化与结构校验器
     """
+    # 全篇报告（兼容）需要校验的 3 大核心章节
     REQUIRED_SECTIONS = [
         "总评",
         "择时六面图",
         "资讯分析"
     ]
+
+    # 拆分后的两篇报告各自校验的章节
+    REPORT_TYPES_REQUIRED_SECTIONS = {
+        "timing": ["总评", "择时六面图"],          # 择时研报
+        "news": ["资讯分析"],                      # 资讯研报
+    }
 
     def __init__(self):
         pass
@@ -64,12 +71,23 @@ class ReportValidator:
 
         return text
 
-    def validate(self, markdown_text: str) -> ValidationResult:
+    def validate(self, markdown_text: str, report_type: Optional[str] = None) -> ValidationResult:
         """
-        校验 Markdown 研报结构的合法性与完整度，并自动输出美化修补后的文本
+        校验 Markdown 研报结构的合法性与完整度，并自动输出美化修补后的文本。
+
+        report_type: 可选，指定报告类型以按需校验章节：
+            - None    -> 校验全部核心章节 (全篇综合研报，兼容旧逻辑)
+            - timing  -> 校验「总评 + 择时六面图」
+            - news    -> 校验「资讯分析」
         """
         errors = []
         warnings = []
+
+        # 解析本报告应校验的核心章节清单
+        if report_type and report_type in self.REPORT_TYPES_REQUIRED_SECTIONS:
+            required_sections = self.REPORT_TYPES_REQUIRED_SECTIONS[report_type]
+        else:
+            required_sections = self.REQUIRED_SECTIONS
 
         if not markdown_text or len(markdown_text.strip()) < 50:
             errors.append("研报文本内容过短 (小于 50 个字符)，未能构成有效投研报告。")
@@ -97,7 +115,7 @@ class ReportValidator:
 
         # 2. 检查必备的核心研报章节
         found_sections = 0
-        for req in self.REQUIRED_SECTIONS:
+        for req in required_sections:
             if any(req in heading for heading in h2_matches) or any(req in heading for heading in h1_match) or req in repaired[:1000]:
                 found_sections += 1
             else:

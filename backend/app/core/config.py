@@ -32,6 +32,9 @@ class Settings:
     REPORT_HOURS_BACK: float = float(os.getenv("REPORT_HOURS_BACK"))
     CRAWL_REQUEST_TIMEOUT: float = float(os.getenv("CRAWL_REQUEST_TIMEOUT"))
 
+    # 1.1 板块并发分析线程数 (node_analyze 最多同时分析的板块数，兼顾吞吐与 DeepSeek API 限流)
+    ANALYZE_CONCURRENCY: int = int(os.getenv("ANALYZE_CONCURRENCY", "4"))
+
     # 1.1 央行 7 天逆回购政策利率 (默认 1.70%)：已从硬编码提升为可配置项，可通过环境变量覆盖
     POLICY_RATE_7D: float = float(os.getenv("POLICY_RATE_7D", "1.70"))
 

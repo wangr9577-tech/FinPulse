@@ -17,7 +17,70 @@ from app.core.logger import app_logger, log_agent_action
 from app.core.config import settings
 from app.core.llm_factory import LLMFactory
 from app.core.skill_loader import SkillLoader
+from app.core.sector_utils import MACRO_CN_ALIASES, MACRO_GL_ALIASES
 from app.agents.analyst_agent import SectorAnalysisResult
+
+# 资讯研报板块排序：国内宏观 -> 国外宏观 -> 行业板块 (数值越小越靠前)
+_MACRO_CN_SET = set(MACRO_CN_ALIASES)
+_MACRO_GL_SET = set(MACRO_GL_ALIASES)
+
+
+def _sector_macro_order(sector_name: str) -> int:
+    """返回板块的排序权重：国内宏观=0、国外宏观=1、行业板块=2。"""
+    n = (sector_name or "").strip()
+    if n in _MACRO_CN_SET:
+        return 0
+    if n in _MACRO_GL_SET:
+        return 1
+    return 2
+
+
+def _extract_overall_headline(summary: str) -> str:
+    """从板块总结文本中抽取「整体结论」的第一句，用于顶部资讯总结的核心要点。"""
+    if not summary:
+        return ""
+    m = re.search(r"【整体结论】\s*[:：]?\s*(.*?)(?:【关键事件】|$)", summary, re.S)
+    if not m:
+        return ""
+    body = m.group(1).strip()
+    sent = body.split("。")[0].split("；")[0].strip()
+    sent = re.sub(r"\s+", " ", sent)                 # 合并多余空白
+    sent = sent.lstrip("-*•、#>. ").strip()           # 去行首项目符号 / 标题符号
+    return sent
+
+
+def _build_news_summary(sector_results) -> str:
+    """构建资讯研报顶部「【资讯总结】」块：全球资讯情绪总览 + 各板块核心观点汇总。"""
+    if not sector_results:
+        return ""
+    from collections import Counter
+    biases = Counter(
+        res.sentiment_bias.value if hasattr(res.sentiment_bias, "value") else str(res.sentiment_bias)
+        for res in sector_results
+    )
+    n_bull = biases.get("看多", 0)
+    n_bear = biases.get("看空", 0)
+    n_neu = biases.get("中性", 0)
+    overall = "偏多" if n_bull > n_bear else ("偏空" if n_bear > n_bull else "中性")
+
+    lines = [
+        "#### 【资讯总结】",
+        "",
+        f"过去时间窗口内，全市场资讯整体情绪**{overall}**（{n_bull} 个板块看多、{n_bear} 个板块看空、{n_neu} 个板块中性）。",
+        "",
+        "各板块核心观点汇总：",
+        "",
+    ]
+    for res in sector_results:
+        bias = res.sentiment_bias.value if hasattr(res.sentiment_bias, "value") else str(res.sentiment_bias)
+        head = _extract_overall_headline(res.summary)
+        if head:
+            bullet = f"- **【{res.sector_name}】**（{bias}）：{head}"
+        else:
+            brief = re.sub(r"\s+", " ", res.summary or "").strip()[:80]
+            bullet = f"- **【{res.sector_name}】**（{bias}）：{brief}"
+        lines.append(bullet)
+    return "\n".join(lines)
 
 
 class SynthesizedReportResult(BaseModel):
@@ -27,11 +90,15 @@ class SynthesizedReportResult(BaseModel):
     report_title: str = Field(..., description="综合投研报告标题")
     generation_date: str = Field(..., description="报告生成日期 (YYYY-MM-DD)")
     sector_count: int = Field(0, description="参与合成的行业/物理簇数量")
+    included_sectors: List[str] = Field(default_factory=list, description="本次研报实际包含的板块 (勾选后的板块名列表)")
     macro_executive_summary: str = Field(..., description="首席策略分析师全局总揽综述 (Markdown)")
     key_macro_alerts: List[str] = Field(default_factory=list, description="核心宏观与市场风险警示列表")
     cross_sector_chains: List[str] = Field(default_factory=list, description="跨行业连锁反应与逻辑溢出链条列表")
     resolved_conflicts: List[str] = Field(default_factory=list, description="冲突消除与辩证归因说明列表")
-    full_report_markdown: str = Field(..., description="排版完整的全篇 Markdown 综合投研报告")
+    # 报告拆分：六面图/总评 (择时研报) 与 资讯分析 (资讯研报) 各自独立成篇
+    hexagon_report_markdown: str = Field(..., description="择时研报 Markdown (## 一、总评 + ## 二、择时六面图)")
+    news_report_markdown: str = Field(..., description="资讯研报 Markdown (## 三、资讯分析)")
+    full_report_markdown: str = Field(..., description="排版完整的全篇 Markdown 综合投研报告 (两篇拼接，兼容保留)")
 
 
 SYNTHESIZER_SYSTEM_PROMPT = """你是一位资深的买方公募/私募头部基金【首席策略分析师 / CIO】。
@@ -305,8 +372,18 @@ def build_sector_analysis_markdown_chapter(sector_results: List[SectorAnalysisRe
     if not sector_results:
         return "## 三、资讯分析\n\n*过去时间窗口内暂无新增资讯分析板块*"
 
+    # 板块排序：国内宏观 -> 国外宏观 -> 行业板块 (其它板块保持原有相对顺序)
+    ordered_results = sorted(sector_results, key=lambda r: _sector_macro_order(r.sector_name))
+
     sections = ["## 三、资讯分析"]
-    for res in sector_results:
+
+    # 最顶部：全市场资讯总结
+    summary_md = _build_news_summary(ordered_results)
+    if summary_md:
+        sections.append(summary_md)
+        sections.append("---")
+
+    for res in ordered_results:
         bias_str = res.sentiment_bias.value if hasattr(res.sentiment_bias, 'value') else str(res.sentiment_bias)
         formatted_sum = format_sector_summary_layout(res.summary)
         sect_md = (
@@ -432,10 +509,21 @@ class SynthesizerAgent:
                 f"{advice}"
             )
 
-            full_report_md = (
+            # 4. 代码确定性直拼全篇研报 Markdown (100% 格式稳定、零丢包)
+            #    【报告拆分】六面图/总评 与 资讯分析 各自独立成篇：
+            #    - 择时研报 (hexagon_report_markdown)：## 一、总评 + ## 二、择时六面图
+            #    - 资讯研报 (news_report_markdown)：## 三、资讯分析 (仅含勾选板块)
+            hexagon_report_md = (
                 f"# {title}\n\n"
                 f"{ch1_total}\n\n"
-                f"{ch2_timing_md}\n\n"
+                f"{ch2_timing_md}"
+            )
+            news_report_md = (
+                f"# {title} · 资讯研报\n\n"
+                f"{ch3_news_md}"
+            )
+            full_report_md = (
+                f"{hexagon_report_md}\n\n"
                 f"{ch3_news_md}"
             )
 
@@ -443,14 +531,18 @@ class SynthesizerAgent:
                 report_title=title,
                 generation_date=datetime.date.today().isoformat(),
                 sector_count=len(sector_results),
+                # 与资讯研报排版一致：国内宏观 -> 国外宏观 -> 行业板块
+                included_sectors=[res.sector_name for res in sorted(sector_results, key=lambda r: _sector_macro_order(r.sector_name))],
                 macro_executive_summary=exec_summary,
                 key_macro_alerts=alerts,
                 cross_sector_chains=chains,
                 resolved_conflicts=conflicts,
+                hexagon_report_markdown=hexagon_report_md,
+                news_report_markdown=news_report_md,
                 full_report_markdown=full_report_md
             )
 
-            app_logger.info(f"✅ [Synthesizer Agent] 成功完成直拼式全局综合研报合成 (标题: {result.report_title})")
+            app_logger.info(f"✅ [Synthesizer Agent] 成功完成直拼式全局综合研报合成 (标题: {result.report_title}, 含 {result.sector_count} 个板块)")
             return result
 
         except Exception as e:

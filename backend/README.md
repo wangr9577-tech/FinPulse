@@ -1,10 +1,10 @@
-# ⚡ FinPulse Backend (智能投研后端服务与自动化数据引擎)
+# FinPulse Backend (智能投研后端服务与自动化数据引擎)
 
 > **FinPulse Backend** 是基于 AI Agent 多节点推演与 **国盛证券《择时六面图》** 35 项定量指标计算引擎打造的智能金融投研后端系统。系统支持全量 28 大财经媒体秒级抓取、三阶数据清洗、择时量化图谱计算、全自动化 PDF 金融研报生成以及 SMTP 每日定时邮件推送。
 
 ---
 
-## 📁 目录结构 (Directory Structure)
+## 目录结构 (Directory Structure)
 
 ```text
 backend/
@@ -25,30 +25,30 @@ backend/
 │   └── docs/                             # 基准研报与复现简报
 │
 ├── scripts/                              # 运维测试与端到端自动化流水线脚本
-│   ├── run_end_to_end_pipeline.py        # 🚀 一键跑通全流程 (抓取->计算->落盘->AI推演->PDF导出)
+│   ├── run_end_to_end_pipeline.py        # 一键跑通全流程 (抓取->计算->落盘->AI推演->PDF导出)
 │   ├── convert_report_to_pdf.py          # Markdown/HTML 研报一键转换为高保真 PDF
 │   ├── import_source_data_to_db.py       # 源数据导入 MongoDB 数据库脚本
-│   ├── test_mongodb_functions.py         # 🧪 MongoDB 核心接口单元测试脚本
-│   ├── test_aggregator.py                # 🧪 NewsAggregator 动态物理簇聚合测试脚本
+│   ├── test_mongodb_functions.py         # MongoDB 核心接口单元测试脚本
+│   ├── test_aggregator.py                # NewsAggregator 动态物理簇聚合测试脚本
 │   └── view_db.py                        # 本地/远程 MongoDB 数据统计与查验脚本
 │
-├── skills/                               # 🧠 Agent 技能库 (遵守 skill-creator 规范)
+├── skills/                               # Agent 技能库 (遵守 skill-creator 规范)
 │   ├── premarket-audio-analysis/         # 08:00 盘前语音买方分析 Skill (SKILL.md, heuristics.md, scripts)
 │   └── skill-creator/                    # Agent Skill 编写规范与自动化评估工具包
 │
 ├── logs/                                 # 日志存储目录 (自动轮转落盘 app_pipeline.log)
 ├── output/                               # 自动生成的 HTML / PDF 每日研报导出目录
-├── daily_scheduler_7am.py                # ⏰ 每日早晨 07:00 常驻定时服务脚本
-├── send_daily_report_email.py            # 📧 单日研报 SMTP 邮件发送服务脚本
+├── daily_scheduler_7am.py                # 每日早晨 07:00 常驻定时服务脚本
+├── send_daily_report_email.py            # 单日研报 SMTP 邮件发送服务脚本
 ├── requirements.txt                      # 依赖清单冗余说明 (实际依赖统一由 pyproject.toml 管理)
-├── pyproject.toml                        # 📦 PEP 517/518 打包与全量依赖声明 (pip install -e . 一键安装)
+├── pyproject.toml                        # PEP 517/518 打包与全量依赖声明 (pip install -e . 一键安装)
 ├── .env.example                          # 环境变量配置模板
 └── README.md                             # 项目说明文档
 ```
 
 ---
 
-## 🔥 核心功能与架构特性
+## 核心功能与架构特性
 
 ### 1. 全量 28 大财经媒体与投研源秒级并发抓取 (`app/data_fetchers/flash_news_fetcher.py` & `scripts/run_end_to_end_pipeline.py`)
 - **覆盖数据源与源头纯化**：新浪财经、东方财富、财联社、华尔街见闻、36氪、IT之家、钛媒体、EE Times、机器之心、量子位、Reuters、Bloomberg、Yahoo Finance，扩展“高股息/红利”、“低估值/破净/回购”与“大消费/白酒/零售”三大垂直板块。
@@ -108,9 +108,9 @@ backend/
 
 ---
 
-## 🛠️ 环境配置指南 (`.env`)
+## 环境配置指南 (`.env`)
 
-本系统通过 `app.core.config.settings` 统一管理敏感凭证与运行时环境变量（本地已配置 `.gitignore`，请勿将 `.env` 提交至代码仓库）。
+本系统通过 `app.core.config.settings` 统一管理敏感凭证与运行时环境变量。请使用 `.env.example` 模板在本地创建 `.env` 文件并填入你的密钥；该文件已被 `.gitignore` 排除，不会进入版本控制，仅为你的私有配置。
 
 复制模版文件创建本地配置：
 ```bash
@@ -152,7 +152,7 @@ FASTAPI_PORT=8000
 
 ---
 
-## 📦 项目打包与路径解析 (`pyproject.toml`)
+## 项目打包与路径解析 (`pyproject.toml`)
 
 `pyproject.toml` 是符合 **PEP 517 / PEP 518** 现代 Python 官方打包标准的配置文件，也是本项目 **唯一的依赖声明源**，主要作用为：
 
@@ -167,7 +167,7 @@ FASTAPI_PORT=8000
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 1. 安装依赖 (通过 pyproject.toml 设置环境)
 支持 Python 3.10+ 环境，在 `backend` 目录下执行：
@@ -214,7 +214,7 @@ python send_daily_report_email.py
 
 ---
 
-## 🔒 代码规范与安全说明
+## 代码规范与安全说明
 
 - `.env` 密钥配置文件已加入 `.gitignore`。
 - 生成的 `logs/*.log` 与 `output/*.pdf/html` 不会上传至 Git 远程仓库。

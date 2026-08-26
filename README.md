@@ -1,4 +1,4 @@
-# ⚡ FinPulse 智能投研引擎
+# FinPulse 智能投研引擎
 
 > **FinPulse** 是一套端到端的智能金融投研系统：基于 **LangGraph 多节点 Agent** 与**国盛证券《择时六面图》35 项定量指标引擎**，实现从 `28 大财经媒体秒级抓取 → LLM 真实打标分类 → 结构化落库 → 多板块深度推理 → 全局研报合成 → 高保真 PDF 导出` 的全自动流水线，并提供 Vue3 可视化大屏与 Node.js BFF 网关。
 
@@ -8,7 +8,7 @@
 
 ---
 
-## 📁 仓库结构 (Monorepo)
+## 仓库结构 (Monorepo)
 
 ```text
 FinPulse/
@@ -26,7 +26,7 @@ FinPulse/
 │   ├── scripts/            # 端到端流水线 / PDF 转换 / 数据库运维脚本
 │   ├── skills/             # Agent 技能库 (skill-creator 规范)
 │   ├── output/             # 自动生成的 HTML / PDF 研报
-│   ├── pyproject.toml      # 📦 PEP 517/518 打包与全量依赖 (pip install -e .)
+│   ├── pyproject.toml      # PEP 517/518 打包与全量依赖 (pip install -e .)
 │   └── README.md           # 后端详细说明
 │
 ├── frontend/               # Vue3 前端可视化大屏 (Port 5173)
@@ -45,7 +45,7 @@ FinPulse/
 
 ---
 
-## 🏗️ 系统架构与核心数据流
+## 系统架构与核心数据流
 
 FinPulse 的核心是「**两库分离 + LLM 真实打标**」：
 
@@ -86,20 +86,20 @@ node_extract → node_aggregate → node_analyze → node_synthesize → node_au
 
 ---
 
-## 🧩 核心技术特性
+## 核心技术特性
 
 | 模块 | 说明 |
 |---|---|
-| 🗞️ 28 大媒体抓取 | 新浪 / 东财 / 财联社 / 华尔街见闻 / Reuters / Bloomberg 等，`asyncio.gather` 并发抓取 + 早停熔断 |
-| 🏷️ TaggerAgent | 两阶段 LLM 分类；严格区分「个股/板块成交→所属行业」与「全市场/宏观资金面→国内宏观·市场流动性」 |
-| 📈 择时六面图 | 国盛证券《择时六面图》35 项定量指标，无未来函数，`ThreadPoolExecutor` 多线程爬取 + 三阶合规流水线 |
-| 📊 ECharts 大屏 | 雷达图 / 双 Y 轴对比折线图，`Radar_Six_Dimensions.png` 嵌入研报 PDF |
-| 🧠 LangGraph | 全原生 `async def` 节点，单事件循环，复用 MongoDB 异步连接池 |
-| 🔒 Auditor + Validator | 纯 LLM 防幻觉审查 + Markdown 结构校验 + 高保真 PDF 编译 |
+| 28 大媒体抓取 | 新浪 / 东财 / 财联社 / 华尔街见闻 / Reuters / Bloomberg 等，`asyncio.gather` 并发抓取 + 早停熔断 |
+| TaggerAgent | 两阶段 LLM 分类；严格区分「个股/板块成交→所属行业」与「全市场/宏观资金面→国内宏观·市场流动性」 |
+| 择时六面图 | 国盛证券《择时六面图》35 项定量指标，无未来函数，`ThreadPoolExecutor` 多线程爬取 + 三阶合规流水线 |
+| ECharts 大屏 | 雷达图 / 双 Y 轴对比折线图，`Radar_Six_Dimensions.png` 嵌入研报 PDF |
+| LangGraph | 全原生 `async def` 节点，单事件循环，复用 MongoDB 异步连接池 |
+| Auditor + Validator | 纯 LLM 防幻觉审查 + Markdown 结构校验 + 高保真 PDF 编译 |
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
@@ -113,7 +113,7 @@ node_extract → node_aggregate → node_analyze → node_synthesize → node_au
 cd backend
 pip install -e .            # 安装全部依赖（PEP 517/518，统一由 pyproject.toml 管理）
 cp .env.example .env        # 配置 LLM / MongoDB / SMTP 等密钥（.env 已被 gitignore，不会提交）
-python scripts/run_end_to_end_pipeline.py   # 🚀 一键跑通全流程（抓取→计算→AI打标→研报→PDF）
+python scripts/run_end_to_end_pipeline.py   # 一键跑通全流程（抓取→计算→AI打标→研报→PDF）
 python app/main.py          # 启动 FastAPI (Port 8000)，文档 http://localhost:8000/docs
 ```
 
@@ -143,7 +143,7 @@ python daily_scheduler_7am.py --now  # 手动立即触发一次
 
 ---
 
-## 🔌 服务与端口
+## 服务与端口
 
 | 服务 | 技术栈 | 端口 | 说明 |
 |---|---|---|---|
@@ -153,7 +153,7 @@ python daily_scheduler_7am.py --now  # 手动立即触发一次
 
 ---
 
-## 🔒 安全与代码规范
+## 安全与代码规范
 
 - `.env` 密钥配置（LLM API Key、MongoDB URI、SMTP 口令）已被 `.gitignore` 排除，**不会提交**。
 - `venv/`、`node_modules/`、`__pycache__/`、`*.egg-info/`、`logs/`、`output/`、生成的 PDF/HTML 均不入库。
@@ -161,7 +161,7 @@ python daily_scheduler_7am.py --now  # 手动立即触发一次
 
 ---
 
-## 📄 子模块说明
+## 子模块说明
 
 - [backend/README.md](backend/README.md) — 后端架构、Agent 体系、择时六面图、脚本、环境变量详解
 - [frontend/README.md](frontend/README.md) — 前端视图、组件、API 对接、构建说明
