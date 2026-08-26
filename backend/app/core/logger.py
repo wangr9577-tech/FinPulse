@@ -72,7 +72,7 @@ def setup_logger():
 
 def log_data_pipeline(action: str, source: str, count: int, extra_info: str = ""):
     """数据采集与清洗流转专用日志记录器"""
-    msg = f"🔄 [Data Pipeline] Action: {action} | Source: {source} | Count: {count}"
+    msg = f"[Data Pipeline] Action: {action} | Source: {source} | Count: {count}"
     if extra_info:
         msg += f" | Info: {extra_info}"
     logger.info(msg)
@@ -80,7 +80,7 @@ def log_data_pipeline(action: str, source: str, count: int, extra_info: str = ""
 
 def log_agent_action(agent_name: str, status: str, details: str):
     """Agent 运行逻辑专用日志记录器"""
-    logger.info(f"🤖 [{agent_name}] Status: {status} | Details: {details}")
+    logger.info(f"[{agent_name}] Status: {status} | Details: {details}")
 
 
 # 暴露单例 logger 供全局直接使用

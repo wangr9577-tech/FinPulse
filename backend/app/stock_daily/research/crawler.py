@@ -73,6 +73,7 @@ def _parse_report_row(row: dict) -> ResearchReport | None:
         aim_price_l=_to_float(row.get("indvAimPriceL")),
         eps_forecast=_to_float(row.get("predictThisYearEps")),
         pdf_url=pdf_url,
+        info_code=info_code,
         source="eastmoney",
     )
 

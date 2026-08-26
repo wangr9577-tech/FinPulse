@@ -583,5 +583,5 @@ class MongoDBClient:
             "batch_read": len(read_items),
             "elapsed_ms": round(elapsed_ms, 2)
         }
-        app_logger.info(f"⚡ [Motor Benchmark]: {res}")
+        app_logger.info(f"[Motor Benchmark]: {res}")
         return res

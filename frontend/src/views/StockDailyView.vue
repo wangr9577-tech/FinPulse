@@ -56,6 +56,17 @@ function fmtUpSide(v) {
   if (!n && n !== 0) return '-'
   return (n > 0 ? '+' : '') + n.toFixed(2) + '%'
 }
+// 目标价空间：有正空间正常显示；为 0 时区分"研报未披露目标价"与"目标价=现价"。
+// 东财 reportapi 的 indvAimPriceT/L 绝大多数为空，故多数为"未披露"，不应误导为 0%。
+function pickUpside(p) {
+  const v = Number(p.target_upside)
+  if (v > 0) return { text: fmtUpSide(v), color: '#cf1322' }
+  const hasTarget = Array.isArray(p.reports) && p.reports.some((r) => {
+    const rp = r?.report
+    return rp && (Number(rp.aim_price_t) > 0 || Number(rp.aim_price_l) > 0)
+  })
+  return hasTarget ? { text: fmtUpSide(v), color: '#8c8c8c' } : { text: '未披露', color: '#8c8c8c' }
+}
 function fmtInt(v) {
   const n = Number(v)
   if (n === null || n === undefined || Number.isNaN(n)) return '-'
@@ -335,7 +346,7 @@ onMounted(loadAll)
                   </div>
                   <div class="pick-upside">
                     <span>目标价空间</span>
-                    <b :style="{color: Number(p.target_upside) > 0 ? '#cf1322' : '#8c8c8c'}">{{ fmtUpSide(p.target_upside) }}</b>
+                    <b :style="{color: pickUpside(p).color}">{{ pickUpside(p).text }}</b>
                   </div>
                   <div class="pick-reason">{{ p.reason || '-' }}</div>
                   <Divider style="margin:8px 0" />
@@ -358,6 +369,7 @@ onMounted(loadAll)
                           <span>{{ rpt.report.org_name }}</span>
                           <span>{{ rpt.report.researcher }}</span>
                           <span>{{ rpt.report.publish_date }}</span>
+                          <span v-if="rpt.target_price">目标价 {{ rpt.target_price }}元</span>
                           <a v-if="rpt.report.pdf_url" :href="rpt.report.pdf_url" target="_blank" style="margin-left:auto">PDF</a>
                         </div>
                         <div class="rpt-title">{{ rpt.report.title }}</div>
@@ -423,7 +435,7 @@ onMounted(loadAll)
         <Row :gutter="[16, 16]">
           <Col :xs="24" :lg="12">
             <Card class="block-card" title="利好公告 · 高" :bordered="true">
-              <div v-if="highRows.length">
+              <div v-if="highRows.length" class="ann-scroll">
                 <div v-for="(row, ri) in highRows" :key="ri" class="ann-row">
                   <div class="ann-head">
                     <Tag :color="levelColor(row.analysis.level)">{{ row.analysis.level }}</Tag>
@@ -442,7 +454,7 @@ onMounted(loadAll)
           </Col>
           <Col :xs="24" :lg="12">
             <Card class="block-card" title="利好公告 · 中" :bordered="true">
-              <div v-if="mediumRows.length">
+              <div v-if="mediumRows.length" class="ann-scroll">
                 <div v-for="(row, ri) in mediumRows" :key="ri" class="ann-row">
                   <div class="ann-head">
                     <Tag :color="levelColor(row.analysis.level)">{{ row.analysis.level }}</Tag>
@@ -491,6 +503,7 @@ onMounted(loadAll)
 .rpt-txt { font-size: 12px; color: #374151; margin: 4px 0; }
 .rpt-list { font-size: 12px; color: #4b5563; margin: 4px 0; }
 .rpt-list.risk { color: #9c3b3b; }
+.ann-scroll { max-height: 460px; overflow-y: auto; padding-right: 4px; }
 .ann-row { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
 .ann-row:last-child { border-bottom: none; }
 .ann-head { display: flex; gap: 6px; align-items: flex-start; }

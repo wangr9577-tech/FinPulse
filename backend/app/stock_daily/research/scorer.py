@@ -136,11 +136,16 @@ def build_candidates(
     for code, ins in best.items():
         rp = ins.report
         price = prices.get(code, 0.0)
+        # 目标价优先取正文提取的 target_price（未披露时回退元数据的 indvAimPriceT/L）
+        tp = ins.target_price
+        aim_t = aim_l = tp if tp and tp > 0 else None
         out.append(build_candidate(
             stock_code=code, stock_name=rp.stock_name,
             ann_level=ann_map.get(code, ""),
             rating=rp.rating, last_rating=rp.last_rating,
-            price=price, aim_l=rp.aim_price_l, aim_t=rp.aim_price_t,
+            price=price,
+            aim_l=(aim_l if aim_l is not None else rp.aim_price_l),
+            aim_t=(aim_t if aim_t is not None else rp.aim_price_t),
             publish_date=rp.publish_date, report_date=report_date,
         ))
     out.sort(key=lambda c: c.score, reverse=True)

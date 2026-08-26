@@ -31,7 +31,7 @@ FINANCIAL_REPORT_CSS = """
         color: #64748b;
     }
     @bottom-left {
-        content: "⚡ 智能投研信息引擎 - 每日全市场综合研报";
+        content: "智能投研信息引擎 - 每日全市场综合研报";
         font-size: 9pt;
         color: #64748b;
     }
@@ -329,7 +329,7 @@ async def compile_report_to_pdf(
     display_label:时间戳文件的人类可读名称 (如 智能投研综合研报 / 智能投研择时六面图研报)
     report_type:  可选，透传给 ReportValidator 以按报告类型校验必备章节 (timing / news)
     """
-    app_logger.info(f"📄 [PDF Engine] 启动投研报告 HTML/CSS 样式渲染 ({display_label})...")
+    app_logger.info(f"[PDF Engine] 启动投研报告 HTML/CSS 样式渲染 ({display_label})...")
 
     # 格式美化校验 (按报告类型校验其必备章节)
     validator = ReportValidator()

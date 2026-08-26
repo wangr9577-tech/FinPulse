@@ -1,8 +1,12 @@
-"""重点研报 PDF 下载 + 逐篇 DeepSeek 观点提取。
+"""重点研报正文提取 + 逐篇 DeepSeek 观点提取。
 
-每篇重点研报（买入/增持）下载 PDF → pypdf 提取正文 → DeepSeek 结构化提取
-核心观点/亮点/风险/目标价依据。PDF 解析失败或 LLM 异常降级为仅元数据观点。
+优先抓取东财研报详情页（data.eastmoney.com/report/zw_stock.jshtml?infocode=XXX）
+的服务器渲染 HTML 正文（免鉴权，可绕过 PDF 直链的 JS 反爬挑战）。PDF 直链返回
+EO_Bot_Ssid 脚本挑战、httpx 无法执行 JS，故 PDF 仅作 HTML 无正文时的兜底。
+提取到正文后交给 DeepSeek 结构化提取核心观点/亮点/风险/目标价依据。
+无正文或 LLM 异常降级为仅元数据观点。
 """
+import html
 import json
 import logging
 import re
@@ -14,17 +18,24 @@ import httpx
 from openai import OpenAI
 
 from app.stock_daily.config import settings
+from app.stock_daily.http_client import build_headers
 from app.stock_daily.models import ReportInsight, ResearchReport
 from app.stock_daily.pdf_parser import download_pdf, parse_with_pypdf
 
 SYSTEM_PROMPT = (
-    "你是A股券商研报分析专家。根据研报标题与正文，提取研报的核心观点。"
+    "你是A股券商研报分析专家。根据研报标题与正文，提取研报的核心观点与目标价。"
     "只输出 JSON，不要输出任何其他文字，JSON 格式：\n"
     "{\"summary\": \"核心观点一句话（不超过40字）\", "
     "\"highlights\": [\"亮点1\", \"亮点2\"], "
     "\"risks\": [\"风险1\"], "
-    "\"target_basis\": \"目标价/评级依据（不超过40字）\"}\n"
+    "\"target_basis\": \"目标价/评级依据（不超过40字）\", "
+    "\"target_price\": 25.0}\n"
+    "target_price：只取正文明确给出的目标价（元），用数字表示；若正文未给出目标价，输出 null。"
+    "禁止根据 EPS/PE 或盈利预测估算目标价。"
 )
+
+DETAIL_BASE = "https://data.eastmoney.com/report/zw_stock.jshtml"
+DETAIL_REFERER = "https://data.eastmoney.com/report/zw_stock.jshtml"
 
 
 def _build_llm() -> OpenAI:
@@ -40,6 +51,28 @@ def _build_llm() -> OpenAI:
     )
 
 
+def _parse_target_price(value) -> float | None:
+    """从 DeepSeek 返回的 target_price 解析正数目标价；无/非法/≤0 返回 None。
+
+    只接受正文明确给出的目标价，禁止估算。数字型直接用；字符串可能带"元"/范围，
+    取首个正数（如 "25元" → 25.0）。
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value) if value > 0 else None
+    m = re.search(r"\d+(?:\.\d+)?", str(value))
+    if not m:
+        return None
+    try:
+        n = float(m.group())
+    except ValueError:
+        return None
+    return n if n > 0 else None
+
+
 def _as_list(value) -> list[str]:
     """JSON 字段安全转字符串列表；非 list 或元素非 str 时丢弃，避免把字符串拆成字符。"""
     if not isinstance(value, list):
@@ -48,7 +81,7 @@ def _as_list(value) -> list[str]:
 
 
 def _call_llm(report: ResearchReport, text: str) -> ReportInsight:
-    """DeepSeek 提取观点。异常抛出（由 analyze_report 降级捕获）。"""
+    """DeepSeek 提取观点。异常抛出（由 _analyze_report 降级捕获）。"""
     user = (
         f"研报标题：{report.title}\n"
         f"机构：{report.org_name} ｜ 研究员：{report.researcher}\n"
@@ -78,11 +111,12 @@ def _call_llm(report: ResearchReport, text: str) -> ReportInsight:
         highlights=_as_list(obj.get("highlights")),
         risks=_as_list(obj.get("risks")),
         target_basis=str(obj.get("target_basis") or "").strip(),
+        target_price=_parse_target_price(obj.get("target_price")),
     )
 
 
 def _meta_insight(report: ResearchReport) -> ReportInsight:
-    """仅元数据降级观点：用标题 + 评级拼一句话（PDF 解析失败/LLM 异常时）。"""
+    """仅元数据降级观点：用标题 + 评级拼一句话（无正文/解析失败/LLM 异常时）。"""
     return ReportInsight(
         report=report,
         summary=f"仅标题与元数据：{report.title}（评级 {report.rating or '-'}）",
@@ -90,17 +124,55 @@ def _meta_insight(report: ResearchReport) -> ReportInsight:
     )
 
 
-def analyze_report(report: ResearchReport, pdf_path: Path | None) -> ReportInsight:
-    """单篇研报：PDF 正文 → DeepSeek 观点。无 PDF/解析失败/LLM 异常均降级。"""
+def _extract_body_text(html_text: str) -> str:
+    """从 zw_stock.jshtml 详情页提取 ctx-content 正文（<p> 段落 → 纯文本）。
+
+    报告正文位于 <div id="ctx-content" class="ctx-content"> 内，由多个 <p> 段落组成。
+    非贪婪取到第一个 </div> 即闭合容器；随后剥离标签、unescape HTML 实体、
+    去首尾空白、压缩连续空白，并截断到 settings.PDF_TEXT_CHARS。
+    """
+    m = re.search(r'<div\s+id="ctx-content"[^>]*>(.*?)</div>', html_text, re.S)
+    seg = m.group(1) if m else html_text
+    seg = re.sub(r'<script.*?</script>', " ", seg, flags=re.S)
+    seg = re.sub(r'<style.*?</style>', " ", seg, flags=re.S)
+    seg = re.sub(r'<br\s*/?>', "\n", seg)
+    seg = re.sub(r'</p>', "\n", seg)
+    seg = re.sub(r'<[^>]+>', " ", seg)
+    seg = html.unescape(seg)
+    seg = seg.replace("　", " ")  # 全角空格 → 半角，便于压缩
+    lines = [re.sub(r"\s+", " ", l).strip() for l in seg.split("\n")]
+    body = "\n".join(l for l in lines if l)
+    return body[: settings.PDF_TEXT_CHARS]
+
+
+def _fetch_html_text(report: ResearchReport, client: httpx.Client) -> str:
+    """抓详情页 HTML 并提取正文。无 info_code / 请求失败 / 无正文返回 ""。"""
+    if not report.info_code:
+        return ""
+    try:
+        resp = client.get(
+            f"{DETAIL_BASE}?infocode={report.info_code}",
+            headers=build_headers(DETAIL_REFERER),
+            timeout=30,
+            follow_redirects=True,
+        )
+        if resp.status_code != 200:
+            return ""
+        return _extract_body_text(resp.text)
+    except Exception:
+        return ""
+
+
+def _analyze_report(report: ResearchReport, html_text: str, pdf_path: Path | None) -> ReportInsight:
+    """单篇研报：正文（HTML 优先，PDF 兜底）→ DeepSeek 观点。无正文/LLM 异常降级。"""
     if not settings.DEEPSEEK_API_KEY:
         return _meta_insight(report)
-    if pdf_path is None:
-        return _meta_insight(report)
-    text = parse_with_pypdf(pdf_path, settings.PDF_TEXT_CHARS)
-    if not text:
+    pdf_text = parse_with_pypdf(pdf_path, settings.PDF_TEXT_CHARS) if pdf_path else ""
+    body = html_text if len(html_text) >= settings.PDF_MIN_CHARS else pdf_text
+    if not body:
         return _meta_insight(report)
     try:
-        return _call_llm(report, text)
+        return _call_llm(report, body)
     except Exception:
         return _meta_insight(report)
 
@@ -122,33 +194,62 @@ def extract_insights(
     ann_date: str | date,
     logger: logging.Logger | None,
 ) -> list[ReportInsight]:
-    """并发下载 PDF + 提取观点。单篇失败降级，不阻断整批；按输入顺序返回。"""
+    """并发抓取正文（HTML 优先，PDF 兜底）+ 提取观点。
+
+    单篇失败降级，不阻断整批；按输入顺序返回。
+    """
     if not reports:
         return []
     pdf_dir = settings.RESEARCH_PDF_DIR / str(ann_date)
-    with httpx.Client(timeout=60) as client, ThreadPoolExecutor(
+
+    # 阶段1：HTML 详情页正文（免 PDF 下载，主路径）
+    html_map: dict[str, str] = {}
+    with httpx.Client(timeout=30) as client, ThreadPoolExecutor(
         max_workers=settings.DOWNLOAD_CONCURRENCY
     ) as ex:
         futures = {
-            ex.submit(download_pdf, r.pdf_url, pdf_dir / _safe_key(_pdf_key(r)), client): _pdf_key(r)
-            for r in reports if r.pdf_url
+            ex.submit(_fetch_html_text, r, client): _pdf_key(r)
+            for r in reports if r.info_code
         }
-        pdf_map: dict[str, Path] = {}
         for fut in as_completed(futures):
             key = futures[fut]
             try:
-                p = fut.result()
-                if p:
-                    pdf_map[key] = p
+                t = fut.result()
+                if t and len(t) >= settings.PDF_MIN_CHARS:
+                    html_map[key] = t
             except Exception:
                 continue
-    if logger:
-        logger.info(f"研报 PDF 下载完成 {len(pdf_map)} 篇")
 
+    # 阶段2：HTML 无正文的再看 PDF 直链（兜底）
+    pdf_map: dict[str, Path] = {}
+    need_pdf = [_pdf_key(r) for r in reports if _pdf_key(r) not in html_map and r.pdf_url]
+    if need_pdf:
+        with httpx.Client(timeout=60) as client, ThreadPoolExecutor(
+            max_workers=settings.DOWNLOAD_CONCURRENCY
+        ) as ex:
+            futures = {
+                ex.submit(
+                    download_pdf, r.pdf_url, pdf_dir / _safe_key(_pdf_key(r)), client
+                ): _pdf_key(r)
+                for r in reports if _pdf_key(r) not in html_map and r.pdf_url
+            }
+            for fut in as_completed(futures):
+                key = futures[fut]
+                try:
+                    p = fut.result()
+                    if p:
+                        pdf_map[key] = p
+                except Exception:
+                    continue
+
+    if logger:
+        logger.info(f"研报正文来源：HTML {len(html_map)} 篇 + PDF {len(pdf_map)} 篇")
+
+    # 阶段3：逐篇观点提取
     results: dict[str, ReportInsight] = {}
     with ThreadPoolExecutor(max_workers=settings.RESEARCH_CONCURRENCY) as ex:
         futures = {
-            ex.submit(analyze_report, r, pdf_map.get(_pdf_key(r))): _pdf_key(r)
+            ex.submit(_analyze_report, r, html_map.get(_pdf_key(r)), pdf_map.get(_pdf_key(r))): _pdf_key(r)
             for r in reports
         }
         for fut in as_completed(futures):

@@ -95,7 +95,8 @@ class ResearchReport(BaseModel):
     aim_price_t: float = 0.0    # 目标价上限（缺失为 0）
     aim_price_l: float = 0.0    # 目标价下限
     eps_forecast: float = 0.0   # 当年 EPS 预测
-    pdf_url: str = ""           # pdf.dfcfw.com 直链
+    pdf_url: str = ""           # pdf.dfcfw.com 直链（被 EO_Bot_Ssid JS 反爬拦截，仅兜底）
+    info_code: str = ""         # 东财 infoCode → zw_stock.jshtml 详情页正文（免下载主路径）
     source: str = "eastmoney"
 
 
@@ -113,12 +114,13 @@ class IndustryReport(BaseModel):
 
 
 class ReportInsight(BaseModel):
-    """一篇重点研报的 DeepSeek 观点（PDF 正文提取）。"""
+    """一篇重点研报的 DeepSeek 观点（正文提取）。"""
     report: ResearchReport
     summary: str = ""
     highlights: list[str] = []
     risks: list[str] = []
     target_basis: str = ""
+    target_price: Optional[float] = None  # 正文明确给出的目标价（元）；未给出/未披露为 None
     degraded: bool = False
 
 

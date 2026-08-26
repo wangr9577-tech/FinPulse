@@ -542,11 +542,11 @@ class SynthesizerAgent:
                 full_report_markdown=full_report_md
             )
 
-            app_logger.info(f"✅ [Synthesizer Agent] 成功完成直拼式全局综合研报合成 (标题: {result.report_title}, 含 {result.sector_count} 个板块)")
+            app_logger.info(f"[Synthesizer Agent] 成功完成直拼式全局综合研报合成 (标题: {result.report_title}, 含 {result.sector_count} 个板块)")
             return result
 
         except Exception as e:
-            app_logger.error(f"❌ [Synthesizer Agent] 全局研报合成解析异常: {e}")
+            app_logger.error(f"[Synthesizer Agent] 全局研报合成解析异常: {e}")
             raise RuntimeError(f"[Synthesizer Agent] 全局研报合成失败: {e}") from e
 
 

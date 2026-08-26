@@ -125,11 +125,13 @@ onMounted(loadAll)
             message="勾选后，当天新生成的资讯研报将仅收录这些板块；不勾选则收录全部活跃板块。"
             style="margin-bottom: 16px;"
           />
-          <Checkbox.Group
-            v-model:value="checkedSectors"
-            :options="sectorOptions.map((s) => ({ label: s, value: s }))"
-            style="display: flex; flex-direction: column; gap: 8px;"
-          />
+          <div class="sector-scroll">
+            <Checkbox.Group
+              v-model:value="checkedSectors"
+              :options="sectorOptions.map((s) => ({ label: s, value: s }))"
+              style="display: flex; flex-direction: column; gap: 8px;"
+            />
+          </div>
           <div style="margin-top: 20px;">
             <Button type="primary" :loading="saving" @click="saveSectors">
               <template #icon><SaveOutlined /></template>
@@ -182,6 +184,14 @@ onMounted(loadAll)
 <style scoped>
 .report-view-container {
   padding-bottom: 24px;
+}
+.sector-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
 }
 .report-md-preview {
   padding: 20px 24px;

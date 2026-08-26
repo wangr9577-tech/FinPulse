@@ -20,10 +20,10 @@ logger = logging.getLogger("FastAPIMain")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期事件：启动时连接 MongoDB、启动每日自动运行调度器；关闭时断开并停止调度器"""
-    logger.info("🚀 [FastAPI Core] 正在启动智能投研信息引擎后端服务...")
+    logger.info("[FastAPI Core] 正在启动智能投研信息引擎后端服务...")
     db_client = MongoDBClient.get_instance()
     await db_client.connect()
-    logger.info("🔁 [FastAPI Core] 正在启动每日自动运行调度器...")
+    logger.info("[FastAPI Core] 正在启动每日自动运行调度器...")
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
     # 读取配置里的 run_time，注册 cron job；默认 07:00
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        logger.info("🛑 [FastAPI Core] 正在停止调度器并断开数据库连接...")
+        logger.info("[FastAPI Core] 正在停止调度器并断开数据库连接...")
         scheduler.shutdown(wait=False)
         await db_client.close()
 
