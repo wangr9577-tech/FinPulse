@@ -74,7 +74,7 @@ def build_candidate(
     publish_date: str, report_date: str,
 ) -> StockCandidate:
     """单股候选打分（目标价缺失时 upside=0 → 记中值 50）。"""
-    from src.research.quote import upside_pct
+    from app.stock_daily.research.quote import upside_pct
     upside = upside_pct(price, aim_l, aim_t)
     score = _weighted(ann_score(ann_level), rating_score(rating, last_rating),
                       upside_score(upside), freshness_score(publish_date, report_date))
