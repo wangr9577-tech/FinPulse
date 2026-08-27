@@ -62,6 +62,24 @@ def _safe_float(val: Any) -> Optional[float]:
         return None
 
 
+def _latest_row_from_mongo(seed_name: str) -> Optional[Dict[str, Any]]:
+    """读取择时源数据 (MongoDB, 爬虫写入) 中某个种子的最近一条记录，返回 dict。
+
+    数据源头已迁移至 MongoDB (timing_source_data)，爬虫将各种子按 date 升序 upsert，
+    故取 iloc[-1] 即最新一条。读取失败/缺失/为空时返回 None，调用方据此回退到实时 akshare，
+    保证算子在 Mongo 未连接或尚未爬取时仍能独立运行 (优雅降级)。
+    """
+    try:
+        from app.timing_hexagon.mongo_store import load_source_frame
+        df = load_source_frame(seed_name)
+        if df is None or df.empty:
+            return None
+        return df.iloc[-1].to_dict()
+    except Exception as e:
+        logger.warning(f"读取 Mongo 种子 {seed_name} 失败: {e}")
+        return None
+
+
 class LeverageOperator:
     """1. 杠杆资金与活跃情绪算子：包含融资买入/偿还/余额、融券卖出/余额、两融交易占比及净融资买入占比"""
 
@@ -216,21 +234,28 @@ class MacroLiquidityOperator:
             except Exception as ex_shibor:
                 logger.warning(f"拉取 Shibor 利率失败: {ex_shibor}")
 
-            # 2. M1, M2 货币供应量
+            # 2. M1, M2 货币供应量 (优先读爬虫落库的 Mongo 种子，缺失则回退实时 akshare)
+            period_val, m2_growth, m1_growth = "N/A", None, None
             try:
-                df_m = ak.macro_china_money_supply()
-                if df_m is not None and not df_m.empty:
-                    latest_m = df_m.iloc[0]
-                    period_val = str(latest_m.get("月份", "N/A"))
-                    m2_growth = _safe_float(latest_m.get("货币和准货币(M2)-同比增长"))
-                    m1_growth = _safe_float(latest_m.get("货币(M1)-同比增长"))
-                    scissors = round(m2_growth - m1_growth, 4) if (m2_growth is not None and m1_growth is not None) else None
-                    result.update({
-                        "money_supply_period": period_val,
-                        "m1_growth": round(m1_growth, 4) if m1_growth is not None else None,
-                        "m2_growth": round(m2_growth, 4) if m2_growth is not None else None,
-                        "m2_m1_scissors_difference": scissors
-                    })
+                row_m = _latest_row_from_mongo("货币供应量.csv")
+                if row_m is not None:
+                    period_val = str(row_m.get("月份", "N/A"))
+                    m2_growth = _safe_float(row_m.get("货币和准货币(M2)-同比增长"))
+                    m1_growth = _safe_float(row_m.get("货币(M1)-同比增长"))
+                else:
+                    df_m = ak.macro_china_money_supply()
+                    if df_m is not None and not df_m.empty:
+                        latest_m = df_m.iloc[0]
+                        period_val = str(latest_m.get("月份", "N/A"))
+                        m2_growth = _safe_float(latest_m.get("货币和准货币(M2)-同比增长"))
+                        m1_growth = _safe_float(latest_m.get("货币(M1)-同比增长"))
+                scissors = round(m2_growth - m1_growth, 4) if (m2_growth is not None and m1_growth is not None) else None
+                result.update({
+                    "money_supply_period": period_val,
+                    "m1_growth": round(m1_growth, 4) if m1_growth is not None else None,
+                    "m2_growth": round(m2_growth, 4) if m2_growth is not None else None,
+                    "m2_m1_scissors_difference": scissors
+                })
             except Exception as ex_m:
                 logger.warning(f"拉取货币供应量失败: {ex_m}")
 
@@ -252,15 +277,23 @@ class MacroLiquidityOperator:
             except Exception as ex_pmi:
                 logger.warning(f"拉取 PMI 失败: {ex_pmi}")
 
-            # 4. CPI & PPI
+            # 4. CPI & PPI (优先读爬虫落库的 Mongo 种子，缺失则回退实时 akshare)
             try:
-                df_cpi = ak.macro_china_cpi()
-                if df_cpi is not None and not df_cpi.empty:
-                    result["cpi_yoy"] = _safe_float(df_cpi.iloc[0].get("全国-同比增长"))
+                row_cpi = _latest_row_from_mongo("CPI.csv")
+                cpi_val = _safe_float(row_cpi.get("cpi_yoy")) if row_cpi is not None else None
+                if cpi_val is None:
+                    df_cpi = ak.macro_china_cpi()
+                    if df_cpi is not None and not df_cpi.empty:
+                        cpi_val = _safe_float(df_cpi.iloc[0].get("全国-同比增长"))
+                result["cpi_yoy"] = cpi_val
 
-                df_ppi = ak.macro_china_ppi()
-                if df_ppi is not None and not df_ppi.empty:
-                    result["ppi_yoy"] = _safe_float(df_ppi.iloc[0].get("当月同比增长"))
+                row_ppi = _latest_row_from_mongo("PPI.csv")
+                ppi_val = _safe_float(row_ppi.get("ppi_yoy")) if row_ppi is not None else None
+                if ppi_val is None:
+                    df_ppi = ak.macro_china_ppi()
+                    if df_ppi is not None and not df_ppi.empty:
+                        ppi_val = _safe_float(df_ppi.iloc[0].get("当月同比增长"))
+                result["ppi_yoy"] = ppi_val
             except Exception as ex_prices:
                 logger.warning(f"拉取 CPI/PPI 失败: {ex_prices}")
 
@@ -292,13 +325,17 @@ class ValuationBreadthOperator:
         try:
             today_str = datetime.date.today().strftime("%Y%m%d")
 
-            # 1. 10年期国债到期收益率
+            # 1. 10年期国债到期收益率 (优先读爬虫落库的 Mongo 种子，缺失则回退实时 akshare)
             bond_yield_10y = None
             try:
-                start_d = (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y%m%d")
-                df_bond = ak.bond_china_yield(start_date=start_d, end_date=today_str)
-                if df_bond is not None and not df_bond.empty and "10年" in df_bond.columns:
-                    bond_yield_10y = _safe_float(df_bond["10年"].dropna().iloc[-1])
+                row_bond = _latest_row_from_mongo("中国国债收益率.csv")
+                if row_bond is not None and row_bond.get("bond_yield_10y") is not None:
+                    bond_yield_10y = _safe_float(row_bond.get("bond_yield_10y"))
+                else:
+                    start_d = (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y%m%d")
+                    df_bond = ak.bond_china_yield(start_date=start_d, end_date=today_str)
+                    if df_bond is not None and not df_bond.empty and "10年" in df_bond.columns:
+                        bond_yield_10y = _safe_float(df_bond["10年"].dropna().iloc[-1])
             except Exception as ex_bond:
                 logger.warning(f"拉取国债收益率失败: {ex_bond}")
 
@@ -420,22 +457,33 @@ class FeatureOperatorEngine:
         self.insider_op = InsiderCapitalOperator()
 
     def get_timing_hexagon_summary(self) -> Dict[str, Any]:
-        """读取择时六面图有效信号汇总 (指标项数由 CSV 实际数据决定) 与六维度加权得分"""
-        results_csv = Path(__file__).resolve().parent.parent.parent / "data" / "results" / "最新信号汇总.csv"
-        if not results_csv.exists():
-            logger.warning("未找到最新信号汇总文件，正在触发 timing_hexagon 流程...")
+        """读取择时六面图有效信号汇总 (指标项数由实际数据决定) 与六维度加权得分 (数据源：MongoDB)"""
+        from app.timing_hexagon.mongo_store import load_signals_summary
+
+        def _load() -> Optional[pd.DataFrame]:
+            try:
+                return load_signals_summary()
+            except Exception as e:
+                logger.warning(f"读取择时信号汇总异常: {e}")
+                return None
+
+        df = _load()
+        if df is None or df.empty:
+            logger.warning("未找到择时信号汇总 (timing_signals_summary)，正在触发 timing_hexagon 流程...")
             try:
                 from app.timing_hexagon.pipeline import run_timing_hexagon_pipeline
                 run_timing_hexagon_pipeline()
             except Exception as e:
                 logger.error(f"运行择时六面图流水线失败: {e}")
                 return {}
+            df = _load()
+            if df is None or df.empty:
+                return {}
 
         try:
-            from app.timing_hexagon.plotter import compute_dimension_weighted_scores
-            dim_scores = compute_dimension_weighted_scores(results_csv)
+            from app.timing_hexagon.plotter import compute_dimension_weighted_scores_from_df
+            dim_scores = compute_dimension_weighted_scores_from_df(df)
 
-            df = pd.read_csv(results_csv, encoding="utf-8-sig")
             as_of_val = ""
             if "as_of_date" in df.columns:
                 valid_dates = df["as_of_date"].dropna()
@@ -502,6 +550,12 @@ class FeatureOperatorEngine:
                     if std_dim:
                         summary["dimension_counts"][std_dim]["中性"] += 1
                     summary["neutral_signals"].append(ind)
+
+            # 优雅降级：没有任何有效指标的维度从 JSON 移除 —— 缺数据的维度不应呈现为"中性"，
+            # 而应直接从六面图中消失 (对应「读不到就把这一项删掉」)。plotter 的 6 轴 PNG 仍保持 6 维。
+            present_dims = set(summary["dimension_counts"])
+            dim_scores = {d: s for d, s in dim_scores.items() if d in present_dims}
+            summary["dimension_scores"] = dim_scores
 
             # 组装 dimension_details
             for std_dim, score_val in dim_scores.items():

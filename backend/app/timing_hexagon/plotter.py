@@ -28,6 +28,7 @@ from scipy.interpolate import make_interp_spline
 
 from app.core.config import settings
 from app.core.logger import app_logger
+from app.timing_hexagon.mongo_store import load_cleaned_frame, load_indicator_frame, load_signals_summary
 
 # ========== 全局绘图参数与主题 ==========
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans', 'Arial']
@@ -47,22 +48,17 @@ BEAR_COLOR = '#B5E8B5'   # 浅绿（看空/下行）
 
 
 # ========== 路径配置 ==========
-BASE_DATA_DIR = settings.BASE_DIR / "data"
-RESULTS_DIR = BASE_DATA_DIR / "results"
-CLEAN_DIR = BASE_DATA_DIR / "cleaned_data"
-INDICATOR_DIR = RESULTS_DIR / "indicator_outputs"
-PROXY_DIR = RESULTS_DIR / "proxy_outputs"
-SUMMARY_CSV = RESULTS_DIR / "最新信号汇总.csv"
-CSI800_PATH = CLEAN_DIR / "中证800日行情_清洗后.csv"
+INDICATOR_DIR = Path("indicator_outputs")
+PROXY_DIR = Path("proxy_outputs")
 
 OUTPUT_CHARTS_DIR = settings.OUTPUT_DIR / "charts"
 
 
 def _get_csi800_data() -> pd.DataFrame:
     """读取中证800基准行情数据"""
-    if not CSI800_PATH.exists():
+    df = load_cleaned_frame("中证800日行情_清洗后.csv")
+    if df is None or df.empty:
         return pd.DataFrame(columns=["date", "csi800_close"])
-    df = pd.read_csv(CSI800_PATH, encoding="utf-8-sig")
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date", "close"]).sort_values("date")
     df = df.rename(columns={"close": "csi800_close"})
@@ -452,12 +448,12 @@ def _build_indicators_config() -> OrderedDict:
 
 def plot_single_indicator_chart(dim_name: str, ind_name: str, cfg: Dict[str, Any], csi_df: pd.DataFrame) -> Optional[Path]:
     """绘制单指标折线图并保存为 PNG 图像"""
-    csv_file = Path(cfg["file"])
-    if not csv_file.exists():
+    csv_name = Path(cfg["file"]).name
+    df = load_indicator_frame(csv_name)
+    if df is None:
         return None
 
     try:
-        df = pd.read_csv(csv_file, encoding="utf-8-sig")
         df["date"] = pd.to_datetime(df[cfg["date_col"]], errors="coerce")
         df = df.dropna(subset=["date"]).sort_values("date")
         if len(df) == 0:
@@ -555,22 +551,20 @@ def plot_single_indicator_chart(dim_name: str, ind_name: str, cfg: Dict[str, Any
         return None
 
 
-def compute_dimension_weighted_scores(summary_csv_path: Optional[Path] = None) -> Dict[str, float]:
+def compute_dimension_weighted_scores_from_df(df: Optional[pd.DataFrame]) -> Dict[str, float]:
     """
-    计算择时六维度的加权得分
-    - 将 CSV 维度映射到六面图标准名 (流动性、宏观经济、估值、资金面、技术面、情绪与期权面)
+    计算择时六维度的加权得分 (从 DataFrame 计算)
+    - 将维度映射到六面图标准名 (流动性、宏观经济、估值、资金面、技术面、情绪与期权面)
     - 对每个维度下 signal_score 非 NaN 且 indicator != 'DR007偏离度' 的指标求均值 (排除 DR007 重复计分)
     - 无有效指标时回退 0.0
     """
     dimension_names = ["流动性", "宏观经济", "估值", "资金面", "技术面", "情绪与期权面"]
     default_scores = OrderedDict([(d, 0.0) for d in dimension_names])
 
-    target_path = summary_csv_path or SUMMARY_CSV
-    if not target_path.exists():
+    if df is None:
         return default_scores
 
     try:
-        df = pd.read_csv(target_path, encoding="utf-8-sig")
         if "dimension" not in df.columns or "signal_score" not in df.columns:
             return default_scores
 
@@ -588,7 +582,7 @@ def compute_dimension_weighted_scores(summary_csv_path: Optional[Path] = None) -
             pattern = "|".join(alias_list)
             dim_mask = df["dimension"].astype(str).str.contains(pattern, na=False)
             valid_mask = dim_mask & df["signal_score"].notna()
-            
+
             if "indicator" in df.columns:
                 valid_mask = valid_mask & (df["indicator"] != "DR007偏离度")
 
@@ -603,6 +597,31 @@ def compute_dimension_weighted_scores(summary_csv_path: Optional[Path] = None) -
     except Exception as e:
         app_logger.error(f"[Plotter Engine] 计算六维度加权得分异常: {e}")
         return default_scores
+
+
+def compute_dimension_weighted_scores(summary_csv_path: Optional[Path] = None) -> Dict[str, float]:
+    """
+    计算择时六维度的加权得分
+    - 优先读取指定 CSV；否则从 MongoDB timing_signals_summary 读取
+    - 无有效指标时回退 0.0
+    """
+    dimension_names = ["流动性", "宏观经济", "估值", "资金面", "技术面", "情绪与期权面"]
+    default_scores = OrderedDict([(d, 0.0) for d in dimension_names])
+
+    # 指定 CSV 存在时按旧逻辑读文件
+    if summary_csv_path is not None and summary_csv_path.exists():
+        try:
+            df = pd.read_csv(summary_csv_path, encoding="utf-8-sig")
+            return compute_dimension_weighted_scores_from_df(df)
+        except Exception as e:
+            app_logger.error(f"[Plotter Engine] 计算六维度加权得分异常: {e}")
+            return default_scores
+
+    # 否则从 MongoDB 信号汇总读取
+    df = load_signals_summary()
+    if df is None:
+        return default_scores
+    return compute_dimension_weighted_scores_from_df(df)
 
 
 def format_weighted_score_markdown_line(summary_csv_path: Optional[Path] = None) -> str:
@@ -628,11 +647,8 @@ def format_weighted_score_markdown_line(summary_csv_path: Optional[Path] = None)
 
 def plot_radar_chart(summary_csv_path: Optional[Path] = None) -> Optional[Path]:
     """绘制择时六维度合规雷达图 (Radar_Six_Dimensions.png)"""
-    target_path = summary_csv_path or SUMMARY_CSV
-    if not target_path.exists():
-        return None
+    dimension_scores = compute_dimension_weighted_scores(summary_csv_path)
     try:
-        dimension_scores = compute_dimension_weighted_scores(target_path)
 
         labels = list(dimension_scores.keys())
         n = len(labels)
@@ -690,7 +706,7 @@ def generate_all_hexagon_charts() -> Dict[str, str]:
                 success_count += 1
 
     # 绘制雷达图
-    radar_path = plot_radar_chart(SUMMARY_CSV)
+    radar_path = plot_radar_chart()
     if radar_path and radar_path.exists():
         chart_paths_map["RADAR_CHART"] = radar_path.as_uri()
 

@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from app.data_fetchers.crawler.utils import (
-    RAW, save_processed, log_fetch, TZ_BEIJING,
+    RAW, save_processed, log_fetch, attach_date, TZ_BEIJING,
 )
 
 
@@ -42,10 +42,6 @@ try:
     if df_hs300 is not None and not df_hs300.empty:
         print(f"  沪深300行情形状: {df_hs300.shape}")
         print(f"  列名: {list(df_hs300.columns)}")
-
-        save_path = RAW / "csindex" / "hs300"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_hs300.to_csv(save_path / f"hs300_daily_em_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         df_out = pd.DataFrame()
         df_out["date"] = pd.to_datetime(df_hs300["date"])
@@ -185,14 +181,11 @@ try:
     df_position = ak.fund_report_asset_allocation_cninfo()
 
     if df_position is not None and not df_position.empty:
+        save_processed(attach_date(df_position, "报告期"), "基金资产配置_代理.csv", "sentiment")
         cols = list(df_position.columns)
         print(f"  基金仓位数据 shape: {df_position.shape}")
         print(f"  列名: {cols}")
         print(f"  日期范围: {df_position.iloc[:, 0].min()} ~ {df_position.iloc[:, 0].max()}")
-
-        save_path = RAW / "market" / "fund_position"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_position.to_csv(save_path / f"fund_position_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         # 列名映射 (中文列名)
         date_col = cols[0]       # 报告期

@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from app.data_fetchers.crawler.utils import (
-    RAW, save_processed, log_fetch, TZ_BEIJING,
+    RAW, save_processed, log_fetch, attach_date, TZ_BEIJING,
 )
 
 
@@ -25,10 +25,6 @@ try:
         print(f"  开户数据形状: {df_account.shape}")
         print(f"  列名: {list(df_account.columns)}")
         print(f"  最近5行:\n{df_account.tail()}")
-
-        save_path = RAW / "chinaclear" / "investor"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_account.to_csv(save_path / f"investor_account_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         df_out = pd.DataFrame()
         date_col = next((c for c in df_account.columns if "日期" in c or "date" in c.lower() or "月份" in c), df_account.columns[0])
@@ -62,13 +58,10 @@ margin_data = {}
 try:
     df_sse_margin = ak.macro_china_market_margin_sh()
     if df_sse_margin is not None and not df_sse_margin.empty:
+        save_processed(attach_date(df_sse_margin, "日期"), "上交所两融.csv", "flow")
         print(f"  上交所两融(macro) shape: {df_sse_margin.shape}")
         cols_sh = list(df_sse_margin.columns)
         print(f"  列名: {cols_sh}")
-
-        save_path = RAW / "sse" / "margin"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_sse_margin.to_csv(save_path / f"sse_margin_macro_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         # Parse columns: 日期, 融资余额(亿), 融资买入额(亿), 融券余量(亿), 融券余额(亿), 融券卖出量(亿), 融资融券余额(亿)
         margin_data["sh"] = df_sse_margin
@@ -81,13 +74,10 @@ except Exception as e:
 try:
     df_szse_margin = ak.macro_china_market_margin_sz()
     if df_szse_margin is not None and not df_szse_margin.empty:
+        save_processed(attach_date(df_szse_margin, "日期"), "深交所两融.csv", "flow")
         print(f"  深交所两融(macro) shape: {df_szse_margin.shape}")
         cols_sz = list(df_szse_margin.columns)
         print(f"  列名: {cols_sz}")
-
-        save_path = RAW / "szse" / "margin"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_szse_margin.to_csv(save_path / f"szse_margin_macro_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         margin_data["sz"] = df_szse_margin
         log_fetch("szse_margin", "OK", f"深交所两融(macro) {len(df_szse_margin)}条")

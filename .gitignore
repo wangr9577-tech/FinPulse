@@ -54,10 +54,15 @@ _tag_result*.txt
 
 # ---- 项目无关 / 个人目录（不入库） ----
 backend.zip
+frontend.zip
 日报/
 入职材料/
 语音文件/
 *.pdf
+
+# ---- 本地工具 / 生成产物（不入库） ----
+.deck/
+.mcp.json
 
 # ---- 外部公告抓取源码（含真实密钥 / PII，绝不入库） ----
 gonggao_code_*/

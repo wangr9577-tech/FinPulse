@@ -63,29 +63,16 @@ try:
             except Exception as e_cs:
                 print(f"  中证官网成交额获取提示: {e_cs}")
 
-            # 若仍缺失，从本地 source_data/中证800日行情.csv 补齐
-            if "amount" not in df_index.columns or df_index["amount"].dropna().empty:
-                for local_f in [DATA_DIR / "source_data" / "中证800日行情.csv", DATA_DIR / "cleaned_data" / "中证800日行情_清洗后.csv"]:
-                    if local_f.exists():
-                        try:
-                            local_df = pd.read_csv(local_f)
-                            date_c = "日期" if "日期" in local_df.columns else "date"
-                            amt_c = "成交额" if "成交额" in local_df.columns else ("amount" if "amount" in local_df.columns else None)
-                            if amt_c:
-                                local_df["date"] = pd.to_datetime(local_df[date_c])
-                                local_df["amount"] = pd.to_numeric(local_df[amt_c], errors="coerce")
-                                df_index["date"] = pd.to_datetime(df_index["date"])
-                                df_index = pd.merge(df_index, local_df[["date", "amount"]], on="date", how="left", suffixes=("", "_loc"))
-                                if "amount_loc" in df_index.columns:
-                                    df_index["amount"] = df_index["amount"].fillna(df_index["amount_loc"])
-                                    df_index.drop(columns=["amount_loc"], inplace=True)
-                                break
-                        except Exception:
-                            pass
+            # 原「从本地 source_data/中证800日行情.csv 补齐成交额」已移除：
+            # 本地 CSV 层已废弃（Mongo 为唯一存储），且 DATA_DIR 在本模块未定义会触发 NameError。
 
-        save_path = RAW / "csindex" / "csi800"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_index.to_csv(save_path / f"csi800_daily_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
+        # 将中证800日行情写入 MongoDB ('timing_source_data'，indicator_name=中证800日行情.csv)，
+        # 供 01_数据清洗 直接读取，替代 raw/csindex 下的 CSV 落盘。
+        from app.timing_hexagon.mongo_store import save_source_frame
+        try:
+            save_source_frame("中证800日行情.csv", df_index)
+        except Exception as e_cm:
+            print(f"  [WARN] 中证800日行情 Mongo 写入提示: {e_cm}")
 
         # Standardize
         df_index["date"] = pd.to_datetime(df_index["date"])
@@ -423,10 +410,6 @@ for sym, name in [("sh000300", "沪深300"), ("sh000001", "上证综指")]:
     try:
         df_aux = ak.stock_zh_index_daily_em(symbol=sym)
         if df_aux is not None and not df_aux.empty:
-            save_path = RAW / "csindex" / "csi800"
-            save_path.mkdir(parents=True, exist_ok=True)
-            safe_name = name
-            df_aux.to_csv(save_path / f"{safe_name}_daily_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
             print(f"  [OK] {name}: {len(df_aux)}条, {df_aux['date'].min()} ~ {df_aux['date'].max()}")
             log_fetch("csindex", "OK", f"{name} {len(df_aux)}条")
     except Exception as e:

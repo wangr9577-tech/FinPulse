@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from app.data_fetchers.crawler.utils import (
-    RAW, save_processed, log_fetch, parse_chinese_date, TZ_BEIJING,
+    RAW, save_processed, log_fetch, parse_chinese_date, attach_date, TZ_BEIJING,
 )
 
 
@@ -23,9 +23,6 @@ try:
     if df_cons is not None and not df_cons.empty:
         print(f"  中证800成分股: {df_cons.shape[0]}只")
         print(f"  列名: {list(df_cons.columns)}")
-        save_path = RAW / "csindex" / "constituents"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_cons.to_csv(save_path / f"csi800_constituents_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
         log_fetch("csindex", "OK", f"成分股: {df_cons.shape[0]}只")
     else:
         log_fetch("csindex", "WARN", "成分股数据为空")
@@ -41,10 +38,6 @@ try:
         print(f"  PE中证800 shape: {df_pe.shape}")
         cols = list(df_pe.columns)
         print(f"  列名: {cols}")
-
-        save_path = RAW / "csindex" / "pe"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_pe.to_csv(save_path / f"pe_csi800_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         # Columns: [0]日期, [1]指数, [2]加权动态市盈率, [3]动态市盈率, [4]动态市盈率分位数,
         #          [5]加权静态市盈率, [6]静态市盈率(TTM), [7]静态市盈率分位数
@@ -103,10 +96,6 @@ try:
         cols_pb = list(df_pb.columns)
         print(f"  列名: {cols_pb}")
 
-        save_path = RAW / "csindex" / "pb"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_pb.to_csv(save_path / f"pb_csi800_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         # Columns: 日期, 指数, 市净率, 等权市净率, 市净率中位数
         df_out = pd.DataFrame()
         date_col_pb = cols_pb[0]
@@ -142,12 +131,22 @@ except Exception as e:
     log_fetch("csindex", "FAIL", str(e))
 
 # ========== 指标14: 股息率 ==========
-# [已删除] AKShare stock_zh_index_value_csindex 仅返回最近20个交易日数据
-# 中证指数官网接口限制，无法获取历史股息率
-# 用户确认：放弃该指标
+# AKShare stock_zh_index_value_csindex 仅返回最近20个交易日数据，无法重建完整历史。
+# 因此不在此计算完整股息率指标（历史沿用 flatten 落库的整段快照），但**把最近20个交易日的
+# 原始种子写入 Mongo**，让 01 读取的 中证800股息率_最近20日.csv 种子随爬虫实时刷新最近一段，
+# 而非停留在迁移时的历史快照。增量去重按 (indicator_name, date) keep='last'，旧历史自动保留。
 print("\n[指标14/35] 股息率（中证800）...")
-print("  [SKIP] 用户确认放弃 - csindex接口仅返回20条数据，无法获取历史股息率")
-log_fetch("csindex", "SKIP", "股息率: 用户确认放弃, 数据源限制")
+try:
+    df_div = ak.stock_zh_index_value_csindex(symbol="000906")
+    if df_div is not None and not df_div.empty:
+        save_processed(attach_date(df_div, "日期"), "中证800股息率_最近20日.csv", "valuation")
+        print(f"  [OK] 股息率(原始种子最近20日): {len(df_div)}条, 最新股息率1={df_div['股息率1'].iloc[-1]:.2f}%, 股息率2={df_div['股息率2'].iloc[-1]:.2f}%")
+        log_fetch("csindex", "OK", f"股息率种子 {len(df_div)}条(仅最近20日)")
+    else:
+        log_fetch("csindex", "WARN", "股息率 csindex 数据为空")
+except Exception as e:
+    print(f"  [WARN] 股息率: {type(e).__name__}: {e}")
+    log_fetch("csindex", "WARN", f"股息率: {e}")
 
 # ========== 指标16: 股权风险溢价 (ERP) ==========
 print("\n[指标16/35] 股权风险溢价...")
@@ -214,8 +213,6 @@ except Exception as e:
 
 # ========== 指标17: DCF估值 (C级 - 占位) ==========
 print("\n[指标17/35] DCF估值(C级占位)...")
-save_path = RAW / "valuation" / "dcf"
-save_path.mkdir(parents=True, exist_ok=True)
 placeholder = pd.DataFrame({
     "date": pd.date_range("2008-01-01", "2026-06-30", freq="ME"),
     "dcf_value": np.nan,
@@ -303,10 +300,6 @@ for sym in ["沪深300", "上证50"]:
     try:
         df_pe300 = ak.stock_index_pe_lg(symbol=sym)
         if df_pe300 is not None and not df_pe300.empty:
-            save_path = RAW / "csindex" / "pe"
-            save_path.mkdir(parents=True, exist_ok=True)
-            safe_name = sym.replace("/", "_")
-            df_pe300.to_csv(save_path / f"pe_{safe_name}_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
             print(f"  [OK] {sym} PE: {len(df_pe300)}条")
             log_fetch("csindex", "OK", f"PE {sym} {len(df_pe300)}条")
     except Exception as e:

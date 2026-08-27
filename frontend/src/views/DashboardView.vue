@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted, computed, h } from 'vue'
-import { Card, Row, Col, Statistic, Tag, Table, Badge, Button, Alert, Empty, Space, Modal, Switch, Input, message } from 'ant-design-vue'
+import { Card, Row, Col, Statistic, Tag, Table, Badge, Button, Alert, Empty, Space, Modal, Switch, Input, TimePicker, message } from 'ant-design-vue'
 import {
   ReloadOutlined,
   FilePdfOutlined,
@@ -98,6 +98,15 @@ function openAutoRunModal() {
   autoRunModal.enabled = !!autoRun.value.enabled
   autoRunModal.run_time = autoRun.value.run_time || '07:00'
   autoRunModal.open = true
+}
+
+// 定时运行时间用 TimePicker 选择，避免用户手输 ":" 造成解析问题。
+// 后端用字符串 "HH:mm"，而 antd TimePicker 的值为 dayjs 对象，这里做双向转换。
+function runTimeToDayjs(t) {
+  return t && /^\d{1,2}:\d{2}$/.test(t) ? dayjs(t, 'HH:mm') : dayjs('07:00', 'HH:mm')
+}
+function onRunTimeChange(t) {
+  autoRunModal.run_time = t ? t.format('HH:mm') : '07:00'
 }
 
 async function saveAutoRun() {
@@ -353,7 +362,13 @@ const reportColumns = [
         </div>
         <div>
           <div style="margin-bottom: 6px;">运行时间</div>
-          <Input v-model:value="autoRunModal.run_time" placeholder="07:00" style="width: 120px;" />
+          <TimePicker
+            :value="runTimeToDayjs(autoRunModal.run_time)"
+            format="HH:mm"
+            :allow-clear="false"
+            style="width: 120px;"
+            @change="onRunTimeChange"
+          />
         </div>
         <Alert
           type="info"

@@ -40,16 +40,13 @@ def fetch_bytes(url: str, params: dict | None = None) -> tuple[bytes, dict]:
 
 
 def save_raw(source: str, dataset: str, content: bytes, meta: dict, suffix: str = "bin"):
-    """落盘原始数据到 raw/<source>/<dataset>/ 目录"""
-    ts = datetime.now(TZ_BEIJING).strftime("%Y%m%d_%H%M%S")
-    folder = RAW / source / dataset
-    folder.mkdir(parents=True, exist_ok=True)
-    data_path = folder / f"{dataset}_{ts}.{suffix}"
-    data_path.write_bytes(content)
-    # 写元数据
-    meta_path = data_path.with_suffix(data_path.suffix + ".meta.json")
-    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-    return data_path
+    """原始响应字节不再落盘 (已切换为 MongoDB 单一存储源)。保留签名仅为兼容，返回 None。
+
+    说明：原始数据由各 fetcher 从 akshare/官方 API 实时拉取后直接计算，无需留存本地字节缓存；
+    因此 raw/<source>/<dataset>/ 目录不再创建。
+    """
+    print(f"[SKIP] raw 落盘已禁用 (Mongo 直写): {source}/{dataset}.{suffix}")
+    return None
 
 
 def expand_by_release_date(macro: pd.DataFrame, trading_days: pd.DatetimeIndex) -> pd.DataFrame:
@@ -137,7 +134,10 @@ FILE_MAPPING_TO_SOURCE_DATA = {
     "PPI同比_月度.csv": "PPI.csv",
     "发电量同比_月度.csv": "全社会用电量_发电量代理.csv",
     "新增开户数_月度.csv": "新增投资者.csv",
-    "QVIX_日度.csv": "50ETF_QVIX.csv"
+    "QVIX_日度.csv": "50ETF_QVIX.csv",
+    # 行业广度/分歧度代理：爬虫产出用 _日度 名，01_数据清洗 读 _代理 种子名，统一桥接。
+    "行业分歧度_日度.csv": "行业分歧度_代理.csv",
+    "新高新低_日度.csv": "行业新高新低_代理.csv",
 }
 
 
@@ -183,57 +183,41 @@ def merge_incremental_dataframe(existing_df: pd.DataFrame, new_df: pd.DataFrame,
         return new_df
 
 
+def attach_date(df: pd.DataFrame, date_col: str) -> pd.DataFrame:
+    """为 akshare 原始序列补一个规范的 'date' 列（Mongo upsert/_id 与增量去重需要）。
+
+    若已有 date 列（如爬虫自算的分歧度/新高新低，date 为真日期）则原样返回；
+    否则把 date_col 的值取前 10 字符作为 date —— 与历史「整块展开」的 date 格式保持一致，
+    这样增量合并 key 不会漂移、也不会产生重复月份。原始数据列原样保留，供 01_数据清洗
+    按原始列名（月份/季度/日期/报告期）读取。
+    """
+    if df is None or df.empty or "date" in df.columns:
+        return df
+    df = df.copy()
+    df["date"] = df[date_col].astype(str).str[:10]
+    return df
+
+
 def save_processed(df: pd.DataFrame, filename: str, category: str):
+    """将处理后的指标序列增量写入 MongoDB ('timing_source_data')，不再落盘任何 CSV。
+
+    indicator_name = 源数据种子文件名 (经 FILE_MAPPING_TO_SOURCE_DATA 映射，未命中则回退 filename)，
+    与 01_数据清洗 读取的种子名对齐；category 仅保留作日志分类。增量去重由 mongo_store.save_source_frame
+    在库内合并 (按日期 keep='last') 完成，等价于原 incremental merge 行为。
     """
-    保存处理后的数据到 processed/<category>/ 目录，并同步按增量合并 (Incremental Merge) 模式更新。
-    如果 target 文件或对应 source_data 文件存在，则自动追加新抓取的增量行，杜绝覆盖历史长序列。
-    """
-    folder = PROCESSED / category
-    folder.mkdir(parents=True, exist_ok=True)
-    filepath = folder / filename
+    from app.timing_hexagon.mongo_store import save_source_frame
 
-    output_df = df.copy()
+    indicator_name = FILE_MAPPING_TO_SOURCE_DATA.get(filename, filename)
+    if df is None or df.empty:
+        print(f"[SKIP] {indicator_name} 为空，跳过 Mongo 写入。")
+        return None
 
-    # 1. 增量更新 processed/<category>/<filename>
-    if filepath.exists() and not output_df.empty:
-        try:
-            if filename.endswith(".parquet"):
-                old_df = pd.read_parquet(filepath)
-            else:
-                old_df = pd.read_csv(filepath)
-            
-            old_rows = len(old_df)
-            output_df = merge_incremental_dataframe(old_df, output_df)
-            added_rows = len(output_df) - old_rows
-            if added_rows > 0:
-                print(f"  [OK] [增量合并] {filename}: 原有 {old_rows} 行 -> 追加 {added_rows} 行新增数据 (共计 {len(output_df)} 行)")
-        except Exception as e:
-            print(f"  [WARN] {filename} 历史读取警示 ({e})，覆盖写入")
-
-    # 落盘 processed 目标文件
-    if filename.endswith(".parquet"):
-        output_df.to_parquet(filepath, index=False)
-    else:
-        output_df.to_csv(filepath, index=False, encoding="utf-8-sig")
-
-    print(f"[OK] saved processed: {filepath}")
-
-    # 2. 增量同步至 source_data 目录 (如果存在映射或同名文件)
-    source_filename = FILE_MAPPING_TO_SOURCE_DATA.get(filename, filename)
-    source_path = SOURCE_DATA / source_filename
-    if source_path.exists() and not output_df.empty:
-        try:
-            old_source_df = pd.read_csv(source_path, encoding="utf-8-sig")
-            old_source_rows = len(old_source_df)
-            merged_source_df = merge_incremental_dataframe(old_source_df, output_df)
-            merged_source_df.to_csv(source_path, index=False, encoding="utf-8-sig")
-            added_source_rows = len(merged_source_df) - old_source_rows
-            if added_source_rows > 0:
-                print(f"  [OK] [source_data 增量同步] {source_filename}: 新增 {added_source_rows} 行数据")
-        except Exception as e_src:
-            print(f"  [WARN] source_data 增量同步失败 ({source_filename}): {e_src}")
-
-    return filepath
+    try:
+        count = save_source_frame(indicator_name, df)
+        print(f"[OK] saved to Mongo timing_source_data[{category}]: {indicator_name} -> {count} 行")
+    except Exception as e:
+        print(f"  [WARN] [{category}] {indicator_name} Mongo 写入警示 ({e})")
+    return None
 
 
 def log_fetch(source: str, status: str, message: str = ""):

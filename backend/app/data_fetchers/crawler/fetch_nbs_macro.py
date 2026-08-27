@@ -24,10 +24,6 @@ try:
     if df_pmi is not None and not df_pmi.empty:
         print(f"  PMI shape: {df_pmi.shape}, cols: {list(df_pmi.columns)}")
 
-        save_path = RAW / "nbs" / "pmi"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_pmi.to_csv(save_path / f"pmi_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         date_col = [c for c in df_pmi.columns if "月" in c or "date" in c.lower()][0]
         pmi_col = [c for c in df_pmi.columns if "制造" in c and "指数" in c][0]
 
@@ -61,10 +57,6 @@ try:
     if df_cpi is not None and not df_cpi.empty:
         print(f"  CPI shape: {df_cpi.shape}, cols: {list(df_cpi.columns)}")
 
-        save_path = RAW / "nbs" / "cpi"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_cpi.to_csv(save_path / f"cpi_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         date_col = [c for c in df_cpi.columns if "月" in c][0]
         cpi_col = "全国-同比增长"
         if cpi_col not in df_cpi.columns:
@@ -96,10 +88,6 @@ try:
     if df_ppi is not None and not df_ppi.empty:
         print(f"  PPI shape: {df_ppi.shape}, cols: {list(df_ppi.columns)}")
 
-        save_path = RAW / "nbs" / "ppi"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_ppi.to_csv(save_path / f"ppi_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         date_col = [c for c in df_ppi.columns if "月" in c][0]
         ppi_col = "当月同比增长"
         if ppi_col not in df_ppi.columns:
@@ -130,10 +118,6 @@ try:
     df_power = ak.macro_china_society_electricity()
     if df_power is not None and not df_power.empty:
         print(f"  发电量 shape: {df_power.shape}, cols: {list(df_power.columns)}")
-
-        save_path = RAW / "nbs" / "power"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_power.to_csv(save_path / f"power_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         # Parse power generation data
         cols_pw = list(df_power.columns)
@@ -249,9 +233,6 @@ try:
     if df_gdp is not None and not df_gdp.empty:
         print(f"  GDP shape: {df_gdp.shape}, cols: {list(df_gdp.columns)}")
         print(f"  tail:\n{df_gdp.tail()}")
-        save_path = RAW / "nbs" / "gdp"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_gdp.to_csv(save_path / f"gdp_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
         print(f"  [OK] GDP: {len(df_gdp)}条")
         log_fetch("nbs", "OK", f"GDP {len(df_gdp)}条")
 except Exception as e:

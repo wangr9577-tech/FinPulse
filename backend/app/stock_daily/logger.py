@@ -11,6 +11,11 @@ def setup_logger(name: str = "announcement", log_dir: Path | None = None) -> log
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger
+    # 本模块自建 handler（console + 轮转文件）输出，不需要再冒泡到根 logger。
+    # 根 logger 已被 app.core.logger 的 InterceptHandler 劫持（Loguru），若这里不关闭
+    # propagate，同一条 pipeline 日志会同时写进自己的文件**又**灌入 Loguru，加倍放大
+    # 高并发 LLM 打标时 Loguru 的队列/锁竞争（曾触发 deadlock avoided 卡死事件循环）。
+    logger.propagate = False
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter(FMT)
     console = logging.StreamHandler()

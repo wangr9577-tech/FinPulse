@@ -8,9 +8,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from app.data_fetchers.crawler.utils import (
-    RAW, PROCESSED, save_processed, log_fetch,
+    RAW, PROCESSED, save_processed, log_fetch, attach_date,
     parse_chinese_date, TZ_BEIJING,
 )
+from app.timing_hexagon.mongo_store import load_source_frame
 
 
 print("=" * 60)
@@ -25,12 +26,14 @@ print("=" * 60)
 print("\n[指标1/35] DR007偏离度...")
 print("  [INFO] 由 fetch_dr007.py 独立脚本生成")
 print("  注意: 缺少7天逆回购政策利率历史，只能生成DR007水平代理，不能生成原研报偏离度")
-print("  保存位置: processed/liquidity/DR007偏离度_日度.csv")
-dr007_path = PROCESSED / "liquidity" / "DR007偏离度_日度.csv"
-if not dr007_path.exists() or dr007_path.stat().st_size == 0:
-    log_fetch("CFETS", "FAIL", "DR007代理文件缺失；请先运行fetch_dr007.py")
-    raise FileNotFoundError(f"请先运行 fetch_dr007.py：{dr007_path}")
-log_fetch("CFETS", "OK", "已检测到DR007水平代理文件")
+print("  数据来源: Mongo timing_source_data / DR007合成代理序列.csv")
+_dr007 = load_source_frame("DR007合成代理序列.csv")
+if _dr007 is None or _dr007.empty:
+    print("  [WARN] DR007源数据尚未入库（DR007由fetch_dr007.py单独生成并直写Mongo），不影响本组其余指标继续计算。")
+    log_fetch("CFETS", "WARN", "DR007源数据未入库；请稍后确认fetch_dr007.py已执行")
+    _dr007 = None
+else:
+    log_fetch("CFETS", "OK", "已检测到Mongo中的DR007源数据")
 
 # ========== 指标3: M1同比 & M2同比 ==========
 print("\n[指标3/35] M1同比 & M2同比...")
@@ -38,13 +41,10 @@ df_m1m2 = None
 try:
     df_money = ak.macro_china_money_supply()
     if df_money is not None and not df_money.empty:
+        save_processed(attach_date(df_money, "月份"), "货币供应量.csv", "liquidity")
         print(f"  货币供应量 shape: {df_money.shape}")
         cols = list(df_money.columns)
         print(f"  列名: {cols}")
-
-        save_path = RAW / "pbc" / "money_supply"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_money.to_csv(save_path / f"money_supply_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         date_col = [c for c in cols if "月" in c][0]
         m1_col = [c for c in cols if "M1" in c.upper() and "同比" in c][0]
@@ -120,11 +120,8 @@ print("\n[指标5/35] M2-GDP利差...")
 try:
     df_gdp = ak.macro_china_gdp()
     if df_gdp is not None and not df_gdp.empty and df_m1m2 is not None:
+        save_processed(attach_date(df_gdp, "季度"), "GDP现价累计值.csv", "liquidity")
         print(f"  GDP shape: {df_gdp.shape}, cols: {list(df_gdp.columns)}")
-
-        save_path = RAW / "nbs" / "gdp"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_gdp.to_csv(save_path / f"gdp_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         # Parse GDP data - typically quarterly with columns like 季度, 国内生产总值
         gdp_cols = list(df_gdp.columns)
@@ -184,12 +181,9 @@ print("\n[指标6/35] 信贷脉冲（社融）...")
 try:
     df_sf = ak.macro_china_new_financial_credit()
     if df_sf is not None and not df_sf.empty:
+        save_processed(attach_date(df_sf, "月份"), "社会融资规模增量.csv", "liquidity")
         print(f"  社融 shape: {df_sf.shape}")
         print(f"  列名: {list(df_sf.columns)}")
-
-        save_path = RAW / "pbc" / "social_financing"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_sf.to_csv(save_path / f"soc_fin_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
 
         # Parse the social financing data
         cols_sf = list(df_sf.columns)
@@ -241,10 +235,6 @@ try:
     df_bond = ak.bond_zh_us_rate()
     if df_bond is not None and not df_bond.empty:
         print(f"  国债 shape: {df_bond.shape}, cols: {list(df_bond.columns)}")
-        save_path = RAW / "chinamoney" / "bond_yield"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_bond.to_csv(save_path / f"bond_yield_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         # Find 10Y China bond yield column
         bond_cols = list(df_bond.columns)
         date_col_b = bond_cols[0]  # 日期

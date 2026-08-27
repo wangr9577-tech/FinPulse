@@ -34,10 +34,6 @@ try:
         print(f"  列名: {list(df_qvix_50.columns)}")
         print(f"  日期范围: {df_qvix_50['date'].min()} ~ {df_qvix_50['date'].max()}")
 
-        save_path = RAW / "sse" / "options"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_qvix_50.to_csv(save_path / f"50etf_qvix_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         # QVIX as VIX proxy
         df_vix = pd.DataFrame()
         df_vix["date"] = pd.to_datetime(df_qvix_50["date"])
@@ -73,10 +69,6 @@ try:
     df_qvix_300 = ak.index_option_300etf_qvix()
     if df_qvix_300 is not None and not df_qvix_300.empty:
         print(f"  300ETF QVIX shape: {df_qvix_300.shape}")
-        save_path = RAW / "sse" / "options"
-        save_path.mkdir(parents=True, exist_ok=True)
-        df_qvix_300.to_csv(save_path / f"300etf_qvix_{datetime.now(TZ_BEIJING).strftime('%Y%m%d')}.csv", index=False, encoding="utf-8-sig")
-
         df_300 = pd.DataFrame()
         df_300["date"] = pd.to_datetime(df_qvix_300["date"])
         df_300["vix_300_proxy"] = pd.to_numeric(df_qvix_300["close"], errors="coerce")

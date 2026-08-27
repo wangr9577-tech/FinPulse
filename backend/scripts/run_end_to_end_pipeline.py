@@ -155,27 +155,8 @@ def run_end_to_end_pipeline(hours_back: Optional[float] = None):
         app_logger.error(f"[STAGE 3.1] 特征算子计算异常: {e_feat}")
         raise RuntimeError(f"[STAGE 3.1 异常中断] 特征算子计算失败: {e_feat}") from e_feat
 
-    # 3.2 运行数据库入库脚本
-    try:
-        db_script = settings.BASE_DIR / "scripts" / "import_source_data_to_db.py"
-        if not db_script.exists():
-            db_script = settings.BASE_DIR / "backend" / "scripts" / "import_source_data_to_db.py"
-        proc_db = subprocess.run(
-            [sys.executable, str(db_script)],
-            cwd=settings.BASE_DIR,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace"
-        )
-        if proc_db.returncode == 0:
-            app_logger.info("[STAGE 3.2] source_data 与最新信号数据成功存入 MongoDB！")
-        else:
-            app_logger.error(f"[STAGE 3.2] MongoDB 数据导入失败: {proc_db.stderr or proc_db.stdout}")
-            raise RuntimeError(f"[STAGE 3.2 异常中断] 数据库导入失败 (退出码: {proc_db.returncode})")
-    except Exception as e_db:
-        app_logger.error(f"[STAGE 3.2] 数据库导入脚本异常: {e_db}")
-        raise RuntimeError(f"[STAGE 3.2 异常中断] 数据库导入脚本异常: {e_db}") from e_db
+    # 3.2 数据入库已内联：爬虫直写 timing_source_data，02_指标计算 直写 timing_signals_summary，
+    #     无需再独立执行 CSV -> Mongo 回灌脚本 (import_source_data_to_db.py 已移除)。
 
     # 3.3 运行 35 项量化指标与六维度雷达图 绘图引擎
     try:

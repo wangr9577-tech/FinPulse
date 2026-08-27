@@ -105,6 +105,14 @@ class MongoDBClient:
             stock_coll = self.db["daily_stock_reports"]
             await stock_coll.create_index([("date", -1)])
 
+            # 5. 择时链路索引 (Crawler 直写 + 01/02/03 读写的吞吐支撑)
+            #    规范 key：timing_source_data / timing_cleaned_data 用 indicator_name，
+            #    timing_indicator_outputs 用 category，timing_signals_summary 用 indicator。
+            await self.db["timing_source_data"].create_index([("indicator_name", 1), ("date", -1)])
+            await self.db["timing_cleaned_data"].create_index([("indicator_name", 1), ("date", -1)])
+            await self.db["timing_indicator_outputs"].create_index([("category", 1), ("date", -1)])
+            await self.db["timing_signals_summary"].create_index([("indicator", 1), ("date", -1)])
+
             app_logger.info("[MongoDB] 核心集合索引与 365 天 (1年) TTL 自动过期索引初始化完成！")
         except Exception as e:
             app_logger.error(f"[MongoDB 索引创建失败]: {e}")
@@ -452,6 +460,121 @@ class MongoDBClient:
             if doc and doc.get("date"):
                 return str(doc.get("date"))[:10]
         return None
+
+    async def delete_timing_signals_summary(self) -> int:
+        """清空择时信号汇总 (timing_signals_summary)。
+
+        timing_signals_summary 语义是「最新截面快照」：每次流水线运行都会由 02 通过
+        add_latest 生成"每指标一行"的当期最新信号集并整表重写。若按 _id 增量 upsert
+        (indicator_effective_date)，当某指标的有效日期随新数据前移时会追加新行、旧行残留，
+        造成"同一指标多行"而破坏 03 的"最新信号25项且名称唯一"校验。故写入前先整表清空，
+        保证幂等：重跑即得到唯一、最新的截面。
+        """
+        if self.is_connected and self.db is not None:
+            res = await self.db["timing_signals_summary"].delete_many({})
+            return int(res.deleted_count)
+        return 0
+
+    # -- 择时源数据 / 清洗数据 / 指标输出 / 信号汇总 的读方法与补充写方法 -------------------
+    async def get_timing_source_data(self, indicator_name: str) -> List[Dict[str, Any]]:
+        """按 indicator_name 读取择时原始/代理源数据全序列 (按 date 升序，丢弃 _id)。"""
+        if self.is_connected and self.db is not None:
+            cursor = self.db["timing_source_data"].find(
+                {"indicator_name": indicator_name}, {"_id": 0}
+            ).sort("date", 1)
+            return await cursor.to_list(length=None)
+        return []
+
+    async def upsert_timing_cleaned_data_batch(self, indicator_name: str, records: List[Dict[str, Any]]) -> int:
+        """批量存入清洗后的择时源数据 (timing_cleaned_data)，_id="{indicator_name}_{date}"。"""
+        if not records:
+            return 0
+        if self.is_connected and self.db is not None:
+            coll = self.db["timing_cleaned_data"]
+            operations = []
+            for r in records:
+                date_val = r.get("date") or r.get("日期") or r.get("报告日")
+                if date_val:
+                    r_clean = dict(r)
+                    d_str = str(date_val)[:10]
+                    r_clean["indicator_name"] = indicator_name
+                    r_clean["date"] = d_str
+                    r_clean["_id"] = f"{indicator_name}_{d_str}"
+                    operations.append(UpdateOne({"_id": r_clean["_id"]}, {"$set": r_clean}, upsert=True))
+            if not operations:
+                return 0
+            try:
+                res = await coll.bulk_write(operations, ordered=False)
+                return res.upserted_count + res.modified_count + res.matched_count
+            except Exception as e:
+                app_logger.warning(f"MongoDB timing_cleaned_data 批量 Upsert 写入提示: {e}")
+                return len(records)
+        return 0
+
+    async def get_timing_cleaned_data(self, indicator_name: str) -> List[Dict[str, Any]]:
+        """按 indicator_name 读取清洗后的择时源数据 (按 date 升序，丢弃 _id)。"""
+        if self.is_connected and self.db is not None:
+            cursor = self.db["timing_cleaned_data"].find(
+                {"indicator_name": indicator_name}, {"_id": 0}
+            ).sort("date", 1)
+            return await cursor.to_list(length=None)
+        return []
+
+    async def upsert_timing_indicator_outputs_batch(self, indicator_name: str, category: str, records: List[Dict[str, Any]]) -> int:
+        """批量存入 02_指标计算 的指标输出 (timing_indicator_outputs)，_id="{indicator_name}_{date}"。
+
+        indicator_name 为指标结果文件名 (含扩展名)，category 为 "indicator_outputs" / "proxy_outputs"。
+        多个指标文件可共享同一 category，故以 indicator_name (文件名) 为主键区分。
+        """
+        if not records:
+            return 0
+        if self.is_connected and self.db is not None:
+            coll = self.db["timing_indicator_outputs"]
+            operations = []
+            for r in records:
+                date_val = r.get("date") or r.get("日期") or r.get("报告日")
+                if date_val:
+                    r_clean = dict(r)
+                    d_str = str(date_val)[:10]
+                    r_clean["indicator_name"] = indicator_name
+                    r_clean["category"] = category
+                    r_clean["date"] = d_str
+                    r_clean["_id"] = f"{indicator_name}_{d_str}"
+                    operations.append(UpdateOne({"_id": r_clean["_id"]}, {"$set": r_clean}, upsert=True))
+            if not operations:
+                return 0
+            try:
+                res = await coll.bulk_write(operations, ordered=False)
+                return res.upserted_count + res.modified_count + res.matched_count
+            except Exception as e:
+                app_logger.warning(f"MongoDB timing_indicator_outputs 批量 Upsert 写入提示: {e}")
+                return len(records)
+        return 0
+
+    async def get_timing_indicator_outputs(self, indicator_name: str) -> List[Dict[str, Any]]:
+        """按文件名读取某个指标输出的全序列 (按 date 升序，丢弃 _id)。"""
+        if self.is_connected and self.db is not None:
+            cursor = self.db["timing_indicator_outputs"].find(
+                {"indicator_name": indicator_name}, {"_id": 0}
+            ).sort("date", 1)
+            return await cursor.to_list(length=None)
+        return []
+
+    async def get_timing_indicator_outputs_by_category(self, category: str) -> List[Dict[str, Any]]:
+        """按 category 列出该类别下所有指标输出 (按 date 升序，丢弃 _id)，供 03_质量检查 批量校验。"""
+        if self.is_connected and self.db is not None:
+            cursor = self.db["timing_indicator_outputs"].find(
+                {"category": category}, {"_id": 0}
+            ).sort("date", 1)
+            return await cursor.to_list(length=None)
+        return []
+
+    async def get_timing_signals_summary(self) -> List[Dict[str, Any]]:
+        """读取择时信号汇总全序列 (按 date 升序，丢弃 _id)，供前端六面图汇总使用。"""
+        if self.is_connected and self.db is not None:
+            cursor = self.db["timing_signals_summary"].find({}, {"_id": 0}).sort("date", 1)
+            return await cursor.to_list(length=None)
+        return []
 
     async def get_latest_insight_report(self) -> Optional[Dict[str, Any]]:
         """获取最新的成品投研报告"""

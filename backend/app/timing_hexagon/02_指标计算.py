@@ -12,7 +12,6 @@
 运行：python 02_指标计算.py
 """
 
-from pathlib import Path
 import numpy as np
 import pandas as pd
 try:
@@ -20,18 +19,13 @@ try:
 except ImportError:
     STL = None
 
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent / "data"
-CLEAN_DIR = BASE_DIR / "cleaned_data"
-RESULT_DIR = BASE_DIR / "results"
-EXACT_DIR = RESULT_DIR / "indicator_outputs"
-PROXY_DIR = RESULT_DIR / "proxy_outputs"
-EXACT_DIR.mkdir(parents=True, exist_ok=True)
-PROXY_DIR.mkdir(parents=True, exist_ok=True)
+from app.timing_hexagon.mongo_store import load_cleaned_frame, save_indicator_frame, save_signals_summary
 
 
 def read_clean(file_name):
-    df = pd.read_csv(CLEAN_DIR / file_name, encoding="utf-8-sig")
+    df = load_cleaned_frame(file_name)
+    if df is None:
+        return None
     for column in df.columns:
         if column == "date" or column.endswith("_date"):
             df[column] = pd.to_datetime(df[column], errors="coerce")
@@ -41,11 +35,11 @@ def read_clean(file_name):
 
 
 def save_exact(df, file_name):
-    df.to_csv(EXACT_DIR / file_name, index=False, encoding="utf-8-sig")
+    save_indicator_frame(file_name, "indicator_outputs", df)
 
 
 def save_proxy(df, file_name):
-    df.to_csv(PROXY_DIR / file_name, index=False, encoding="utf-8-sig")
+    save_indicator_frame(file_name, "proxy_outputs", df)
 
 
 def expanding_quantile_before_today(series, q, min_periods):
@@ -100,14 +94,27 @@ def wilder_rsi(close, n):
 import os
 
 market_calendar_base = read_clean("中证800日行情_清洗后.csv")
-MARKET_DATES = pd.DatetimeIndex(
-    market_calendar_base["date"].dropna().drop_duplicates().sort_values()
-)
-TIMING_AS_OF_ENV = os.environ.get("TIMING_AS_OF")
-if TIMING_AS_OF_ENV:
-    AS_OF_DATE = pd.to_datetime(TIMING_AS_OF_ENV)
+if market_calendar_base is None:
+    print("跳过：中证800日行情_清洗后.csv 缺失，使用空交易日历与今日截面。")
+    market_calendar_base = pd.DataFrame(columns=["date"])
+    MARKET_DATES = pd.DatetimeIndex([])
+    TIMING_AS_OF_ENV = os.environ.get("TIMING_AS_OF")
+    if TIMING_AS_OF_ENV:
+        AS_OF_DATE = pd.to_datetime(TIMING_AS_OF_ENV)
+    else:
+        AS_OF_DATE = pd.Timestamp.today()
 else:
-    AS_OF_DATE = MARKET_DATES.max()
+    MARKET_DATES = pd.DatetimeIndex(
+        market_calendar_base["date"].dropna().drop_duplicates().sort_values()
+    )
+    TIMING_AS_OF_ENV = os.environ.get("TIMING_AS_OF")
+    if TIMING_AS_OF_ENV:
+        AS_OF_DATE = pd.to_datetime(TIMING_AS_OF_ENV)
+    else:
+        AS_OF_DATE = MARKET_DATES.max()
+
+has_market_close = "close" in market_calendar_base.columns
+has_market_amount = "amount" in market_calendar_base.columns
 
 
 def next_trading_day(date_series):
@@ -218,6 +225,14 @@ def add_latest(
     })
 
 
+# 供各指标块与汇总/复核共享的变量：某数据集缺失时保持 None，交由后续块或复核逻辑跳过。
+shibor = dr007 = money = prices = gdp = sf = pmi = electricity = None
+valuation = bond = margin = breadth = divergence = fund_q = qvix = None
+m1 = m1_ppi = m2_gdp = inflation = inf_surprise = None
+pe_median = pb = erp = ma_align = ma_distance = boll = rsi = None
+clock = heat = fund_daily = None
+
+
 # ============================================================
 # 一、流动性
 # ============================================================
@@ -225,19 +240,25 @@ def add_latest(
 # ------------------------------------------------------------
 # 1. SHIBOR 1W：MA60低于历史10%分位数时看多
 # ------------------------------------------------------------
-shibor = read_clean("SHIBOR_1W_清洗后.csv")
-shibor["ma60"] = shibor["shibor_1w_pct"].rolling(60, min_periods=60).mean()
-shibor["historical_q10"] = expanding_quantile_before_today(shibor["ma60"], 0.10, 250)
-shibor["signal_score"] = 0
-shibor.loc[shibor["ma60"] < shibor["historical_q10"], "signal_score"] = 1
-shibor["signal_text"] = np.where(shibor["signal_score"] == 1, "看多：短端资金处于历史低位", "中性")
-shibor["new_bull_trigger"] = (
-    (shibor["ma60"] < shibor["historical_q10"])
-    & ~(shibor["ma60"].shift(1) < shibor["historical_q10"].shift(1)).fillna(False)
-)
-shibor = add_effective_date(shibor)
-save_exact(shibor, "01_SHIBOR_1W信号_日度.csv")
-add_latest("流动性", "SHIBOR 1W", shibor, "ma60", "signal_score", "signal_text", "可按公开规则复现")
+try:
+    shibor = read_clean("SHIBOR_1W_清洗后.csv")
+    if shibor is None:
+        print("跳过指标: SHIBOR 1W（SHIBOR_1W_清洗后.csv 缺失）")
+    else:
+        shibor["ma60"] = shibor["shibor_1w_pct"].rolling(60, min_periods=60).mean()
+        shibor["historical_q10"] = expanding_quantile_before_today(shibor["ma60"], 0.10, 250)
+        shibor["signal_score"] = 0
+        shibor.loc[shibor["ma60"] < shibor["historical_q10"], "signal_score"] = 1
+        shibor["signal_text"] = np.where(shibor["signal_score"] == 1, "看多：短端资金处于历史低位", "中性")
+        shibor["new_bull_trigger"] = (
+            (shibor["ma60"] < shibor["historical_q10"])
+            & ~(shibor["ma60"].shift(1) < shibor["historical_q10"].shift(1)).fillna(False)
+        )
+        shibor = add_effective_date(shibor)
+        save_exact(shibor, "01_SHIBOR_1W信号_日度.csv")
+        add_latest("流动性", "SHIBOR 1W", shibor, "ma60", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: SHIBOR 1W（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
@@ -245,156 +266,186 @@ add_latest("流动性", "SHIBOR 1W", shibor, "ma60", "signal_score", "signal_tex
 # 压缩包缺少央行7天逆回购利率，不能计算原报告的DR007偏离度。
 # 这里只对已有合成DR007水平做MA60与历史10%分位判断。
 # ------------------------------------------------------------
-dr007 = read_clean("DR007水平代理_清洗后.csv")
-dr007["ma60"] = dr007["dr007"].rolling(60, min_periods=60).mean()
-dr007["historical_q10"] = expanding_quantile_before_today(dr007["ma60"], 0.10, 250)
-dr007["signal_score"] = 0
-dr007.loc[dr007["ma60"] < dr007["historical_q10"], "signal_score"] = 1
-dr007["signal_text"] = np.where(dr007["signal_score"] == 1, "代理看多：DR007水平处于历史低位", "代理中性")
-dr007["independent_from_shibor"] = False
-dr007 = add_effective_date(dr007)
-save_proxy(dr007, "P01_DR007水平代理_日度.csv")
-add_latest(
-    "流动性", "DR007偏离度", dr007, "ma60", "signal_score", "signal_text", "代理",
-    "缺少7天逆回购利率历史序列；2022年前序列是SHIBOR加固定利差，不独立、不得与SHIBOR重复计分。",
-    aggregation_eligible=False,
-)
+try:
+    dr007 = read_clean("DR007水平代理_清洗后.csv")
+    if dr007 is None:
+        print("跳过指标: DR007偏离度（DR007水平代理_清洗后.csv 缺失）")
+    else:
+        dr007["ma60"] = dr007["dr007"].rolling(60, min_periods=60).mean()
+        dr007["historical_q10"] = expanding_quantile_before_today(dr007["ma60"], 0.10, 250)
+        dr007["signal_score"] = 0
+        dr007.loc[dr007["ma60"] < dr007["historical_q10"], "signal_score"] = 1
+        dr007["signal_text"] = np.where(dr007["signal_score"] == 1, "代理看多：DR007水平处于历史低位", "代理中性")
+        dr007["independent_from_shibor"] = False
+        dr007 = add_effective_date(dr007)
+        save_proxy(dr007, "P01_DR007水平代理_日度.csv")
+        add_latest(
+            "流动性", "DR007偏离度", dr007, "ma60", "signal_score", "signal_text", "代理",
+            "缺少7天逆回购利率历史序列；2022年前序列是SHIBOR加固定利差，不独立、不得与SHIBOR重复计分。",
+            aggregation_eligible=False,
+        )
+except Exception as e:
+    print(f"跳过指标: DR007偏离度（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 3. M1同比：MA6与MA12判断趋势
 # ------------------------------------------------------------
-money = read_clean("货币供应量_清洗后.csv")
-m1 = money[["date", "available_date", "m1_yoy_pct"]].copy()
-m1["ma6"] = m1["m1_yoy_pct"].rolling(6, min_periods=6).mean()
-m1["ma12"] = m1["m1_yoy_pct"].rolling(12, min_periods=12).mean()
-m1["signal_score"] = np.nan
-m1.loc[m1["ma6"] > m1["ma12"], "signal_score"] = 1
-m1.loc[m1["ma6"] < m1["ma12"], "signal_score"] = -1
-m1["signal_text"] = "样本不足"
-m1.loc[m1["signal_score"] == 1, "signal_text"] = "看多：M1同比上行"
-m1.loc[m1["signal_score"] == -1, "signal_text"] = "看空：M1同比下行"
-m1 = add_effective_date(m1, "available_date")
-save_exact(m1, "02_M1同比趋势_月度.csv")
-add_latest("流动性", "M1同比", m1, "m1_yoy_pct", "signal_score", "signal_text", "可按公开规则复现")
+try:
+    money = read_clean("货币供应量_清洗后.csv")
+    if money is None:
+        print("跳过指标: M1同比（货币供应量_清洗后.csv 缺失）")
+    else:
+        m1 = money[["date", "available_date", "m1_yoy_pct"]].copy()
+        m1["ma6"] = m1["m1_yoy_pct"].rolling(6, min_periods=6).mean()
+        m1["ma12"] = m1["m1_yoy_pct"].rolling(12, min_periods=12).mean()
+        m1["signal_score"] = np.nan
+        m1.loc[m1["ma6"] > m1["ma12"], "signal_score"] = 1
+        m1.loc[m1["ma6"] < m1["ma12"], "signal_score"] = -1
+        m1["signal_text"] = "样本不足"
+        m1.loc[m1["signal_score"] == 1, "signal_text"] = "看多：M1同比上行"
+        m1.loc[m1["signal_score"] == -1, "signal_text"] = "看空：M1同比下行"
+        m1 = add_effective_date(m1, "available_date")
+        save_exact(m1, "02_M1同比趋势_月度.csv")
+        add_latest("流动性", "M1同比", m1, "m1_yoy_pct", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: M1同比（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 4. M1同比-PPI同比：MA6与MA12判断趋势
 # ------------------------------------------------------------
-prices = read_clean("CPI_PPI_清洗后.csv")
-m1_ppi = pd.merge(
-    money[["date", "available_date", "m1_yoy_pct"]],
-    prices[["date", "ppi_available_date", "ppi_yoy_pct"]],
-    on="date",
-    how="inner",
-)
-m1_ppi["signal_available_date"] = m1_ppi[
-    ["available_date", "ppi_available_date"]
-].max(axis=1)
-m1_ppi["m1_minus_ppi_pct_point"] = m1_ppi["m1_yoy_pct"] - m1_ppi["ppi_yoy_pct"]
-m1_ppi["ma6"] = m1_ppi["m1_minus_ppi_pct_point"].rolling(6, min_periods=6).mean()
-m1_ppi["ma12"] = m1_ppi["m1_minus_ppi_pct_point"].rolling(12, min_periods=12).mean()
-m1_ppi["signal_score"] = np.nan
-m1_ppi.loc[m1_ppi["ma6"] > m1_ppi["ma12"], "signal_score"] = 1
-m1_ppi.loc[m1_ppi["ma6"] < m1_ppi["ma12"], "signal_score"] = -1
-m1_ppi["signal_text"] = "样本不足"
-m1_ppi.loc[m1_ppi["signal_score"] == 1, "signal_text"] = "看多：剪刀差上行"
-m1_ppi.loc[m1_ppi["signal_score"] == -1, "signal_text"] = "看空：剪刀差下行"
-m1_ppi = add_effective_date(m1_ppi, "signal_available_date")
-save_exact(m1_ppi, "03_M1减PPI趋势_月度.csv")
-add_latest("流动性", "M1同比-PPI同比", m1_ppi, "m1_minus_ppi_pct_point", "signal_score", "signal_text", "可按公开规则复现")
+try:
+    prices = read_clean("CPI_PPI_清洗后.csv")
+    if prices is None or money is None:
+        print("跳过指标: M1同比-PPI同比（CPI_PPI 或 货币供应量 数据缺失）")
+    else:
+        m1_ppi = pd.merge(
+            money[["date", "available_date", "m1_yoy_pct"]],
+            prices[["date", "ppi_available_date", "ppi_yoy_pct"]],
+            on="date",
+            how="inner",
+        )
+        m1_ppi["signal_available_date"] = m1_ppi[
+            ["available_date", "ppi_available_date"]
+        ].max(axis=1)
+        m1_ppi["m1_minus_ppi_pct_point"] = m1_ppi["m1_yoy_pct"] - m1_ppi["ppi_yoy_pct"]
+        m1_ppi["ma6"] = m1_ppi["m1_minus_ppi_pct_point"].rolling(6, min_periods=6).mean()
+        m1_ppi["ma12"] = m1_ppi["m1_minus_ppi_pct_point"].rolling(12, min_periods=12).mean()
+        m1_ppi["signal_score"] = np.nan
+        m1_ppi.loc[m1_ppi["ma6"] > m1_ppi["ma12"], "signal_score"] = 1
+        m1_ppi.loc[m1_ppi["ma6"] < m1_ppi["ma12"], "signal_score"] = -1
+        m1_ppi["signal_text"] = "样本不足"
+        m1_ppi.loc[m1_ppi["signal_score"] == 1, "signal_text"] = "看多：剪刀差上行"
+        m1_ppi.loc[m1_ppi["signal_score"] == -1, "signal_text"] = "看空：剪刀差下行"
+        m1_ppi = add_effective_date(m1_ppi, "signal_available_date")
+        save_exact(m1_ppi, "03_M1减PPI趋势_月度.csv")
+        add_latest("流动性", "M1同比-PPI同比", m1_ppi, "m1_minus_ppi_pct_point", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: M1同比-PPI同比（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 5. M2同比-名义GDP累计同比
 # GDP按保守可用日期映射到月度，避免把季度数据提前使用。
 # ------------------------------------------------------------
-gdp = read_clean("名义GDP_清洗后.csv")
-gdp["conservative_available_date"] = pd.to_datetime(gdp["conservative_available_date"])
-gdp_available = gdp[[
-    "conservative_available_date", "date", "nominal_gdp_cum_yoy_pct"
-]].rename(columns={"date": "gdp_stat_period_end"}).dropna(subset=["nominal_gdp_cum_yoy_pct"])
-gdp_available = gdp_available.sort_values("conservative_available_date")
+try:
+    gdp = read_clean("名义GDP_清洗后.csv")
+    if gdp is None or money is None:
+        print("跳过指标: M2同比-名义GDP增速（名义GDP 或 货币供应量 数据缺失）")
+    else:
+        gdp["conservative_available_date"] = pd.to_datetime(gdp["conservative_available_date"])
+        gdp_available = gdp[[
+            "conservative_available_date", "date", "nominal_gdp_cum_yoy_pct"
+        ]].rename(columns={"date": "gdp_stat_period_end"}).dropna(subset=["nominal_gdp_cum_yoy_pct"])
+        gdp_available = gdp_available.sort_values("conservative_available_date")
 
-m2_available = money[
-    ["date", "available_date", "m2_yoy_pct"]
-].rename(columns={"date": "m2_stat_period_end"}).sort_values("available_date")
-release_events = pd.DataFrame({
-    "signal_available_date": pd.concat([
-        m2_available["available_date"],
-        gdp_available["conservative_available_date"],
-    ]).dropna().drop_duplicates().sort_values()
-})
-m2_gdp = pd.merge_asof(
-    release_events,
-    m2_available,
-    left_on="signal_available_date",
-    right_on="available_date",
-    direction="backward",
-)
-m2_gdp = pd.merge_asof(
-    m2_gdp.sort_values("signal_available_date"),
-    gdp_available,
-    left_on="signal_available_date",
-    right_on="conservative_available_date",
-    direction="backward",
-)
-m2_gdp["date"] = m2_gdp["signal_available_date"]
-m2_gdp["m2_minus_nominal_gdp_pct_point"] = m2_gdp["m2_yoy_pct"] - m2_gdp["nominal_gdp_cum_yoy_pct"]
-m2_gdp["signal_score"] = np.nan
-m2_gdp.loc[m2_gdp["m2_minus_nominal_gdp_pct_point"] > 0, "signal_score"] = 1
-m2_gdp.loc[m2_gdp["m2_minus_nominal_gdp_pct_point"] < 0, "signal_score"] = -1
-m2_gdp["signal_text"] = "样本不足"
-m2_gdp.loc[m2_gdp["signal_score"] == 1, "signal_text"] = "看多：M2增速高于名义GDP增速"
-m2_gdp.loc[m2_gdp["signal_score"] == -1, "signal_text"] = "看空：M2增速低于名义GDP增速"
-m2_gdp = add_effective_date(m2_gdp, "signal_available_date")
-save_exact(m2_gdp, "04_M2减名义GDP_月度.csv")
-add_latest("流动性", "M2同比-名义GDP增速", m2_gdp, "m2_minus_nominal_gdp_pct_point", "signal_score", "signal_text", "可复现；GDP发布日期采用保守近似")
+        m2_available = money[
+            ["date", "available_date", "m2_yoy_pct"]
+        ].rename(columns={"date": "m2_stat_period_end"}).sort_values("available_date")
+        release_events = pd.DataFrame({
+            "signal_available_date": pd.concat([
+                m2_available["available_date"],
+                gdp_available["conservative_available_date"],
+            ]).dropna().drop_duplicates().sort_values()
+        })
+        m2_gdp = pd.merge_asof(
+            release_events,
+            m2_available,
+            left_on="signal_available_date",
+            right_on="available_date",
+            direction="backward",
+        )
+        m2_gdp = pd.merge_asof(
+            m2_gdp.sort_values("signal_available_date"),
+            gdp_available,
+            left_on="signal_available_date",
+            right_on="conservative_available_date",
+            direction="backward",
+        )
+        m2_gdp["date"] = m2_gdp["signal_available_date"]
+        m2_gdp["m2_minus_nominal_gdp_pct_point"] = m2_gdp["m2_yoy_pct"] - m2_gdp["nominal_gdp_cum_yoy_pct"]
+        m2_gdp["signal_score"] = np.nan
+        m2_gdp.loc[m2_gdp["m2_minus_nominal_gdp_pct_point"] > 0, "signal_score"] = 1
+        m2_gdp.loc[m2_gdp["m2_minus_nominal_gdp_pct_point"] < 0, "signal_score"] = -1
+        m2_gdp["signal_text"] = "样本不足"
+        m2_gdp.loc[m2_gdp["signal_score"] == 1, "signal_text"] = "看多：M2增速高于名义GDP增速"
+        m2_gdp.loc[m2_gdp["signal_score"] == -1, "signal_text"] = "看空：M2增速低于名义GDP增速"
+        m2_gdp = add_effective_date(m2_gdp, "signal_available_date")
+        save_exact(m2_gdp, "04_M2减名义GDP_月度.csv")
+        add_latest("流动性", "M2同比-名义GDP增速", m2_gdp, "m2_minus_nominal_gdp_pct_point", "signal_score", "signal_text", "可复现；GDP发布日期采用保守近似")
+except Exception as e:
+    print(f"跳过指标: M2同比-名义GDP增速（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 6. 信贷脉冲：社融增量经STL季调后计算环比
 # 原研报未披露季调程序；STL是透明代理，不声称与Wind季调完全一致。
 # ------------------------------------------------------------
-sf = read_clean("社会融资规模增量_清洗后.csv")
-full_months = pd.date_range(sf["date"].min(), sf["date"].max(), freq="ME")
-sf = sf.set_index("date").reindex(full_months).rename_axis("date").reset_index()
+try:
+    sf = read_clean("社会融资规模增量_清洗后.csv")
+    if sf is None:
+        print("跳过指标: 信贷脉冲（社会融资规模增量_清洗后.csv 缺失）")
+    else:
+        full_months = pd.date_range(sf["date"].min(), sf["date"].max(), freq="ME")
+        sf = sf.set_index("date").reindex(full_months).rename_axis("date").reset_index()
 
-# 缺口只允许使用此前数据前向填充。每个历史时点单独递归拟合，
-# 避免全样本STL和双向插值把未来月份带入历史信号。
-sf["sf_for_stl"] = sf["social_financing_100m"].ffill()
-(
-    sf["social_financing_sa_100m"],
-    sf["seasonal_component"],
-) = realtime_stl_adjusted(sf["sf_for_stl"], period=12, min_history=36)
+        # 缺口只允许使用此前数据前向填充。每个历史时点单独递归拟合，
+        # 避免全样本STL和双向插值把未来月份带入历史信号。
+        sf["sf_for_stl"] = sf["social_financing_100m"].ffill()
+        (
+            sf["social_financing_sa_100m"],
+            sf["seasonal_component"],
+        ) = realtime_stl_adjusted(sf["sf_for_stl"], period=12, min_history=36)
 
-previous_sa = sf["social_financing_sa_100m"].shift(1)
-valid_ratio = (sf["social_financing_sa_100m"] > 0) & (previous_sa > 0)
-sf["sa_mom_pct"] = np.nan
-sf.loc[valid_ratio, "sa_mom_pct"] = (
-    sf.loc[valid_ratio, "social_financing_sa_100m"]
-    / previous_sa.loc[valid_ratio]
-    - 1
-) * 100
-sf["signal_score"] = 0
-sf.loc[sf["sa_mom_pct"] > 5, "signal_score"] = 1
-sf["signal_text"] = np.where(
-    sf["signal_score"] == 1,
-    "看多事件：实时递归季调社融环比超过5%",
-    "未触发",
-)
-fallback_available_date = (
-    sf["date"] + pd.offsets.MonthBegin(1) + pd.to_timedelta(19, unit="D")
-)
-sf["available_date"] = sf["available_date"].fillna(fallback_available_date)
-sf = add_effective_date(sf, "available_date")
-save_proxy(sf, "P02_信贷脉冲_STL季调代理_月度.csv")
-add_latest(
-    "流动性", "信贷脉冲", sf, "sa_mom_pct", "signal_score", "signal_text", "代理",
-    "原研报季调方法未披露；本实现按每个历史时点递归拟合STL，不使用未来月份。",
-    aggregation_eligible=False,
-)
+        previous_sa = sf["social_financing_sa_100m"].shift(1)
+        valid_ratio = (sf["social_financing_sa_100m"] > 0) & (previous_sa > 0)
+        sf["sa_mom_pct"] = np.nan
+        sf.loc[valid_ratio, "sa_mom_pct"] = (
+            sf.loc[valid_ratio, "social_financing_sa_100m"]
+            / previous_sa.loc[valid_ratio]
+            - 1
+        ) * 100
+        sf["signal_score"] = 0
+        sf.loc[sf["sa_mom_pct"] > 5, "signal_score"] = 1
+        sf["signal_text"] = np.where(
+            sf["signal_score"] == 1,
+            "看多事件：实时递归季调社融环比超过5%",
+            "未触发",
+        )
+        fallback_available_date = (
+            sf["date"] + pd.offsets.MonthBegin(1) + pd.to_timedelta(19, unit="D")
+        )
+        sf["available_date"] = sf["available_date"].fillna(fallback_available_date)
+        sf = add_effective_date(sf, "available_date")
+        save_proxy(sf, "P02_信贷脉冲_STL季调代理_月度.csv")
+        add_latest(
+            "流动性", "信贷脉冲", sf, "sa_mom_pct", "signal_score", "signal_text", "代理",
+            "原研报季调方法未披露；本实现按每个历史时点递归拟合STL，不使用未来月份。",
+            aggregation_eligible=False,
+        )
+except Exception as e:
+    print(f"跳过指标: 信贷脉冲（计算异常）：{e}")
 
 
 # ============================================================
@@ -404,60 +455,78 @@ add_latest(
 # ------------------------------------------------------------
 # 7. 制造业PMI
 # ------------------------------------------------------------
-pmi = read_clean("制造业PMI_清洗后.csv")
-pmi["ma6"] = pmi["manufacturing_pmi"].rolling(6, min_periods=6).mean()
-pmi["ma12"] = pmi["manufacturing_pmi"].rolling(12, min_periods=12).mean()
-pmi["signal_score"] = np.nan
-pmi.loc[pmi["ma6"] > pmi["ma12"], "signal_score"] = 1
-pmi.loc[pmi["ma6"] < pmi["ma12"], "signal_score"] = -1
-pmi["signal_text"] = "样本不足"
-pmi.loc[pmi["signal_score"] == 1, "signal_text"] = "看多：PMI趋势上行"
-pmi.loc[pmi["signal_score"] == -1, "signal_text"] = "看空：PMI趋势下行"
-pmi = add_effective_date(pmi, "available_date")
-save_exact(pmi, "05_制造业PMI趋势_月度.csv")
-add_latest("经济面", "制造业PMI", pmi, "manufacturing_pmi", "signal_score", "signal_text", "可按公开规则复现")
+try:
+    pmi = read_clean("制造业PMI_清洗后.csv")
+    if pmi is None:
+        print("跳过指标: 制造业PMI（制造业PMI_清洗后.csv 缺失）")
+    else:
+        pmi["ma6"] = pmi["manufacturing_pmi"].rolling(6, min_periods=6).mean()
+        pmi["ma12"] = pmi["manufacturing_pmi"].rolling(12, min_periods=12).mean()
+        pmi["signal_score"] = np.nan
+        pmi.loc[pmi["ma6"] > pmi["ma12"], "signal_score"] = 1
+        pmi.loc[pmi["ma6"] < pmi["ma12"], "signal_score"] = -1
+        pmi["signal_text"] = "样本不足"
+        pmi.loc[pmi["signal_score"] == 1, "signal_text"] = "看多：PMI趋势上行"
+        pmi.loc[pmi["signal_score"] == -1, "signal_text"] = "看空：PMI趋势下行"
+        pmi = add_effective_date(pmi, "available_date")
+        save_exact(pmi, "05_制造业PMI趋势_月度.csv")
+        add_latest("经济面", "制造业PMI", pmi, "manufacturing_pmi", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: 制造业PMI（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 8. 全社会用电量同比代理
 # 数据不是研报所述“规模以上工业发电量同比”，仅单独输出代理结果。
 # ------------------------------------------------------------
-electricity = read_clean("全社会用电量同比_代理_清洗后.csv")
-electricity["ma6"] = electricity["electricity_consumption_yoy_pct"].rolling(6, min_periods=6).mean()
-electricity["ma12"] = electricity["electricity_consumption_yoy_pct"].rolling(12, min_periods=12).mean()
-electricity["signal_score"] = np.nan
-electricity.loc[electricity["ma6"] > electricity["ma12"], "signal_score"] = 1
-electricity.loc[electricity["ma6"] < electricity["ma12"], "signal_score"] = -1
-electricity["signal_text"] = "样本不足"
-electricity.loc[electricity["signal_score"] == 1, "signal_text"] = "代理看多：用电量趋势上行"
-electricity.loc[electricity["signal_score"] == -1, "signal_text"] = "代理看空：用电量趋势下行"
-electricity = add_effective_date(electricity, "available_date")
-save_proxy(electricity, "P03_全社会用电量同比趋势代理_月度.csv")
-add_latest(
-    "经济面", "发电量同比", electricity, "electricity_consumption_yoy_pct", "signal_score", "signal_text", "代理",
-    "压缩包提供的是全社会用电量，不是研报的发电量同比。",
-)
+try:
+    electricity = read_clean("全社会用电量同比_代理_清洗后.csv")
+    if electricity is None:
+        print("跳过指标: 发电量同比（全社会用电量同比_代理_清洗后.csv 缺失）")
+    else:
+        electricity["ma6"] = electricity["electricity_consumption_yoy_pct"].rolling(6, min_periods=6).mean()
+        electricity["ma12"] = electricity["electricity_consumption_yoy_pct"].rolling(12, min_periods=12).mean()
+        electricity["signal_score"] = np.nan
+        electricity.loc[electricity["ma6"] > electricity["ma12"], "signal_score"] = 1
+        electricity.loc[electricity["ma6"] < electricity["ma12"], "signal_score"] = -1
+        electricity["signal_text"] = "样本不足"
+        electricity.loc[electricity["signal_score"] == 1, "signal_text"] = "代理看多：用电量趋势上行"
+        electricity.loc[electricity["signal_score"] == -1, "signal_text"] = "代理看空：用电量趋势下行"
+        electricity = add_effective_date(electricity, "available_date")
+        save_proxy(electricity, "P03_全社会用电量同比趋势代理_月度.csv")
+        add_latest(
+            "经济面", "发电量同比", electricity, "electricity_consumption_yoy_pct", "signal_score", "signal_text", "代理",
+            "压缩包提供的是全社会用电量，不是研报的发电量同比。",
+        )
+except Exception as e:
+    print(f"跳过指标: 发电量同比（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 9. 通胀方向因子：0.5 * CPI同比(MA3) + 0.5 * PPI同比
 # 判断逻辑：较3个月前下行 -> 通胀回落、货币宽松空间打开 -> 看多(+1)；否则 看空(-1)
 # ------------------------------------------------------------
-inflation = prices[["date", "cpi_available_date", "ppi_available_date", "cpi_yoy_pct", "ppi_yoy_pct"]].dropna(subset=["cpi_yoy_pct", "ppi_yoy_pct"]).copy()
-inflation["cpi_ma3"] = inflation["cpi_yoy_pct"].rolling(3, min_periods=1).mean()
-inflation["inflation_dir_factor"] = 0.5 * inflation["cpi_ma3"] + 0.5 * inflation["ppi_yoy_pct"]
-inflation["signal_available_date"] = inflation[["cpi_available_date", "ppi_available_date"]].max(axis=1)
+try:
+    if prices is None:
+        print("跳过指标: 通胀方向因子（CPI_PPI 清洗后数据缺失）")
+    else:
+        inflation = prices[["date", "cpi_available_date", "ppi_available_date", "cpi_yoy_pct", "ppi_yoy_pct"]].dropna(subset=["cpi_yoy_pct", "ppi_yoy_pct"]).copy()
+        inflation["cpi_ma3"] = inflation["cpi_yoy_pct"].rolling(3, min_periods=1).mean()
+        inflation["inflation_dir_factor"] = 0.5 * inflation["cpi_ma3"] + 0.5 * inflation["ppi_yoy_pct"]
+        inflation["signal_available_date"] = inflation[["cpi_available_date", "ppi_available_date"]].max(axis=1)
 
-inflation["signal_score"] = np.nan
-dir_diff = inflation["inflation_dir_factor"] - inflation["inflation_dir_factor"].shift(3)
-inflation.loc[dir_diff < 0, "signal_score"] = 1
-inflation.loc[dir_diff >= 0, "signal_score"] = -1
-inflation["signal_text"] = "样本不足"
-inflation.loc[inflation["signal_score"] == 1, "signal_text"] = "看多：通胀方向因子较3个月前下行"
-inflation.loc[inflation["signal_score"] == -1, "signal_text"] = "看空：通胀方向因子较3个月前上行"
-inflation = add_effective_date(inflation, "signal_available_date")
-save_exact(inflation, "06_通胀方向因子信号_月度.csv")
-add_latest("经济面", "通胀方向因子", inflation, "inflation_dir_factor", "signal_score", "signal_text", "可按公开规则复现")
+        inflation["signal_score"] = np.nan
+        dir_diff = inflation["inflation_dir_factor"] - inflation["inflation_dir_factor"].shift(3)
+        inflation.loc[dir_diff < 0, "signal_score"] = 1
+        inflation.loc[dir_diff >= 0, "signal_score"] = -1
+        inflation["signal_text"] = "样本不足"
+        inflation.loc[inflation["signal_score"] == 1, "signal_text"] = "看多：通胀方向因子较3个月前下行"
+        inflation.loc[inflation["signal_score"] == -1, "signal_text"] = "看空：通胀方向因子较3个月前上行"
+        inflation = add_effective_date(inflation, "signal_available_date")
+        save_exact(inflation, "06_通胀方向因子信号_月度.csv")
+        add_latest("经济面", "通胀方向因子", inflation, "inflation_dir_factor", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: 通胀方向因子（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
@@ -467,30 +536,36 @@ add_latest("经济面", "通胀方向因子", inflation, "inflation_dir_factor",
 # 通胀强度因子 = mean(CPI超预期z, PPI超预期z)
 # 信号：因子 < -1.5σ -> 看多(+1)；> +1.5σ -> 看空(-1)；触发后未来60个交易日有效
 # ------------------------------------------------------------
-inf_surprise = prices[["date", "cpi_available_date", "ppi_available_date", "cpi_yoy_pct", "ppi_yoy_pct"]].dropna(subset=["cpi_yoy_pct", "ppi_yoy_pct"]).copy()
-inf_surprise["signal_available_date"] = inf_surprise[["cpi_available_date", "ppi_available_date"]].max(axis=1)
+try:
+    if prices is None:
+        print("跳过指标: 通胀强度因子（CPI_PPI 清洗后数据缺失）")
+    else:
+        inf_surprise = prices[["date", "cpi_available_date", "ppi_available_date", "cpi_yoy_pct", "ppi_yoy_pct"]].dropna(subset=["cpi_yoy_pct", "ppi_yoy_pct"]).copy()
+        inf_surprise["signal_available_date"] = inf_surprise[["cpi_available_date", "ppi_available_date"]].max(axis=1)
 
-cpi_exp = inf_surprise["cpi_yoy_pct"].rolling(6, min_periods=3).mean().shift(1)
-ppi_exp = inf_surprise["ppi_yoy_pct"].rolling(6, min_periods=3).mean().shift(1)
-cpi_err = inf_surprise["cpi_yoy_pct"] - cpi_exp
-ppi_err = inf_surprise["ppi_yoy_pct"] - ppi_exp
+        cpi_exp = inf_surprise["cpi_yoy_pct"].rolling(6, min_periods=3).mean().shift(1)
+        ppi_exp = inf_surprise["ppi_yoy_pct"].rolling(6, min_periods=3).mean().shift(1)
+        cpi_err = inf_surprise["cpi_yoy_pct"] - cpi_exp
+        ppi_err = inf_surprise["ppi_yoy_pct"] - ppi_exp
 
-cpi_err_std = cpi_err.rolling(12, min_periods=6).std(ddof=1)
-ppi_err_std = ppi_err.rolling(12, min_periods=6).std(ddof=1)
+        cpi_err_std = cpi_err.rolling(12, min_periods=6).std(ddof=1)
+        ppi_err_std = ppi_err.rolling(12, min_periods=6).std(ddof=1)
 
-inf_surprise["cpi_surprise_z"] = cpi_err / cpi_err_std
-inf_surprise["ppi_surprise_z"] = ppi_err / ppi_err_std
-inf_surprise["inflation_surprise_factor"] = (inf_surprise["cpi_surprise_z"] + inf_surprise["ppi_surprise_z"]) / 2.0
+        inf_surprise["cpi_surprise_z"] = cpi_err / cpi_err_std
+        inf_surprise["ppi_surprise_z"] = ppi_err / ppi_err_std
+        inf_surprise["inflation_surprise_factor"] = (inf_surprise["cpi_surprise_z"] + inf_surprise["ppi_surprise_z"]) / 2.0
 
-inf_surprise["signal_score"] = 0
-inf_surprise.loc[inf_surprise["inflation_surprise_factor"] < -1.5, "signal_score"] = 1
-inf_surprise.loc[inf_surprise["inflation_surprise_factor"] > 1.5, "signal_score"] = -1
-inf_surprise["signal_text"] = "中性"
-inf_surprise.loc[inf_surprise["signal_score"] == 1, "signal_text"] = "看多：通胀显著不及预期"
-inf_surprise.loc[inf_surprise["signal_score"] == -1, "signal_text"] = "看空：通胀显著超预期"
-inf_surprise = add_effective_date(inf_surprise, "signal_available_date")
-save_exact(inf_surprise, "07_通胀强度因子信号_月度.csv")
-add_latest("经济面", "通胀强度因子", inf_surprise, "inflation_surprise_factor", "signal_score", "signal_text", "可按公开规则复现")
+        inf_surprise["signal_score"] = 0
+        inf_surprise.loc[inf_surprise["inflation_surprise_factor"] < -1.5, "signal_score"] = 1
+        inf_surprise.loc[inf_surprise["inflation_surprise_factor"] > 1.5, "signal_score"] = -1
+        inf_surprise["signal_text"] = "中性"
+        inf_surprise.loc[inf_surprise["signal_score"] == 1, "signal_text"] = "看多：通胀显著不及预期"
+        inf_surprise.loc[inf_surprise["signal_score"] == -1, "signal_text"] = "看空：通胀显著超预期"
+        inf_surprise = add_effective_date(inf_surprise, "signal_available_date")
+        save_exact(inf_surprise, "07_通胀强度因子信号_月度.csv")
+        add_latest("经济面", "通胀强度因子", inf_surprise, "inflation_surprise_factor", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: 通胀强度因子（计算异常）：{e}")
 
 
 # 注：原报告中的库存周期、A股景气度指数因公开数据源与Nowcasting模型参数缺失，已按规范剔除。
@@ -499,35 +574,41 @@ add_latest("经济面", "通胀强度因子", inf_surprise, "inflation_surprise_
 # ============================================================
 # 三、估值面
 # ============================================================
-valuation = read_clean("中证800_PE_PB_清洗后.csv")
-csi_price = market_calendar_base[["date", "close"]].rename(columns={"close": "market_close"}).dropna().sort_values("date")
-valuation = pd.merge(valuation, csi_price, on="date", how="left")
-if "index_close" in valuation.columns:
-    valuation["index_close"] = valuation["index_close"].fillna(valuation["market_close"]).ffill()
-else:
-    valuation["index_close"] = valuation["market_close"].ffill()
-valuation.drop(columns=["market_close"], inplace=True, errors="ignore")
+try:
+    valuation = read_clean("中证800_PE_PB_清洗后.csv")
+    if valuation is None or not has_market_close:
+        print("跳过指标: 中证800估值/PE/PB（中证800_PE_PB 或 中证800日行情 数据缺失）")
+    else:
+        csi_price = market_calendar_base[["date", "close"]].rename(columns={"close": "market_close"}).dropna().sort_values("date")
+        valuation = pd.merge(valuation, csi_price, on="date", how="left")
+        if "index_close" in valuation.columns:
+            valuation["index_close"] = valuation["index_close"].fillna(valuation["market_close"]).ffill()
+        else:
+            valuation["index_close"] = valuation["market_close"].ffill()
+        valuation.drop(columns=["market_close"], inplace=True, errors="ignore")
 
-# ------------------------------------------------------------
-# 11. 中证800成分股PE_TTM中位数：20倍以下看多
-# ------------------------------------------------------------
-pe_median = valuation[["date", "pe_ttm_median"]].dropna().copy()
-pe_median["bottom_threshold"] = 20.0
-pe_median["signal_score"] = np.where(pe_median["pe_ttm_median"] <= 20.0, 1, 0)
-pe_median["signal_text"] = np.where(pe_median["signal_score"] == 1, "看多：PE_TTM中位数进入20倍底部区", "中性")
-pe_median = add_effective_date(pe_median)
-save_exact(pe_median, "08_PE_TTM中位数信号_日度.csv")
-add_latest(
-    "估值面",
-    "中证800成分股PE_TTM中位数",
-    pe_median,
-    "pe_ttm_median",
-    "signal_score",
-    "signal_text",
-    "阈值公开；接近阈值缓冲未披露",
-    "研报在20.43倍时仍按'接近20倍'看多，机械缓冲区未披露。",
-    aggregation_eligible=False,
-)
+        # ------------------------------------------------------------
+        # 11. 中证800成分股PE_TTM中位数：20倍以下看多
+        # ------------------------------------------------------------
+        pe_median = valuation[["date", "pe_ttm_median"]].dropna().copy()
+        pe_median["bottom_threshold"] = 20.0
+        pe_median["signal_score"] = np.where(pe_median["pe_ttm_median"] <= 20.0, 1, 0)
+        pe_median["signal_text"] = np.where(pe_median["signal_score"] == 1, "看多：PE_TTM中位数进入20倍底部区", "中性")
+        pe_median = add_effective_date(pe_median)
+        save_exact(pe_median, "08_PE_TTM中位数信号_日度.csv")
+        add_latest(
+            "估值面",
+            "中证800成分股PE_TTM中位数",
+            pe_median,
+            "pe_ttm_median",
+            "signal_score",
+            "signal_text",
+            "阈值公开；接近阈值缓冲未披露",
+            "研报在20.43倍时仍按'接近20倍'看多，机械缓冲区未披露。",
+            aggregation_eligible=False,
+        )
+except Exception as e:
+    print(f"跳过指标: 中证800估值/PE/PB（计算异常）：{e}")
 
 
 # 注：原报告中的中证800股息率因历史序列不全，已按规范剔除。
@@ -536,23 +617,29 @@ add_latest(
 # ------------------------------------------------------------
 # 13. 中证800 PB：1.4倍以下看多
 # ------------------------------------------------------------
-pb = valuation[["date", "pb_index"]].dropna().copy()
-pb["bottom_threshold"] = 1.4
-pb["signal_score"] = np.where(pb["pb_index"] <= 1.4, 1, 0)
-pb["signal_text"] = np.where(pb["signal_score"] == 1, "看多：PB进入1.4倍底部区", "中性")
-pb = add_effective_date(pb)
-save_exact(pb, "09_PB信号_日度.csv")
-add_latest(
-    "估值面",
-    "中证800 PB",
-    pb,
-    "pb_index",
-    "signal_score",
-    "signal_text",
-    "阈值公开；接近阈值缓冲未披露",
-    "研报在1.5倍时仍按'接近1.4倍'看多，机械缓冲区未披露。",
-    aggregation_eligible=False,
-)
+try:
+    if valuation is None:
+        print("跳过指标: 中证800 PB（估值数据缺失）")
+    else:
+        pb = valuation[["date", "pb_index"]].dropna().copy()
+        pb["bottom_threshold"] = 1.4
+        pb["signal_score"] = np.where(pb["pb_index"] <= 1.4, 1, 0)
+        pb["signal_text"] = np.where(pb["signal_score"] == 1, "看多：PB进入1.4倍底部区", "中性")
+        pb = add_effective_date(pb)
+        save_exact(pb, "09_PB信号_日度.csv")
+        add_latest(
+            "估值面",
+            "中证800 PB",
+            pb,
+            "pb_index",
+            "signal_score",
+            "signal_text",
+            "阈值公开；接近阈值缓冲未披露",
+            "研报在1.5倍时仍按'接近1.4倍'看多，机械缓冲区未披露。",
+            aggregation_eligible=False,
+        )
+except Exception as e:
+    print(f"跳过指标: 中证800 PB（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
@@ -562,50 +649,56 @@ add_latest(
 # 席勒ERP_t = 1/席勒PE_t - 10Y国债到期收益率
 # 信号：6年(1500交易日)滚动 Z-score，±1.5σ -> 看多/看空
 # ------------------------------------------------------------
-bond = read_clean("10年期国债收益率_清洗后.csv")
-erp = valuation[["date", "index_close", "pe_ttm_index"]].dropna().sort_values("date").copy()
-erp = pd.merge_asof(
-    erp,
-    bond[["date", "bond_yield_10y_pct"]].sort_values("date"),
-    on="date",
-    direction="backward",
-)
+try:
+    bond = read_clean("10年期国债收益率_清洗后.csv")
+    if bond is None or valuation is None or prices is None:
+        print("跳过指标: 中证800席勒ERP（10年期国债收益率 或 估值或CPI_PPI 数据缺失）")
+    else:
+        erp = valuation[["date", "index_close", "pe_ttm_index"]].dropna().sort_values("date").copy()
+        erp = pd.merge_asof(
+            erp,
+            bond[["date", "bond_yield_10y_pct"]].sort_values("date"),
+            on="date",
+            direction="backward",
+        )
 
-# 引入 CPI 构造定基价格指数（以最早 CPI 为 100）
-cpi_data = prices[["date", "cpi_available_date", "cpi_yoy_pct"]].dropna().sort_values("cpi_available_date").copy()
-cpi_data["cpi_index"] = (1.0 + cpi_data["cpi_yoy_pct"] / 100.0).cumprod() * 100.0
-erp = pd.merge_asof(
-    erp,
-    cpi_data[["cpi_available_date", "cpi_index"]],
-    left_on="date",
-    right_on="cpi_available_date",
-    direction="backward"
-)
-erp["cpi_index"] = erp["cpi_index"].ffill().fillna(100.0)
+        # 引入 CPI 构造定基价格指数（以最早 CPI 为 100）
+        cpi_data = prices[["date", "cpi_available_date", "cpi_yoy_pct"]].dropna().sort_values("cpi_available_date").copy()
+        cpi_data["cpi_index"] = (1.0 + cpi_data["cpi_yoy_pct"] / 100.0).cumprod() * 100.0
+        erp = pd.merge_asof(
+            erp,
+            cpi_data[["cpi_available_date", "cpi_index"]],
+            left_on="date",
+            right_on="cpi_available_date",
+            direction="backward"
+        )
+        erp["cpi_index"] = erp["cpi_index"].ffill().fillna(100.0)
 
-# 反推每股盈利 E = P / PE
-erp["earnings"] = erp["index_close"] / erp["pe_ttm_index"]
-# 通胀调整后真实盈利 real_E = earnings / cpi_index
-erp["real_earnings"] = erp["earnings"] / erp["cpi_index"]
-# 6年(1500交易日)滚动平滑真实盈利
-erp["rolling_real_e_6y"] = erp["real_earnings"].rolling(1500, min_periods=500).mean()
-# 席勒 PE = P / (cpi_index * rolling_real_e_6y)
-erp["shiller_pe"] = erp["index_close"] / (erp["cpi_index"] * erp["rolling_real_e_6y"])
-# 席勒 ERP = 1 / 席勒PE - 10Y国债收益率
-erp["shiller_erp"] = (1.0 / erp["shiller_pe"]) - (erp["bond_yield_10y_pct"] / 100.0)
-erp["shiller_erp_pct"] = erp["shiller_erp"] * 100.0
+        # 反推每股盈利 E = P / PE
+        erp["earnings"] = erp["index_close"] / erp["pe_ttm_index"]
+        # 通胀调整后真实盈利 real_E = earnings / cpi_index
+        erp["real_earnings"] = erp["earnings"] / erp["cpi_index"]
+        # 6年(1500交易日)滚动平滑真实盈利
+        erp["rolling_real_e_6y"] = erp["real_earnings"].rolling(1500, min_periods=500).mean()
+        # 席勒 PE = P / (cpi_index * rolling_real_e_6y)
+        erp["shiller_pe"] = erp["index_close"] / (erp["cpi_index"] * erp["rolling_real_e_6y"])
+        # 席勒 ERP = 1 / 席勒PE - 10Y国债收益率
+        erp["shiller_erp"] = (1.0 / erp["shiller_pe"]) - (erp["bond_yield_10y_pct"] / 100.0)
+        erp["shiller_erp_pct"] = erp["shiller_erp"] * 100.0
 
-# 6年(1500交易日)滚动 Z-score
-erp["erp_z5y"], erp["erp_mean6y"], erp["erp_std6y"] = rolling_zscore(erp["shiller_erp_pct"], 1500, 500)
-erp["signal_score"] = 0
-erp.loc[erp["erp_z5y"] > 1.5, "signal_score"] = 1
-erp.loc[erp["erp_z5y"] < -1.5, "signal_score"] = -1
-erp["signal_text"] = "中性"
-erp.loc[erp["signal_score"] == 1, "signal_text"] = "看多：席勒ERP高于1.5个标准差"
-erp.loc[erp["signal_score"] == -1, "signal_text"] = "看空：席勒ERP低于-1.5个标准差"
-erp = add_effective_date(erp)
-save_exact(erp, "10_股权风险溢价_日度.csv")
-add_latest("估值面", "中证800席勒ERP", erp, "shiller_erp_pct", "signal_score", "signal_text", "可按公开规则复现")
+        # 6年(1500交易日)滚动 Z-score
+        erp["erp_z5y"], erp["erp_mean6y"], erp["erp_std6y"] = rolling_zscore(erp["shiller_erp_pct"], 1500, 500)
+        erp["signal_score"] = 0
+        erp.loc[erp["erp_z5y"] > 1.5, "signal_score"] = 1
+        erp.loc[erp["erp_z5y"] < -1.5, "signal_score"] = -1
+        erp["signal_text"] = "中性"
+        erp.loc[erp["signal_score"] == 1, "signal_text"] = "看多：席勒ERP高于1.5个标准差"
+        erp.loc[erp["signal_score"] == -1, "signal_text"] = "看空：席勒ERP低于-1.5个标准差"
+        erp = add_effective_date(erp)
+        save_exact(erp, "10_股权风险溢价_日度.csv")
+        add_latest("估值面", "中证800席勒ERP", erp, "shiller_erp_pct", "signal_score", "signal_text", "可按公开规则复现")
+except Exception as e:
+    print(f"跳过指标: 中证800席勒ERP（计算异常）：{e}")
 
 
 # 注：原报告中的DCF和AIAE因模型参数与数据口径缺失，已按规范剔除。
@@ -628,24 +721,30 @@ north = None
 # net_delta = margin_net.diff()
 # signal = +1 if net_delta_ma120 > net_delta_ma240 else -1
 # ------------------------------------------------------------
-margin = read_clean("融资融券余额_清洗后.csv")
-if "margin_net" not in margin.columns:
-    margin["margin_net"] = margin["margin_total"]
-margin["net_delta"] = margin["margin_net"].diff()
-margin["net_delta_ma120"] = margin["net_delta"].rolling(120, min_periods=60).mean()
-margin["net_delta_ma240"] = margin["net_delta"].rolling(240, min_periods=120).mean()
-margin["signal_score"] = np.nan
-margin.loc[margin["net_delta_ma120"] > margin["net_delta_ma240"], "signal_score"] = 1
-margin.loc[margin["net_delta_ma120"] < margin["net_delta_ma240"], "signal_score"] = -1
-margin["signal_text"] = "样本不足"
-margin.loc[margin["signal_score"] == 1, "signal_text"] = "代理看多：两融增量提速(MA120>MA240)"
-margin.loc[margin["signal_score"] == -1, "signal_text"] = "代理看空：两融增量放缓(MA120<MA240)"
-margin = add_effective_date(margin)
-save_proxy(margin, "P05_两融增量_MA120_MA240_日度.csv")
-add_latest(
-    "资金面", "两融增量", margin, "net_delta_ma120", "signal_score", "signal_text", "透明代理",
-    "采用120日与240日净两融额日增量均线判断边际杠杆资金提速与放缓。",
-)
+try:
+    margin = read_clean("融资融券余额_清洗后.csv")
+    if margin is None:
+        print("跳过指标: 两融增量（融资融券余额_清洗后.csv 缺失）")
+    else:
+        if "margin_net" not in margin.columns:
+            margin["margin_net"] = margin["margin_total"]
+        margin["net_delta"] = margin["margin_net"].diff()
+        margin["net_delta_ma120"] = margin["net_delta"].rolling(120, min_periods=60).mean()
+        margin["net_delta_ma240"] = margin["net_delta"].rolling(240, min_periods=120).mean()
+        margin["signal_score"] = np.nan
+        margin.loc[margin["net_delta_ma120"] > margin["net_delta_ma240"], "signal_score"] = 1
+        margin.loc[margin["net_delta_ma120"] < margin["net_delta_ma240"], "signal_score"] = -1
+        margin["signal_text"] = "样本不足"
+        margin.loc[margin["signal_score"] == 1, "signal_text"] = "代理看多：两融增量提速(MA120>MA240)"
+        margin.loc[margin["signal_score"] == -1, "signal_text"] = "代理看空：两融增量放缓(MA120<MA240)"
+        margin = add_effective_date(margin)
+        save_proxy(margin, "P05_两融增量_MA120_MA240_日度.csv")
+        add_latest(
+            "资金面", "两融增量", margin, "net_delta_ma120", "signal_score", "signal_text", "透明代理",
+            "采用120日与240日净两融额日增量均线判断边际杠杆资金提速与放缓。",
+        )
+except Exception as e:
+    print(f"跳过指标: 两融增量（计算异常）：{e}")
 
 
 # ============================================================
@@ -656,181 +755,211 @@ market = market_calendar_base.copy()
 # ------------------------------------------------------------
 # 18. 均线排列：MA10 > MA30 > MA60时看多
 # ------------------------------------------------------------
-ma_align = market[["date", "close"]].copy()
-ma_align["ma10"] = ma_align["close"].rolling(10, min_periods=10).mean()
-ma_align["ma30"] = ma_align["close"].rolling(30, min_periods=30).mean()
-ma_align["ma60"] = ma_align["close"].rolling(60, min_periods=60).mean()
-ma_align["bull_alignment"] = (ma_align["ma10"] > ma_align["ma30"]) & (ma_align["ma30"] > ma_align["ma60"])
-ma_align["bear_alignment_supplement"] = (ma_align["ma10"] < ma_align["ma30"]) & (ma_align["ma30"] < ma_align["ma60"])
-ma_align["signal_score"] = np.where(ma_align["bull_alignment"], 1, 0)
-ma_align["signal_text"] = np.where(ma_align["bull_alignment"], "看多：10/30/60日均线多头排列", "未触发多头排列")
-ma_align = add_effective_date(ma_align)
-save_exact(ma_align, "13_均线排列_日度.csv")
-add_latest("技术面", "均线排列", ma_align, "close", "signal_score", "signal_text", "可按图表公开参数复现")
+try:
+    if not has_market_close:
+        print("跳过指标: 均线排列（中证800日行情缺失 close 数据）")
+    else:
+        ma_align = market[["date", "close"]].copy()
+        ma_align["ma10"] = ma_align["close"].rolling(10, min_periods=10).mean()
+        ma_align["ma30"] = ma_align["close"].rolling(30, min_periods=30).mean()
+        ma_align["ma60"] = ma_align["close"].rolling(60, min_periods=60).mean()
+        ma_align["bull_alignment"] = (ma_align["ma10"] > ma_align["ma30"]) & (ma_align["ma30"] > ma_align["ma60"])
+        ma_align["bear_alignment_supplement"] = (ma_align["ma10"] < ma_align["ma30"]) & (ma_align["ma30"] < ma_align["ma60"])
+        ma_align["signal_score"] = np.where(ma_align["bull_alignment"], 1, 0)
+        ma_align["signal_text"] = np.where(ma_align["bull_alignment"], "看多：10/30/60日均线多头排列", "未触发多头排列")
+        ma_align = add_effective_date(ma_align)
+        save_exact(ma_align, "13_均线排列_日度.csv")
+        add_latest("技术面", "均线排列", ma_align, "close", "signal_score", "signal_text", "可按图表公开参数复现")
+except Exception as e:
+    print(f"跳过指标: 均线排列（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 19. 均线距离：MA10/MA60-1，超过±3%判断趋势
 # 均线长度未在正文披露，采用压缩包已有的10/60日设定。
 # ------------------------------------------------------------
-ma_distance = market[["date", "close"]].copy()
-ma_distance["ma10"] = ma_distance["close"].rolling(10, min_periods=10).mean()
-ma_distance["ma60"] = ma_distance["close"].rolling(60, min_periods=60).mean()
-ma_distance["distance_pct"] = (ma_distance["ma10"] / ma_distance["ma60"] - 1) * 100
-ma_distance["signal_score"] = 0
-ma_distance.loc[ma_distance["distance_pct"] > 3, "signal_score"] = 1
-ma_distance.loc[ma_distance["distance_pct"] < -3, "signal_score"] = -1
-ma_distance["signal_text"] = "震荡"
-ma_distance.loc[ma_distance["signal_score"] == 1, "signal_text"] = "看多：短均线高于长均线3%以上"
-ma_distance.loc[ma_distance["signal_score"] == -1, "signal_text"] = "看空：短均线低于长均线3%以上"
-ma_distance = add_effective_date(ma_distance)
-save_proxy(ma_distance, "P06_均线距离_MA10_MA60_日度.csv")
-add_latest(
-    "技术面", "均线距离", ma_distance, "distance_pct", "signal_score", "signal_text", "参数假设",
-    "研报公开±3%阈值，但未写明长短均线天数；采用数据包的MA10/MA60。",
-)
+try:
+    if not has_market_close:
+        print("跳过指标: 均线距离（中证800日行情缺失 close 数据）")
+    else:
+        ma_distance = market[["date", "close"]].copy()
+        ma_distance["ma10"] = ma_distance["close"].rolling(10, min_periods=10).mean()
+        ma_distance["ma60"] = ma_distance["close"].rolling(60, min_periods=60).mean()
+        ma_distance["distance_pct"] = (ma_distance["ma10"] / ma_distance["ma60"] - 1) * 100
+        ma_distance["signal_score"] = 0
+        ma_distance.loc[ma_distance["distance_pct"] > 3, "signal_score"] = 1
+        ma_distance.loc[ma_distance["distance_pct"] < -3, "signal_score"] = -1
+        ma_distance["signal_text"] = "震荡"
+        ma_distance.loc[ma_distance["signal_score"] == 1, "signal_text"] = "看多：短均线高于长均线3%以上"
+        ma_distance.loc[ma_distance["signal_score"] == -1, "signal_text"] = "看空：短均线低于长均线3%以上"
+        ma_distance = add_effective_date(ma_distance)
+        save_proxy(ma_distance, "P06_均线距离_MA10_MA60_日度.csv")
+        add_latest(
+            "技术面", "均线距离", ma_distance, "distance_pct", "signal_score", "signal_text", "参数假设",
+            "研报公开±3%阈值，但未写明长短均线天数；采用数据包的MA10/MA60。",
+        )
+except Exception as e:
+    print(f"跳过指标: 均线距离（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 20. 布林带：上穿上轨后重新跌回上轨内做空；下穿下轨后重新回到下轨上方做多
 # ------------------------------------------------------------
-boll = market[["date", "close"]].copy()
-boll["middle"] = boll["close"].rolling(20, min_periods=20).mean()
-boll["std20"] = boll["close"].rolling(20, min_periods=20).std(ddof=0)
-boll["upper"] = boll["middle"] + 2 * boll["std20"]
-boll["lower"] = boll["middle"] - 2 * boll["std20"]
-boll["trigger"] = ""
-short_trigger = (boll["close"].shift(1) > boll["upper"].shift(1)) & (boll["close"] <= boll["upper"])
-long_trigger = (boll["close"].shift(1) < boll["lower"].shift(1)) & (boll["close"] >= boll["lower"])
-boll.loc[short_trigger, "trigger"] = "看空触发"
-boll.loc[long_trigger, "trigger"] = "看多触发"
+try:
+    if not has_market_close:
+        print("跳过指标: 布林带（中证800日行情缺失 close 数据）")
+    else:
+        boll = market[["date", "close"]].copy()
+        boll["middle"] = boll["close"].rolling(20, min_periods=20).mean()
+        boll["std20"] = boll["close"].rolling(20, min_periods=20).std(ddof=0)
+        boll["upper"] = boll["middle"] + 2 * boll["std20"]
+        boll["lower"] = boll["middle"] - 2 * boll["std20"]
+        boll["trigger"] = ""
+        short_trigger = (boll["close"].shift(1) > boll["upper"].shift(1)) & (boll["close"] <= boll["upper"])
+        long_trigger = (boll["close"].shift(1) < boll["lower"].shift(1)) & (boll["close"] >= boll["lower"])
+        boll.loc[short_trigger, "trigger"] = "看空触发"
+        boll.loc[long_trigger, "trigger"] = "看多触发"
 
-# 研报在指数位于通道中部时写“不发出信号”，因此主信号只记录触发日。
-boll["signal_score"] = 0
-boll.loc[boll["trigger"] == "看多触发", "signal_score"] = 1
-boll.loc[boll["trigger"] == "看空触发", "signal_score"] = -1
-boll["signal_text"] = "中性：当前未触发"
-boll.loc[boll["signal_score"] == 1, "signal_text"] = "看多触发：下穿下轨后重新上穿下轨"
-boll.loc[boll["signal_score"] == -1, "signal_text"] = "看空触发：上穿上轨后重新下穿上轨"
+        # 研报在指数位于通道中部时写“不发出信号”，因此主信号只记录触发日。
+        boll["signal_score"] = 0
+        boll.loc[boll["trigger"] == "看多触发", "signal_score"] = 1
+        boll.loc[boll["trigger"] == "看空触发", "signal_score"] = -1
+        boll["signal_text"] = "中性：当前未触发"
+        boll.loc[boll["signal_score"] == 1, "signal_text"] = "看多触发：下穿下轨后重新上穿下轨"
+        boll.loc[boll["signal_score"] == -1, "signal_text"] = "看空触发：上穿上轨后重新下穿上轨"
 
-# 补充保留最近一次触发方向，但不把它当作原报告的当前信号。
-state = 0
-states = []
-for trigger in boll["trigger"]:
-    if trigger == "看多触发":
-        state = 1
-    elif trigger == "看空触发":
-        state = -1
-    states.append(state)
-boll["last_trigger_state_supplement"] = states
+        # 补充保留最近一次触发方向，但不把它当作原报告的当前信号。
+        state = 0
+        states = []
+        for trigger in boll["trigger"]:
+            if trigger == "看多触发":
+                state = 1
+            elif trigger == "看空触发":
+                state = -1
+            states.append(state)
+        boll["last_trigger_state_supplement"] = states
 
-boll = add_effective_date(boll)
-save_proxy(boll, "P13_布林带触发信号_MA20_2σ_日度.csv")
-add_latest(
-    "技术面",
-    "布林带",
-    boll,
-    "close",
-    "signal_score",
-    "signal_text",
-    "参数假设",
-    "触发逻辑公开，但研报未披露窗口和倍数；采用MA20±2σ。",
-    aggregation_eligible=False,
-)
+        boll = add_effective_date(boll)
+        save_proxy(boll, "P13_布林带触发信号_MA20_2σ_日度.csv")
+        add_latest(
+            "技术面",
+            "布林带",
+            boll,
+            "close",
+            "signal_score",
+            "signal_text",
+            "参数假设",
+            "触发逻辑公开，但研报未披露窗口和倍数；采用MA20±2σ。",
+            aggregation_eligible=False,
+        )
+except Exception as e:
+    print(f"跳过指标: 布林带（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 21. RSI：RSI6快线、RSI24慢线，20/80为触发区
 # ------------------------------------------------------------
-rsi = market[["date", "close"]].copy()
-rsi["rsi6"] = wilder_rsi(rsi["close"], 6)
-rsi["rsi24"] = wilder_rsi(rsi["close"], 24)
-rsi["trigger"] = ""
+try:
+    if not has_market_close:
+        print("跳过指标: RSI（中证800日行情缺失 close 数据）")
+    else:
+        rsi = market[["date", "close"]].copy()
+        rsi["rsi6"] = wilder_rsi(rsi["close"], 6)
+        rsi["rsi24"] = wilder_rsi(rsi["close"], 24)
+        rsi["trigger"] = ""
 
-armed_long = False
-armed_short = False
-state = 0
-states = []
-triggers = []
-for i in range(len(rsi)):
-    fast = rsi.loc[i, "rsi6"]
-    slow = rsi.loc[i, "rsi24"]
-    previous_fast = rsi.loc[i - 1, "rsi6"] if i > 0 else np.nan
-    previous_slow = rsi.loc[i - 1, "rsi24"] if i > 0 else np.nan
-    trigger = ""
-
-    if pd.notna(fast) and fast < 20:
-        armed_long = True
-    if pd.notna(fast) and fast > 80:
-        armed_short = True
-
-    cross_up = i > 0 and pd.notna(previous_fast) and pd.notna(previous_slow) and previous_fast <= previous_slow and fast > slow
-    cross_down = i > 0 and pd.notna(previous_fast) and pd.notna(previous_slow) and previous_fast >= previous_slow and fast < slow
-
-    if armed_long and cross_up:
-        state = 1
-        trigger = "看多触发"
         armed_long = False
         armed_short = False
-    elif armed_short and cross_down:
-        state = -1
-        trigger = "看空触发"
-        armed_long = False
-        armed_short = False
+        state = 0
+        states = []
+        triggers = []
+        for i in range(len(rsi)):
+            fast = rsi.loc[i, "rsi6"]
+            slow = rsi.loc[i, "rsi24"]
+            previous_fast = rsi.loc[i - 1, "rsi6"] if i > 0 else np.nan
+            previous_slow = rsi.loc[i - 1, "rsi24"] if i > 0 else np.nan
+            trigger = ""
 
-    triggers.append(trigger)
-    states.append(state)
+            if pd.notna(fast) and fast < 20:
+                armed_long = True
+            if pd.notna(fast) and fast > 80:
+                armed_short = True
 
-rsi["trigger"] = triggers
-rsi["signal_score"] = states
-rsi["signal_text"] = rsi["signal_score"].map({1: "看多状态", 0: "中性状态", -1: "看空状态"})
-rsi = add_effective_date(rsi)
-save_proxy(rsi, "P14_RSI_Wilder状态_日度.csv")
-add_latest(
-    "技术面",
-    "RSI",
-    rsi,
-    "rsi6",
-    "signal_score",
-    "signal_text",
-    "算法假设",
-    "RSI6/24及20/80公开，但平滑算法未披露；采用Wilder算法。",
-    aggregation_eligible=False,
-)
+            cross_up = i > 0 and pd.notna(previous_fast) and pd.notna(previous_slow) and previous_fast <= previous_slow and fast > slow
+            cross_down = i > 0 and pd.notna(previous_fast) and pd.notna(previous_slow) and previous_fast >= previous_slow and fast < slow
+
+            if armed_long and cross_up:
+                state = 1
+                trigger = "看多触发"
+                armed_long = False
+                armed_short = False
+            elif armed_short and cross_down:
+                state = -1
+                trigger = "看空触发"
+                armed_long = False
+                armed_short = False
+
+            triggers.append(trigger)
+            states.append(state)
+
+        rsi["trigger"] = triggers
+        rsi["signal_score"] = states
+        rsi["signal_text"] = rsi["signal_score"].map({1: "看多状态", 0: "中性状态", -1: "看空状态"})
+        rsi = add_effective_date(rsi)
+        save_proxy(rsi, "P14_RSI_Wilder状态_日度.csv")
+        add_latest(
+            "技术面",
+            "RSI",
+            rsi,
+            "rsi6",
+            "signal_score",
+            "signal_text",
+            "算法假设",
+            "RSI6/24及20/80公开，但平滑算法未披露；采用Wilder算法。",
+            aggregation_eligible=False,
+        )
+except Exception as e:
+    print(f"跳过指标: RSI（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 22. 新高新低占比：压缩包只有15个行业指数代理，不是全市场股票占比
 # ------------------------------------------------------------
-breadth = read_clean("行业新高新低_代理_清洗后.csv")
-breadth["signal_score"] = 0
-breadth.loc[(breadth["nh_ratio"] >= 0.10) & (breadth["nl_ratio"] < 0.10), "signal_score"] = -1
-breadth.loc[(breadth["nl_ratio"] >= 0.10) & (breadth["nh_ratio"] < 0.10), "signal_score"] = 1
-breadth["signal_text"] = "代理中性"
-breadth.loc[breadth["signal_score"] == 1, "signal_text"] = "代理看多：行业新低占比达到10%"
-breadth.loc[breadth["signal_score"] == -1, "signal_text"] = "代理看空：行业新高占比达到10%"
-breadth["nh_signal_score"] = np.where(breadth["nh_ratio"] >= 0.10, -1, 0)
-breadth["nh_signal_text"] = np.where(
-    breadth["nh_signal_score"] == -1,
-    "代理看空：行业新高占比达到10%",
-    "代理中性",
-)
-breadth["nl_signal_score"] = np.where(breadth["nl_ratio"] >= 0.10, 1, 0)
-breadth["nl_signal_text"] = np.where(
-    breadth["nl_signal_score"] == 1,
-    "代理看多：行业新低占比达到10%",
-    "代理中性",
-)
-breadth = add_effective_date(breadth)
-save_proxy(breadth, "P07_行业新高新低占比代理_日度.csv")
-add_latest(
-    "技术面", "250日新高占比", breadth, "nh_ratio", "nh_signal_score", "nh_signal_text", "代理",
-    "原研报需要全市场股票；压缩包仅有15个行业指数。",
-)
-add_latest(
-    "技术面", "250日新低占比", breadth, "nl_ratio", "nl_signal_score", "nl_signal_text", "代理",
-    "原研报需要全市场股票；压缩包仅有15个行业指数。",
-)
+try:
+    breadth = read_clean("行业新高新低_代理_清洗后.csv")
+    if breadth is None:
+        print("跳过指标: 250日新高/新低占比（行业新高新低_代理_清洗后.csv 缺失）")
+    else:
+        breadth["signal_score"] = 0
+        breadth.loc[(breadth["nh_ratio"] >= 0.10) & (breadth["nl_ratio"] < 0.10), "signal_score"] = -1
+        breadth.loc[(breadth["nl_ratio"] >= 0.10) & (breadth["nh_ratio"] < 0.10), "signal_score"] = 1
+        breadth["signal_text"] = "代理中性"
+        breadth.loc[breadth["signal_score"] == 1, "signal_text"] = "代理看多：行业新低占比达到10%"
+        breadth.loc[breadth["signal_score"] == -1, "signal_text"] = "代理看空：行业新高占比达到10%"
+        breadth["nh_signal_score"] = np.where(breadth["nh_ratio"] >= 0.10, -1, 0)
+        breadth["nh_signal_text"] = np.where(
+            breadth["nh_signal_score"] == -1,
+            "代理看空：行业新高占比达到10%",
+            "代理中性",
+        )
+        breadth["nl_signal_score"] = np.where(breadth["nl_ratio"] >= 0.10, 1, 0)
+        breadth["nl_signal_text"] = np.where(
+            breadth["nl_signal_score"] == 1,
+            "代理看多：行业新低占比达到10%",
+            "代理中性",
+        )
+        breadth = add_effective_date(breadth)
+        save_proxy(breadth, "P07_行业新高新低占比代理_日度.csv")
+        add_latest(
+            "技术面", "250日新高占比", breadth, "nh_ratio", "nh_signal_score", "nh_signal_text", "代理",
+            "原研报需要全市场股票；压缩包仅有15个行业指数。",
+        )
+        add_latest(
+            "技术面", "250日新低占比", breadth, "nl_ratio", "nl_signal_score", "nl_signal_text", "代理",
+            "原研报需要全市场股票；压缩包仅有15个行业指数。",
+        )
+except Exception as e:
+    print(f"跳过指标: 250日新高/新低占比（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
@@ -838,27 +967,33 @@ add_latest(
 # 成交额趋势：MA20(amount)与MA60(amount)
 # 波动率趋势：20日年化波动率的MA20与MA60
 # ------------------------------------------------------------
-clock = market[["date", "close", "amount"]].copy()
-clock["log_return"] = np.log(clock["close"] / clock["close"].shift(1))
-clock["volatility_20d_ann"] = clock["log_return"].rolling(20, min_periods=20).std(ddof=1) * np.sqrt(250)
-clock["amount_ma20"] = clock["amount"].rolling(20, min_periods=20).mean()
-clock["amount_ma60"] = clock["amount"].rolling(60, min_periods=60).mean()
-clock["vol_ma20"] = clock["volatility_20d_ann"].rolling(20, min_periods=20).mean()
-clock["vol_ma60"] = clock["volatility_20d_ann"].rolling(60, min_periods=60).mean()
-clock["amount_trend"] = np.where(clock["amount_ma20"] > clock["amount_ma60"], "成交上", "成交下")
-clock["volatility_trend"] = np.where(clock["vol_ma20"] > clock["vol_ma60"], "波动上", "波动下")
-clock["quadrant"] = clock["volatility_trend"] + "+" + clock["amount_trend"]
-clock["signal_score"] = 1
-clock.loc[clock["quadrant"] == "波动上+成交下", "signal_score"] = -1
-clock.loc[clock[["amount_ma60", "vol_ma60"]].isna().any(axis=1), "signal_score"] = np.nan
-clock["signal_text"] = np.where(clock["signal_score"] == -1, "看空：波动上+成交下", "看多/低风险象限")
-clock.loc[clock["signal_score"].isna(), "signal_text"] = "样本不足"
-clock = add_effective_date(clock)
-save_proxy(clock, "P08_量价时钟透明代理_日度.csv")
-add_latest(
-    "技术面", "成交额+波动率时钟", clock, "volatility_20d_ann", "signal_score", "signal_text", "透明代理",
-    "原研报未披露趋势滤波参数；本实现用20/60日均线判断上下行。",
-)
+try:
+    if not (has_market_close and has_market_amount):
+        print("跳过指标: 成交额+波动率时钟（中证800日行情缺失 close/amount 数据）")
+    else:
+        clock = market[["date", "close", "amount"]].copy()
+        clock["log_return"] = np.log(clock["close"] / clock["close"].shift(1))
+        clock["volatility_20d_ann"] = clock["log_return"].rolling(20, min_periods=20).std(ddof=1) * np.sqrt(250)
+        clock["amount_ma20"] = clock["amount"].rolling(20, min_periods=20).mean()
+        clock["amount_ma60"] = clock["amount"].rolling(60, min_periods=60).mean()
+        clock["vol_ma20"] = clock["volatility_20d_ann"].rolling(20, min_periods=20).mean()
+        clock["vol_ma60"] = clock["volatility_20d_ann"].rolling(60, min_periods=60).mean()
+        clock["amount_trend"] = np.where(clock["amount_ma20"] > clock["amount_ma60"], "成交上", "成交下")
+        clock["volatility_trend"] = np.where(clock["vol_ma20"] > clock["vol_ma60"], "波动上", "波动下")
+        clock["quadrant"] = clock["volatility_trend"] + "+" + clock["amount_trend"]
+        clock["signal_score"] = 1
+        clock.loc[clock["quadrant"] == "波动上+成交下", "signal_score"] = -1
+        clock.loc[clock[["amount_ma60", "vol_ma60"]].isna().any(axis=1), "signal_score"] = np.nan
+        clock["signal_text"] = np.where(clock["signal_score"] == -1, "看空：波动上+成交下", "看多/低风险象限")
+        clock.loc[clock["signal_score"].isna(), "signal_text"] = "样本不足"
+        clock = add_effective_date(clock)
+        save_proxy(clock, "P08_量价时钟透明代理_日度.csv")
+        add_latest(
+            "技术面", "成交额+波动率时钟", clock, "volatility_20d_ann", "signal_score", "signal_text", "透明代理",
+            "原研报未披露趋势滤波参数；本实现用20/60日均线判断上下行。",
+        )
+except Exception as e:
+    print(f"跳过指标: 成交额+波动率时钟（计算异常）：{e}")
 
 
 # ============================================================
@@ -868,21 +1003,27 @@ add_latest(
 # ------------------------------------------------------------
 # 24. 成交热度：用中证800成交额替代缺失的沪深300成交额
 # ------------------------------------------------------------
-heat = market[["date", "close", "amount"]].copy()
-heat["heat_3m"] = heat["amount"].rolling(60, min_periods=60).mean()
-heat["heat_z5y"], heat["heat_mean5y"], heat["heat_std5y"] = rolling_zscore(heat["heat_3m"], 1250, 1000)
-heat["signal_score"] = 0
-heat.loc[heat["heat_z5y"] < -1, "signal_score"] = 1
-heat.loc[heat["heat_z5y"] > 1, "signal_score"] = -1
-heat["signal_text"] = "中性"
-heat.loc[heat["signal_score"] == 1, "signal_text"] = "代理看多：成交情绪过冷"
-heat.loc[heat["signal_score"] == -1, "signal_text"] = "代理看空：成交情绪过热"
-heat = add_effective_date(heat)
-save_proxy(heat, "P09_成交热度_中证800成交额代理_日度.csv")
-add_latest(
-    "情绪面", "成交热度", heat, "heat_z5y", "signal_score", "signal_text", "代理",
-    "研报使用沪深300成交金额；压缩包的沪深300数据只有成交量，故改用中证800成交额并单独标注。",
-)
+try:
+    if not (has_market_close and has_market_amount):
+        print("跳过指标: 成交热度（中证800日行情缺失 close/amount 数据）")
+    else:
+        heat = market[["date", "close", "amount"]].copy()
+        heat["heat_3m"] = heat["amount"].rolling(60, min_periods=60).mean()
+        heat["heat_z5y"], heat["heat_mean5y"], heat["heat_std5y"] = rolling_zscore(heat["heat_3m"], 1250, 1000)
+        heat["signal_score"] = 0
+        heat.loc[heat["heat_z5y"] < -1, "signal_score"] = 1
+        heat.loc[heat["heat_z5y"] > 1, "signal_score"] = -1
+        heat["signal_text"] = "中性"
+        heat.loc[heat["signal_score"] == 1, "signal_text"] = "代理看多：成交情绪过冷"
+        heat.loc[heat["signal_score"] == -1, "signal_text"] = "代理看空：成交情绪过热"
+        heat = add_effective_date(heat)
+        save_proxy(heat, "P09_成交热度_中证800成交额代理_日度.csv")
+        add_latest(
+            "情绪面", "成交热度", heat, "heat_z5y", "signal_score", "signal_text", "代理",
+            "研报使用沪深300成交金额；压缩包的沪深300数据只有成交量，故改用中证800成交额并单独标注。",
+        )
+except Exception as e:
+    print(f"跳过指标: 成交热度（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
@@ -890,53 +1031,65 @@ add_latest(
 # 原研报公式为100%-过去10日行业收益率第一主成分解释比例；
 # 压缩包只有另一种分歧度结果，因此只按其自身历史±1σ做反向情绪信号。
 # ------------------------------------------------------------
-divergence = read_clean("行业分歧度_代理_清洗后.csv")
-divergence["divergence_ma20"] = divergence["divergence"].rolling(20, min_periods=20).mean()
-divergence["z5y"], divergence["mean5y"], divergence["std5y"] = rolling_zscore(divergence["divergence_ma20"], 1250, 750)
-divergence["signal_score"] = 0
-divergence.loc[divergence["z5y"] < -1, "signal_score"] = 1
-divergence.loc[divergence["z5y"] > 1, "signal_score"] = -1
-divergence["signal_text"] = "代理中性"
-divergence.loc[divergence["signal_score"] == 1, "signal_text"] = "代理看多：行业分歧较低"
-divergence.loc[divergence["signal_score"] == -1, "signal_text"] = "代理看空：行业分歧较高"
-divergence = add_effective_date(divergence)
-save_proxy(divergence, "P10_行业分歧度代理_日度.csv")
-add_latest(
-    "情绪面", "行业分歧度", divergence, "z5y", "signal_score", "signal_text", "代理",
-    "底层计算不是研报的PCA解释比例，不能视为精确复刻。",
-)
+try:
+    divergence = read_clean("行业分歧度_代理_清洗后.csv")
+    if divergence is None:
+        print("跳过指标: 行业分歧度（行业分歧度_代理_清洗后.csv 缺失）")
+    else:
+        divergence["divergence_ma20"] = divergence["divergence"].rolling(20, min_periods=20).mean()
+        divergence["z5y"], divergence["mean5y"], divergence["std5y"] = rolling_zscore(divergence["divergence_ma20"], 1250, 750)
+        divergence["signal_score"] = 0
+        divergence.loc[divergence["z5y"] < -1, "signal_score"] = 1
+        divergence.loc[divergence["z5y"] > 1, "signal_score"] = -1
+        divergence["signal_text"] = "代理中性"
+        divergence.loc[divergence["signal_score"] == 1, "signal_text"] = "代理看多：行业分歧较低"
+        divergence.loc[divergence["signal_score"] == -1, "signal_text"] = "代理看空：行业分歧较高"
+        divergence = add_effective_date(divergence)
+        save_proxy(divergence, "P10_行业分歧度代理_日度.csv")
+        add_latest(
+            "情绪面", "行业分歧度", divergence, "z5y", "signal_score", "signal_text", "代理",
+            "底层计算不是研报的PCA解释比例，不能视为精确复刻。",
+        )
+except Exception as e:
+    print(f"跳过指标: 行业分歧度（计算异常）：{e}")
 
 
 # ------------------------------------------------------------
 # 26. 基金仓位代理
 # 原研报为主动权益基金带约束回归估算；压缩包是全市场基金季度资产配置。
 # ------------------------------------------------------------
-fund_q = read_clean("全市场基金股票仓位_代理_清洗后.csv")
-calendar = market[["date"]].copy()
-fund_source = fund_q[
-    ["date", "available_date", "all_fund_equity_position_pct", "fund_count"]
-].rename(columns={"date": "fund_period_end"}).sort_values("available_date")
-fund_daily = pd.merge_asof(
-    calendar.sort_values("date"),
-    fund_source,
-    left_on="date",
-    right_on="available_date",
-    direction="backward",
-)
-fund_daily["position_ma5"] = fund_daily["all_fund_equity_position_pct"].rolling(5, min_periods=5).mean()
-fund_daily["position_z5y"], fund_daily["position_mean5y"], fund_daily["position_std5y"] = rolling_zscore(fund_daily["position_ma5"], 1250, 750)
-fund_daily["signal_score"] = 0
-fund_daily.loc[fund_daily["position_z5y"] < -1, "signal_score"] = 1
-fund_daily.loc[fund_daily["position_z5y"] > 1, "signal_score"] = -1
-fund_daily["signal_text"] = "代理中性"
-fund_daily.loc[fund_daily["signal_score"] == 1, "signal_text"] = "代理看多：基金股票仓位偏低"
-fund_daily.loc[fund_daily["signal_score"] == -1, "signal_text"] = "代理看空：基金股票仓位偏高"
-fund_daily = add_effective_date(fund_daily)
-save_proxy(fund_daily, "P11_全市场基金股票仓位代理_日度.csv")
-add_latest(
-    "情绪面", "偏股基金仓位", fund_daily, "position_z5y", "signal_score", "signal_text", "代理",
-    "全市场基金资产配置不等于主动权益基金带约束回归仓位。",
-)
+try:
+    fund_q = read_clean("全市场基金股票仓位_代理_清洗后.csv")
+    if fund_q is None:
+        print("跳过指标: 偏股基金仓位（全市场基金股票仓位_代理_清洗后.csv 缺失）")
+    else:
+        calendar = market[["date"]].copy()
+        fund_source = fund_q[
+            ["date", "available_date", "all_fund_equity_position_pct", "fund_count"]
+        ].rename(columns={"date": "fund_period_end"}).sort_values("available_date")
+        fund_daily = pd.merge_asof(
+            calendar.sort_values("date"),
+            fund_source,
+            left_on="date",
+            right_on="available_date",
+            direction="backward",
+        )
+        fund_daily["position_ma5"] = fund_daily["all_fund_equity_position_pct"].rolling(5, min_periods=5).mean()
+        fund_daily["position_z5y"], fund_daily["position_mean5y"], fund_daily["position_std5y"] = rolling_zscore(fund_daily["position_ma5"], 1250, 750)
+        fund_daily["signal_score"] = 0
+        fund_daily.loc[fund_daily["position_z5y"] < -1, "signal_score"] = 1
+        fund_daily.loc[fund_daily["position_z5y"] > 1, "signal_score"] = -1
+        fund_daily["signal_text"] = "代理中性"
+        fund_daily.loc[fund_daily["signal_score"] == 1, "signal_text"] = "代理看多：基金股票仓位偏低"
+        fund_daily.loc[fund_daily["signal_score"] == -1, "signal_text"] = "代理看空：基金股票仓位偏高"
+        fund_daily = add_effective_date(fund_daily)
+        save_proxy(fund_daily, "P11_全市场基金股票仓位代理_日度.csv")
+        add_latest(
+            "情绪面", "偏股基金仓位", fund_daily, "position_z5y", "signal_score", "signal_text", "代理",
+            "全市场基金资产配置不等于主动权益基金带约束回归仓位。",
+        )
+except Exception as e:
+    print(f"跳过指标: 偏股基金仓位（计算异常）：{e}")
 
 
 # 注：原报告中的东财NLP情绪因缺少历史语料模型，已按规范剔除。
@@ -946,19 +1099,25 @@ add_latest(
 # 27. 50ETF QVIX：高于均值+1σ时视为恐慌过度，反向看多
 # 采用可用全历史滚动 z-score (min_periods=12，透明窗口假设)
 # ------------------------------------------------------------
-qvix = read_clean("50ETF_QVIX_清洗后.csv")
-qvix["qvix_mean"] = qvix["qvix"].expanding(min_periods=12).mean()
-qvix["qvix_std"] = qvix["qvix"].expanding(min_periods=12).std(ddof=1)
-qvix["qvix_z5y"] = (qvix["qvix"] - qvix["qvix_mean"]) / qvix["qvix_std"]
-qvix["signal_score"] = 0
-qvix.loc[qvix["qvix_z5y"] > 1, "signal_score"] = 1
-qvix["signal_text"] = np.where(qvix["signal_score"] == 1, "看多：期权恐慌处于高位(恐慌过度)", "中性")
-qvix = add_effective_date(qvix)
-save_proxy(qvix, "P12_50ETF_QVIX信号_日度.csv")
-add_latest(
-    "情绪面", "50ETF期权VIX", qvix, "qvix_z5y", "signal_score", "signal_text", "窗口假设",
-    "QVIX采用全历史滚动 z-score (min_periods=12)，高于+1σ反向看多。",
-)
+try:
+    qvix = read_clean("50ETF_QVIX_清洗后.csv")
+    if qvix is None:
+        print("跳过指标: 50ETF期权VIX（50ETF_QVIX_清洗后.csv 缺失）")
+    else:
+        qvix["qvix_mean"] = qvix["qvix"].expanding(min_periods=12).mean()
+        qvix["qvix_std"] = qvix["qvix"].expanding(min_periods=12).std(ddof=1)
+        qvix["qvix_z5y"] = (qvix["qvix"] - qvix["qvix_mean"]) / qvix["qvix_std"]
+        qvix["signal_score"] = 0
+        qvix.loc[qvix["qvix_z5y"] > 1, "signal_score"] = 1
+        qvix["signal_text"] = np.where(qvix["signal_score"] == 1, "看多：期权恐慌处于高位(恐慌过度)", "中性")
+        qvix = add_effective_date(qvix)
+        save_proxy(qvix, "P12_50ETF_QVIX信号_日度.csv")
+        add_latest(
+            "情绪面", "50ETF期权VIX", qvix, "qvix_z5y", "signal_score", "signal_text", "窗口假设",
+            "QVIX采用全历史滚动 z-score (min_periods=12)，高于+1σ反向看多。",
+        )
+except Exception as e:
+    print(f"跳过指标: 50ETF期权VIX（计算异常）：{e}")
 
 
 # 注：原报告中的期权CPR、SKEW因成交明细历史与口径问题，已按规范剔除。
@@ -990,22 +1149,8 @@ latest = latest[
         "aggregation_eligible", "note",
     ]
 ]
-latest.to_csv(RESULT_DIR / "最新信号汇总.csv", index=False, encoding="utf-8-sig")
-
-# 直接增量写入 MongoDB 数据库 ('timing_signals_summary' 集合)
-try:
-    import asyncio
-    from app.db.mongodb import MongoDBClient
-    async def _upsert_signals_to_mongo():
-        db_client = MongoDBClient.get_instance()
-        if await db_client.connect():
-            records = latest.to_dict(orient="records")
-            count = await db_client.upsert_timing_signals_batch(records)
-            await db_client.close()
-            print(f"  [OK] 成功将 {count} 项择时六面图计算信号增量落盘至 MongoDB ('timing_signals_summary')！")
-    asyncio.run(_upsert_signals_to_mongo())
-except Exception as e_mongo:
-    print(f"  [WARN] MongoDB 择时信号落盘提示: {e_mongo}")
+save_signals_summary(latest)
+print(f"最新信号汇总已写入 MongoDB（timing_signals_summary，{len(latest)} 行）。")
 
 replication_summary = pd.DataFrame([
     ["可按公开规则复现", "SHIBOR 1W、M1、M1-PPI、M2-名义GDP、PMI、通胀方向因子、通胀强度因子、席勒ERP、均线排列"],
@@ -1014,7 +1159,8 @@ replication_summary = pd.DataFrame([
     ["透明代理/参数假设", "DR007水平、信贷脉冲、发电量、两融增量、均线距离、量价时钟、成交热度、行业分歧度、基金仓位、QVIX、新高新低占比"],
     ["不能严谨复现", "库存周期、A股景气度、DCF、AIAE、NLP、CPR、期权SKEW；股息率仅有最近20日"],
 ], columns=["category", "indicators"])
-replication_summary.to_csv(RESULT_DIR / "复刻边界汇总.csv", index=False, encoding="utf-8-sig")
+print("复刻边界汇总：")
+print(replication_summary.to_string(index=False))
 
 
 # ============================================================
@@ -1032,6 +1178,8 @@ def pick_row(df, cutoff):
     月度数据优先按保守可用日筛选；日度收盘数据按观测日筛选。effective_date
     用于回测交易执行，不用于周末发布的研报回看（7月29日收盘在7月31日已知）。
     """
+    if df is None:
+        return None
     cutoff = pd.Timestamp(cutoff)
     availability_candidates = [
         "signal_available_date",
@@ -1134,10 +1282,13 @@ add_review("50ETF期权VIX", "中等位置", "中性", pick_row(qvix, report_cut
 
 # 25 项有效指标复核
 review = pd.DataFrame(review_rows)
-review.to_csv(RESULT_DIR / "研报2022时点复核.csv", index=False, encoding="utf-8-sig")
+print("研报2022时点复核：")
+print(review.to_string(index=False))
+print("研报2022时点复核（JSON）：")
+print(review.to_json(orient="records", force_ascii=False))
 
 print("指标计算完成。")
-print(f"严格/近似可复现输出：{EXACT_DIR}")
-print(f"代理输出：{PROXY_DIR}")
-print(f"最新信号汇总：{RESULT_DIR / '最新信号汇总.csv'}")
+print("严格/近似可复现输出已写入 MongoDB（timing_indicator_outputs, indicator_outputs）。")
+print("代理输出已写入 MongoDB（timing_indicator_outputs, proxy_outputs）。")
+print(f"最新信号汇总：{len(latest)} 行（timing_signals_summary）")
 print(latest.to_string(index=False))
